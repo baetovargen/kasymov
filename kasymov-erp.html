@@ -767,7 +767,7 @@ window.addEventListener('hashchange', () => {
    item.style.cssText='padding:10px 12px;color:#eef3fb;border-radius:7px;cursor:pointer';
    item.onmouseenter=function(){item.style.background='rgba(255,255,255,.08)';};
    item.onmouseleave=function(){item.style.background='transparent';};
-   item.onclick=function(e){e.stopPropagation();menu.style.display='none';window.open('/admin.html','_blank');};
+   item.onclick=function(e){e.stopPropagation();menu.style.display='none';window.open('admin.html','_blank');};
    menu.appendChild(item);
    document.body.appendChild(menu);
    u.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();
