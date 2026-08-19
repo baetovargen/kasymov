@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Производство — Kasymov ERP</title>
+<link rel="stylesheet" href="kasymov-ui.css">
+<style>
+/* ══════════════════════════════════════════════════════
+   Оформление раздела «Производство».
+   Тёплая палитра цеха: профиль, дерево, свет из окна.
+   ══════════════════════════════════════════════════════ */
+:root{
+  --h1:#9a4a10; --h2:#c26a15; --h3:#d99a1c;
+  --ink:#151d29; --ink-3:#2b3b52;
+  --sh:0 1px 2px rgba(21,29,41,.05), 0 4px 14px rgba(21,29,41,.05);
+}
+body{
+  background:
+    repeating-linear-gradient(180deg, rgba(21,29,41,.016) 0 1px, transparent 1px 7px),
+    linear-gradient(168deg,#faf7f2 0%,#eef1f7 46%,#e6ebf4 100%);
+  background-attachment:fixed;
+}
+.phead{
+  position:relative;overflow:hidden;align-items:center;
+  padding:15px 20px;margin-bottom:16px;border-radius:13px;color:#fff;
+  background:linear-gradient(112deg,var(--h1) 0%,var(--h2) 54%,var(--h3) 100%);
+  box-shadow:0 3px 10px rgba(21,29,41,.10), 0 14px 34px rgba(154,74,16,.20);
+}
+.phead::before{content:'';position:absolute;left:-10%;top:-140%;width:60%;height:280%;
+  background:radial-gradient(closest-side, rgba(255,255,255,.28), transparent 72%);pointer-events:none}
+.phead::after{content:'';position:absolute;right:-40px;top:-30%;width:290px;height:180%;
+  background:repeating-linear-gradient(180deg, rgba(255,255,255,.24) 0 3px, transparent 3px 11px);
+  transform:skewX(-14deg);pointer-events:none}
+.ptitle{font-size:20px;font-weight:800;letter-spacing:-.02em;color:#fff}
+.psub{font-size:12px;color:rgba(255,255,255,.88);font-weight:500}
+.pright{position:relative;z-index:1}
+.phead .inp{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.34);color:#fff}
+.phead .inp::placeholder{color:rgba(255,255,255,.7)}
+.phead .inp:focus{background:rgba(255,255,255,.26);border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.25)}
+.phead .search svg{color:rgba(255,255,255,.78)}
+.phead .btn{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.36);color:#fff}
+.phead .btn:hover{background:rgba(255,255,255,.3)}
+.phead .btn.green{background:linear-gradient(180deg,#6ba823,#4d8215);border-color:#4d8215}
+
+.btn{border-radius:9px;background:linear-gradient(#fff,#f7f9fd);box-shadow:0 1px 2px rgba(21,29,41,.05);
+     transition:transform .1s, box-shadow .14s, background .14s, border-color .14s}
+.btn:hover{background:linear-gradient(#fff,#eef3fa);border-color:#aeb9d1;box-shadow:0 3px 8px rgba(21,29,41,.09)}
+.btn:active{transform:translateY(1px);box-shadow:none}
+.btn.green{background:linear-gradient(180deg,#6ba823,#4d8215);border-color:#4d8215;color:#fff;
+           box-shadow:0 2px 8px rgba(95,154,30,.34)}
+.btn.green:hover{background:linear-gradient(180deg,#78b52a,#456f12)}
+
+.stats{gap:11px}
+.stat{padding:13px 15px 14px;border-radius:13px;box-shadow:var(--sh);overflow:hidden}
+.stat::before{left:0;right:0;top:0;bottom:auto;width:auto;height:3px}
+.stat.bl{background:linear-gradient(160deg,#f2f7fe,#fff 62%);border-color:#d5e4f7}
+.stat.bl::before{background:linear-gradient(90deg,#2b7fd4,#5aa4ea)}
+.stat.gn{background:linear-gradient(160deg,#f2f9e9,#fff 62%);border-color:#d9e9c4}
+.stat.gn::before{background:linear-gradient(90deg,#5f9a1e,#8cc23f)}
+.stat.rd{background:linear-gradient(160deg,#fef3f1,#fff 62%);border-color:#f6d3ce}
+.stat.rd::before{background:linear-gradient(90deg,#e0483f,#f0837a)}
+.stat.am{background:linear-gradient(160deg,#fef6e8,#fff 62%);border-color:#f3ddb6}
+.stat.am::before{background:linear-gradient(90deg,#c07a12,#e0a63f)}
+.stat.vl{background:linear-gradient(160deg,#f3f2fe,#fff 62%);border-color:#dcd9f6}
+.stat.vl::before{background:linear-gradient(90deg,#4b3f9e,#7d70d2)}
+.stat-v{font-size:22px;letter-spacing:-.025em;font-variant-numeric:tabular-nums}
+.stat-l{letter-spacing:.06em}
+
+.card{border-radius:13px;box-shadow:var(--sh)}
+.card-h{background:linear-gradient(180deg,#fbfcfe,#f6f8fc);border-radius:13px 13px 0 0}
+.tbl th{background:linear-gradient(180deg,#f4f7fc,#eef2f9);color:var(--t2);letter-spacing:.06em;
+        border-bottom-color:var(--line)}
+.tbl td{padding:9px 12px}
+.tbl tbody tr:hover{background:#fbfaf5}
+.chip{padding:2px 9px;font-weight:800;border:1px solid transparent}
+.chip.bl{border-color:#c7dcf5} .chip.gn{border-color:#cee3b4} .chip.rd{border-color:#f7cbc6}
+.chip.am{border-color:#f0d3a4} .chip.vl{border-color:#d6d2f6} .chip.gy{border-color:#dfe4ee}
+.modal{border-radius:16px;overflow:hidden}
+.modal-h{background:linear-gradient(112deg,var(--h1),var(--h3));color:#fff;border-bottom:none}
+.modal-x{background:rgba(255,255,255,.14);color:rgba(255,255,255,.9)}
+.toast{background:linear-gradient(115deg,var(--ink),var(--ink-3));border-left:3px solid #e9dfc9;border-radius:11px}
+.toast.bad{background:linear-gradient(115deg,#7d211c,#a83229);border-left-color:#ffb3ac}
+.hint{background:var(--bl-l);border:1px solid rgba(21,29,41,.07);border-radius:10px;padding:9px 12px;color:var(--t2)}
+
+.subtabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--bd);margin-bottom:16px}
+.subtab{padding:9px 17px;font-size:13.5px;font-weight:700;color:var(--t2);white-space:nowrap;
+        border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:8px 8px 0 0}
+.subtab:hover{background:#f2f0ea;color:var(--t1)}
+.subtab.on{color:var(--h1);border-bottom-color:var(--h2);background:linear-gradient(180deg,#fff,#fdf3e3)}
+.subtab .n{font-size:11px;font-weight:800;color:var(--t3);margin-left:6px}
+.subtab.on .n{color:var(--h2)}
+
+.who{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid rgba(255,255,255,.3);
+     border-radius:9px;padding:5px 8px 5px 12px;box-shadow:0 2px 8px rgba(0,0,0,.16)}
+.who-l{font-size:10px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.05em}
+.who select{border:none;background:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;padding:3px 4px}
+.who select:focus{outline:none}
+
+/* ── галочки ── */
+.tick{
+  width:34px;height:34px;border-radius:9px;border:2px solid #cfd7e6;background:#fff;
+  cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+  font-size:18px;font-weight:800;color:transparent;padding:0;
+  transition:transform .1s, background .14s, border-color .14s, box-shadow .14s;
+}
+.tick:hover{border-color:var(--gn);background:var(--gn-l);transform:scale(1.06)}
+.tick.on{background:linear-gradient(180deg,#6fae26,#4d8215);border-color:#4d8215;color:#fff;
+         box-shadow:0 2px 7px rgba(95,154,30,.4)}
+.tick.on:hover{background:linear-gradient(180deg,#7dbd2c,#456f12)}
+.tick.lock{opacity:.35;cursor:not-allowed;border-style:dashed;border-color:#c3cbdb}
+.tick.lock:hover{background:#fff;transform:none;border-color:#c3cbdb}
+.tickcell{text-align:center;padding:7px 4px!important}
+.tickwho{font-size:9.5px;color:var(--t3);margin-top:3px;line-height:1.2;height:11px;overflow:hidden}
+.tbl th.tickhead{text-align:center;font-size:10.5px;width:84px}
+
+.held{font-size:10.5px;font-weight:700;color:var(--gn-d);margin-top:3px;
+       animation:blink 1s ease-in-out infinite alternate}
+@keyframes blink{from{opacity:.55}to{opacity:1}}
+tr.urg td{background:#fdf1ef}
+tr.urg:hover td{background:#fbe8e5}
+tr.allok td{background:#f4faec}
+.big{font-size:14.5px;font-weight:700}
+.num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.q0{color:var(--t3);font-weight:400}
+.pos{color:var(--gn-d)} .neg{color:var(--rd-d)}
+.money{font-variant-numeric:tabular-nums;font-weight:700;text-align:right;white-space:nowrap}
+.tbl tfoot td{background:#f7f9fd;border-top:2px solid var(--bd);font-weight:800;padding:11px 12px}
+.chipbtn{border:1px solid var(--bd);background:linear-gradient(#fff,#f8fafd);border-radius:20px;
+         padding:6px 16px;font-size:12.5px;font-weight:600;color:var(--t2);cursor:pointer;
+         box-shadow:0 1px 2px rgba(21,29,41,.05)}
+.chipbtn:hover{border-color:var(--line)}
+.chipbtn.on{background:linear-gradient(115deg,var(--h1),var(--h2));border-color:var(--h1);color:#fff;
+            box-shadow:0 2px 8px rgba(154,74,16,.3)}
+/* фильтры красим по смыслу: в работе синий, срочные красный, готово зелёный */
+.chipbtn.f-work.on{background:linear-gradient(180deg,#3b8ade,#1c62b4);border-color:#1c62b4;
+                   box-shadow:0 2px 8px rgba(43,127,212,.35)}
+.chipbtn.f-urgent.on{background:linear-gradient(180deg,#e5564c,#b8322b);border-color:#b8322b;
+                     box-shadow:0 2px 8px rgba(224,72,63,.35)}
+.chipbtn.f-done.on{background:linear-gradient(180deg,#6fae26,#4d8215);border-color:#4d8215;
+                   box-shadow:0 2px 8px rgba(95,154,30,.35)}
+.chipbtn.f-all.on{background:linear-gradient(115deg,var(--ink),var(--ink-3));border-color:var(--ink);
+                  box-shadow:0 2px 8px rgba(21,29,41,.28)}
+/* когда фильтр выключен — цветная точка подсказывает, что означает кнопка */
+.chipbtn .mk{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:7px;
+             vertical-align:-1px;background:currentColor;opacity:.55}
+.chipbtn.f-work  .mk{background:var(--bl)}
+.chipbtn.f-urgent .mk{background:var(--rd)}
+.chipbtn.f-done  .mk{background:var(--gn)}
+.chipbtn.on .mk{background:#fff;opacity:.95}
+.chipbtn.f-all .mk{display:none}
+
+/* ── карточки адресов: по две-три в ряд ── */
+.packgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(424px,1fr));gap:14px;align-items:start}
+.gcard{background:#fff;border:1px solid var(--bd);border-radius:14px;overflow:hidden;
+       box-shadow:var(--sh);display:flex;flex-direction:column}
+/* цвет рамки по состоянию: готово зелёный, срочный красный, в работе синий */
+.gcard.st-ok{border-color:var(--gn);box-shadow:0 0 0 2px var(--gn-l), var(--sh)}
+.gcard.st-urg{border-color:var(--rd);box-shadow:0 0 0 2px var(--rd-l), var(--sh)}
+.gcard.st-work{border-color:#b9d3ef;box-shadow:0 0 0 2px var(--bl-l), var(--sh)}
+.gc-h{padding:14px 16px;border-bottom:1px solid var(--bd)}
+.gcard.st-ok   .gc-h{background:linear-gradient(105deg,#f2faea 0%,#f6fbf1 60%,#eef7fd 100%)}
+.gcard.st-urg  .gc-h{background:linear-gradient(105deg,#fdf0ee 0%,#fdf6f4 60%,#eef4fd 100%)}
+.gcard.st-work .gc-h{background:linear-gradient(105deg,#eaf2fd 0%,#f3f7fd 60%,#eef4fd 100%)}
+.gc-top{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:9px}
+.gc-num{font-size:18px;font-weight:800;letter-spacing:-.02em}
+.gc-sum{margin-left:auto;text-align:right}
+.gc-sum span{display:block;font-size:10px;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.gc-sum b{font-size:17px;font-variant-numeric:tabular-nums;color:var(--gn-d)}
+.gc-addr{display:flex;align-items:flex-start;gap:7px;font-size:15px;font-weight:700;
+         line-height:1.3;margin-bottom:8px}
+/* без fill:none браузер заливает контур иконки чёрным */
+.gc-addr svg{width:15px;height:15px;margin-top:2px;flex-shrink:0;
+             fill:none;stroke:var(--h2);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.gc-row{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--t2);margin-bottom:4px}
+.gc-row svg{width:13px;height:13px;stroke:var(--t3);fill:none;stroke-width:2;flex-shrink:0;
+            stroke-linecap:round;stroke-linejoin:round}
+.gcard svg{fill:none}
+.gc-people{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.gc-p{background:rgba(255,255,255,.8);border:1px solid rgba(21,29,41,.07);border-radius:9px;padding:8px 11px}
+.gc-p span{display:block;font-size:10px;color:var(--t3);font-weight:700;margin-bottom:2px}
+.gc-p b{font-size:12.5px;line-height:1.3;display:block}
+.gc-p i{display:block;font-style:normal;font-size:11px;font-weight:600;color:var(--t3);
+        margin-top:5px;padding-top:5px;border-top:1px solid rgba(21,29,41,.07)}
+.gc-act{display:flex;align-items:center;gap:10px;padding:11px 16px;background:#fafbfd;
+        border-top:1px solid var(--bd);flex-wrap:wrap;margin-top:auto}
+.gc-prog{font-size:12.5px;font-weight:700}
+.gc-prog b{font-size:17px;font-variant-numeric:tabular-nums}
+.waitlist{font-size:11.5px;color:var(--am-d)}
+.gcard .tbl td{padding:7px 10px}
+.gcard .tbl th{padding:8px 10px}
+@media (max-width:1000px){ .hide-m{display:none} }
+@media (max-width:520px){ .packgrid{grid-template-columns:1fr} .gc-people{grid-template-columns:1fr} }
+@media (max-width:640px){ .hide-s{display:none} .gc-addr{margin-left:0;width:100%} }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="phead">
+    <div>
+      <div class="ptitle">Производство</div>
+      <div class="psub" id="sub">—</div>
+    </div>
+    <div class="pright">
+      <div class="who"><span class="who-l">Кто отмечает</span><select id="who"></select></div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input class="inp" id="q" placeholder="Заказ, адрес, ткань" style="width:190px">
+      </div>
+      <button class="btn green" id="btn-primary">Печать</button>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+  <div class="subtabs" id="subtabs"></div>
+  <div id="view"></div>
+</div>
+
+<div class="ovl" id="ovl" hidden>
+  <div class="modal" id="mdl">
+    <div class="modal-h"><div class="modal-t" id="m-t"></div><button class="modal-x" data-close aria-label="Закрыть">✕</button></div>
+    <div class="modal-b" id="m-b"></div>
+    <div class="modal-f" id="m-f"></div>
+  </div>
+</div>
+
+<iframe id="printer" style="position:fixed;width:0;height:0;border:0;left:-9999px" title="Печать"></iframe>
+
+<script>
+/* сообщаем оболочке о сбое, чтобы он не превратился в пустой экран */
+window.__errHook = true;
+window.addEventListener('error', e => {
+  try{ window.parent.postMessage({ ns:'kasymov', type:'moduleError',
+       msg:(e.message||'') + ' · ' + (e.lineno||'') }, '*'); }catch(_){}
+  const b = document.body;
+  if(b) b.insertAdjacentHTML('afterbegin',
+    '<div style="background:#7d211c;color:#fff;padding:12px 16px;font:13px/1.5 -apple-system,sans-serif">'
+    + '<b>Сбой в разделе.</b> ' + (e.message||'') + '</div>');
+});
+</script>
+<script src="kasymov-data.js"></script>
+<script>
+const K = window.KASYMOV;
+let S = null, tab = 'list', who = 'u19', flt = 'work', packFlt = 'ready';
+let P = { preset:'month', from:'', to:'' };
+/* закрытые изделия исчезают не сразу — 30 секунд видно, что сделал */
+const HOLD = 30000;
+const held = new Map();
+function hold(key){
+  held.set(key, Date.now());
+  setTimeout(() => { held.delete(key); render(); }, HOLD + 400);
+}
+const isHeld = key => held.has(key) && Date.now() - held.get(key) < HOLD;
+const heldLeft = key => Math.max(0, Math.ceil((HOLD - (Date.now() - held.get(key))) / 1000));
+
+const TABS = [
+  { id:'list', name:'Заказы' },
+  { id:'pack', name:'Упаковка' },
+  { id:'pay',  name:'Кто сколько сделал' },
+  { id:'arch', name:'Передано установщику' },
+];
+const TODAY = '2026-08-03';
+
+K.connect(state => {
+  S = state;
+  if(S.me && ['shop','packer'].includes(S.me.role)) who = S.me.id;
+  S.orders.forEach(o => o.items.forEach(it => {
+    if(!it.marks) it.marks = [];
+    while(it.marks.length < it.qty) it.marks.push({});
+    if(it.urgent === undefined) it.urgent = false;
+  }));
+  render();
+}, name => { if(name === 'primary') printSheet(); });
+
+/* ═══════════ ХЕЛПЕРЫ ═══════════ */
+const staff = id => K.staffName(id);
+const order = id => S.orders.find(o => o.id === id);
+const shopOrders = () => S.orders.filter(o => o.status === 'toShop');
+const NOW = () => TODAY + ' ' + new Date().toTimeString().slice(0,5);
+/* упаковка открывается, когда закрыты остальные четыре */
+const beforePack = K.OPS.filter(o => o.key !== 'pack').map(o => o.key);
+/* в списке заказов упаковки нет — она живёт в своей вкладке */
+const LIST_OPS = K.OPS.filter(o => o.key !== 'pack');
+const pieceReady = m => beforePack.every(k => m[k]);
+const orderPacked = o => o.items.every(it => it.marks.every(m => m.pack));
+const orderReady  = o => o.items.every(it => it.marks.every(pieceReady));
+
+/* каждое изделие — отдельная строка */
+const rowKey = r => r.o.id + '-' + r.ix + '-' + r.u;
+
+function rows(){
+  const t = document.getElementById('q').value.trim().toLowerCase();
+  const out = [];
+  shopOrders().forEach(o => o.items.forEach((it,ix) => {
+    for(let u = 0; u < it.qty; u++){
+      if(t && !(String(o.num).includes(t) || o.addr.toLowerCase().includes(t) ||
+                it.fabric.toLowerCase().includes(t))) continue;
+      out.push({ o, it, ix, u, m:it.marks[u] });
+    }
+  }));
+  return out.sort((a,b) => (b.it.urgent?1:0) - (a.it.urgent?1:0));
+}
+
+/* ═══════════ РЕНДЕР ═══════════ */
+function render(){
+  if(!S) return;
+  document.getElementById('who').innerHTML =
+    [...K.byRole('shop'), ...K.byRole('packer')].map(s =>
+      `<option value="${s.id}" ${who===s.id?'selected':''}>${K.esc(s.name)}</option>`).join('');
+
+  const all = rows();
+  const urgent = all.filter(r => r.it.urgent).length;
+  const packed = all.filter(r => r.m.pack).length;
+  const ready  = all.filter(r => pieceReady(r.m) && !r.m.pack).length;
+  const waitGive = shopOrders().filter(orderPacked).length;
+  const myToday = countBy(who, TODAY, TODAY).qty;
+  const [pf, pt] = periodRange();
+
+  document.getElementById('sub').textContent =
+    `${shopOrders().length} заказов · ${all.length} изделий · упаковано ${packed}`;
+
+  document.getElementById('stats').innerHTML = `
+    <div class="stat bl"><div class="stat-l">Изделий в цеху</div>
+      <div class="stat-v">${all.length}</div>
+      <div class="stat-s">по ${shopOrders().length} адресам</div></div>
+    <div class="stat rd"><div class="stat-l">Срочных</div>
+      <div class="stat-v ${urgent?'neg':''}">${urgent}</div>
+      <div class="stat-s">делать вне очереди</div></div>
+    <div class="stat am"><div class="stat-l">Ждут упаковки</div>
+      <div class="stat-v">${ready}</div>
+      <div class="stat-s">всё сделано, осталось упаковать</div></div>
+    <div class="stat gn"><div class="stat-l">Упаковано, ждут передачи</div>
+      <div class="stat-v pos">${waitGive}</div>
+      <div class="stat-s">адресов для старшего установщика</div></div>
+    <div class="stat vl"><div class="stat-l">${K.esc(staff(who))} сегодня</div>
+      <div class="stat-v">${myToday}</div>
+      <div class="stat-s">галочек за день</div></div>`;
+
+  const n = { list:all.length,
+              pack:shopOrders().filter(o => orderReady(o) || orderPacked(o)).length, pay:'',
+              arch:handedOrders().length };
+  document.getElementById('subtabs').innerHTML = TABS.map(t =>
+    `<button class="subtab ${tab===t.id?'on':''}" data-t="${t.id}">${t.name}${n[t.id]!==''?`<span class="n">${n[t.id]}</span>`:''}</button>`).join('');
+  document.querySelectorAll('.subtab').forEach(b =>
+    b.addEventListener('click', () => { tab = b.dataset.t; render(); }));
+
+  ({ list:renderList, pack:renderPack, pay:renderPay, arch:renderArch })[tab]();
+}
+document.getElementById('who').addEventListener('change', e => { who = e.target.value; render(); });
+document.getElementById('q').addEventListener('input', render);
+
+/* ── 1. ЗАКАЗЫ: список с пятью галочками ── */
+function renderList(){
+  let list = rows();
+  if(flt === 'work')   list = list.filter(r => !pieceReady(r.m) || isHeld(rowKey(r)));
+  if(flt === 'urgent') list = list.filter(r => r.it.urgent);
+  if(flt === 'done')   list = list.filter(r => pieceReady(r.m));
+
+  document.getElementById('view').innerHTML = `
+    <div class="bar" style="margin-bottom:12px">
+      ${[['all','Все'],['work','В работе'],['urgent','Срочные'],['done','Готово']].map(([k,n]) =>
+        `<button class="chipbtn f-${k} ${flt===k?'on':''}" data-flt="${k}">
+          <span class="mk"></span>${n}</button>`).join('')}
+      <span style="margin-left:auto"></span>
+      <span class="dim" style="font-size:12.5px">Отмечает: <b>${K.esc(staff(who))}</b></span>
+      <button class="btn green" id="pr">Печать списка</button>
+    </div>
+    <div class="card"><div class="tbl-wrap"><table class="tbl">
+      <thead><tr>
+        <th style="width:80px">Заказ</th>
+        <th class="hide-s" style="width:170px">Адрес</th>
+        <th style="width:88px">Ширина</th>
+        <th style="width:88px">Высота</th>
+        <th>Ткань</th>
+        <th class="hide-m" style="width:150px">Профиль</th>
+        <th style="width:100px">Тип</th>
+        ${LIST_OPS.map(op => `<th class="tickhead">${op.label}</th>`).join('')}
+      </tr></thead>
+      <tbody>${list.length ? list.map(r => {
+        const done = pieceReady(r.m);
+        const hk = isHeld(rowKey(r));
+        return `<tr class="${r.it.urgent && !done ? 'urg' : ''} ${done ? 'allok' : ''}">
+          <td class="strong">#${r.o.num}</td>
+          <td class="dim hide-s">${K.esc(r.o.addr)}</td>
+          <td class="num big">${K.qfmt(r.it.w)}</td>
+          <td class="num big">${K.qfmt(r.it.h)}</td>
+          <td>${K.esc(r.it.fabric)}${r.it.urgent ? ' <span class="chip rd">срочно</span>' : ''}</td>
+          <td class="dim hide-m">${K.esc(r.it.profile)}</td>
+          <td>${K.esc(r.it.type)}${hk ? `<div class="held">готово · скроется через ${heldLeft(rowKey(r))} с</div>` : ''}</td>
+          ${LIST_OPS.map(op => {
+            const on = !!r.m[op.key];
+            return `<td class="tickcell">
+              <button class="tick ${on?'on':''}"
+                data-t="${r.o.id}|${r.ix}|${r.u}|${op.key}"
+                aria-label="${op.label} — ${on?'снять':'отметить'}">✓</button>
+              <div class="tickwho">${on ? K.esc(staff(r.m[op.key].by).split(' ')[0]) : ''}</div>
+            </td>`;
+          }).join('')}
+        </tr>`;
+      }).join('') : `<tr><td colspan="${7+LIST_OPS.length}"><div class="empty">
+        <div class="empty-t">Изделий нет</div>
+        <div class="empty-s">Заказы появятся, когда их отправят в производство</div></div></td></tr>`}</tbody>
+    </table></div></div>`;
+
+  document.querySelectorAll('[data-flt]').forEach(b =>
+    b.addEventListener('click', () => { flt = b.dataset.flt; render(); }));
+  document.getElementById('pr').onclick = printSheet;
+  document.querySelectorAll('[data-t]').forEach(b =>
+    b.addEventListener('click', () => toggle(...b.dataset.t.split('|'))));
+}
+
+/* поставить или снять галочку */
+function toggle(oid, ix, u, key){
+  const o = order(+oid), it = o.items[+ix], m = it.marks[+u];
+  const op = K.OPS.find(x => x.key === key);
+  if(m[key]){
+    if(m[key].by !== who){
+      K.toast(`Отметил ${staff(m[key].by)} — снять может только он`, 'bad'); return;
+    }
+    delete m[key];
+    save(); K.toast(`${op.label}: галочка снята`);
+    return;
+  }
+  m[key] = { by:who, at:NOW() };
+  if(key !== 'pack' && pieceReady(m)) hold(oid + '-' + ix + '-' + u);
+  if(key === 'pack' && orderPacked(o)){
+    o.packedAt = NOW();
+    o.history.push({ at:NOW(), who, what:'Адрес упакован, ждёт передачи старшему установщику' });
+    save(); K.toast(`Заказ #${o.num} упакован — передайте старшему установщику`);
+    return;
+  }
+  save();
+  K.toast(`${op.label} — отметил ${staff(who)}`);
+}
+
+/* передать упакованный адрес старшему установщику */
+function handOver(o){
+  o.status = 'ready';
+  o.history.push({ at:NOW(), who, what:`Передан старшему установщику · ${staff(who)}` });
+  save();
+  K.toast(`${o.addr} — передан старшему установщику`);
+}
+
+/* ── 2. УПАКОВКА: карточки по адресам, как в «по группам» ── */
+const IC = {
+  cal:  '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 11h18"/></svg>',
+  user: '<svg viewBox="0 0 24 24"><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><circle cx="9" cy="7" r="4"/></svg>',
+  tel:  '<svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3 19.5 19.5 0 01-6-6 19.8 19.8 0 01-3-8.7A2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.5 2.1L8.1 9.9a16 16 0 006 6l1.3-1.2a2 2 0 012.1-.5c.9.3 1.8.6 2.8.7a2 2 0 011.7 2z"/></svg>',
+  pin:  '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+};
+
+function renderPack(){
+  const all = shopOrders().map(o => {
+    const pcs = o.items.reduce((a,i) => a + i.qty, 0);
+    const ok = o.items.reduce((a,i) => a + i.marks.filter(pieceReady).length, 0);
+    const packed = orderPacked(o);
+    return { o, pcs, ok, packed, ready: ok === pcs && !packed };
+  });
+  const groups = { work:all.filter(x => !x.ready && !x.packed),
+                   ready:all.filter(x => x.ready),
+                   done:all.filter(x => x.packed) };
+  const list = groups[packFlt];
+
+  const cards = list.map(x => {
+    const { o, pcs, ok, packed, ready } = x;
+    const urgent = o.items.some(i => i.urgent);
+    const st = packed ? 'ok' : ready ? 'ok' : urgent ? 'urg' : 'work';
+    const chip = packed ? '<span class="chip gn">упаковано</span>'
+               : ready  ? '<span class="chip gn">готов к упаковке</span>'
+               : urgent ? '<span class="chip rd">срочный</span>'
+               :          '<span class="chip bl">в работе</span>';
+
+    const wait = beforePack.filter(k => o.items.some(it => it.marks.some(m => !m[k])))
+                           .map(k => K.OPS.find(z => z.key === k).short);
+    const flat = [];
+    o.items.forEach((it,ix) => it.marks.forEach((m,u) => flat.push({ it, ix, u, m })));
+
+    return `<div class="gcard st-${st}">
+      <div class="gc-h">
+        <div class="gc-top">
+          <span class="gc-num">#${o.num}</span>${chip}
+          <span class="gc-sum"><span>Сумма</span><b>${K.fmt(K.orderTotal(o))}</b></span>
+        </div>
+        <div class="gc-addr">${IC.pin}<span>${K.esc(o.addr)}</span></div>
+        <div class="gc-row">${IC.cal}${K.dmy(o.measureAt)} · срок ${K.dmy(o.deadline)}</div>
+        <div class="gc-row">${IC.user}${K.esc(o.client)} · ${K.esc(o.phone)}</div>
+        <div class="gc-people">
+          <div class="gc-p"><span>Менеджер</span><b>${K.esc(staff(o.manager))}</b>
+            <i>${K.esc((K.BRANCHES.find(b => b.id === o.branch)||{}).name || '')}</i></div>
+          <div class="gc-p"><span>Замерщик</span><b>${o.measurer ? K.esc(staff(o.measurer)) : '—'}</b>
+            <i>${o.packedAt ? 'Упакован ' + o.packedAt.slice(11) : 'Ещё не упакован'}</i></div>
+        </div>
+      </div>
+
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr>
+          <th style="width:74px">Ширина</th><th style="width:74px">Высота</th>
+          <th>Ткань</th><th class="hide-m" style="width:96px">Тип</th>
+          <th style="width:150px">Осталось</th>
+          <th class="tickhead" style="width:74px">Упак.</th>
+        </tr></thead>
+        <tbody>${flat.map(f => {
+          const rdy = pieceReady(f.m), left = beforePack.filter(k => !f.m[k]);
+          return `<tr class="${f.m.pack?'allok':f.it.urgent?'urg':''}">
+            <td class="num big">${K.qfmt(f.it.w)}</td>
+            <td class="num big">${K.qfmt(f.it.h)}</td>
+            <td>${K.esc(f.it.fabric)}</td>
+            <td class="dim hide-m">${K.esc(f.it.type)}</td>
+            <td>${f.m.pack ? '<span class="chip gn">упаковано</span>'
+              : rdy ? '<span class="chip gn">готово</span>'
+              : `<span class="waitlist">${left.map(k => K.OPS.find(z => z.key === k).short).join(', ')}</span>`}</td>
+            <td class="tickcell">
+              <button class="tick ${f.m.pack?'on':''} ${!rdy && !f.m.pack ? 'lock':''}"
+                ${!rdy && !f.m.pack ? 'disabled title="Сначала закройте четыре операции"' : ''}
+                data-t="${o.id}|${f.ix}|${f.u}|pack" aria-label="Упаковка">✓</button>
+              <div class="tickwho">${f.m.pack ? K.esc(staff(f.m.pack.by).split(' ')[0]) : ''}</div>
+            </td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>
+
+      <div class="gc-act">
+        <span class="gc-prog">Готово <b class="${ready||packed?'pos':''}">${ok}</b> из <b>${pcs}</b></span>
+        ${!ready && !packed && wait.length ? `<span class="waitlist">ждём: ${wait.join(', ')}</span>` : ''}
+        <span style="margin-left:auto"></span>
+        ${packed
+          ? `<button class="btn primary" data-give="${o.id}">Передать старшему установщику</button>`
+          : `<button class="btn green" data-pk="${o.id}" ${ready?'':'disabled title="Сначала поставьте все галочки"'}>Упаковать адрес</button>`}
+      </div>
+    </div>`;
+  }).join('');
+
+  const chips = [['work','В работе',groups.work.length],
+                 ['ready','Готов к упаковке',groups.ready.length],
+                 ['done','Готовые',groups.done.length]];
+
+  document.getElementById('view').innerHTML = `
+    <div class="bar" style="margin-bottom:12px">
+      ${chips.map(([k,n,c]) =>
+        `<button class="chipbtn f-${k==='ready'?'done':k==='done'?'all':'work'} ${packFlt===k?'on':''}"
+          data-pf="${k}"><span class="mk"></span>${n} · ${c}</button>`).join('')}
+      <span style="margin-left:auto"></span>
+      <span class="dim" style="font-size:12.5px">${
+        packFlt === 'done' ? 'Упакованные адреса. Старший цеха передаёт их старшему установщику.'
+        : packFlt === 'ready' ? 'Все четыре операции закрыты — можно упаковывать.'
+        : 'Ещё в работе: кнопка упаковки заблокирована, пока не поставят все галочки.'}</span>
+    </div>
+    ${list.length ? `<div class="packgrid">${cards}</div>`
+      : `<div class="card"><div class="empty">
+          <div class="empty-t">${packFlt==='done' ? 'Упакованных адресов нет'
+            : packFlt==='ready' ? 'Готовых к упаковке нет' : 'Всё сделано, в работе ничего нет'}</div>
+          <div class="empty-s">Переключите фильтр выше</div></div></div>`}`;
+
+  document.querySelectorAll('[data-pf]').forEach(b =>
+    b.addEventListener('click', () => { packFlt = b.dataset.pf; render(); }));
+  document.querySelectorAll('[data-t]').forEach(b =>
+    b.addEventListener('click', () => toggle(...b.dataset.t.split('|'))));
+  document.querySelectorAll('[data-pk]').forEach(b => b.addEventListener('click', () => {
+    const o = order(+b.dataset.pk);
+    o.items.forEach(it => it.marks.forEach(m => { if(!m.pack) m.pack = { by:who, at:NOW() }; }));
+    o.packedAt = NOW();
+    o.history.push({ at:NOW(), who, what:'Адрес упакован, ждёт передачи старшему установщику' });
+    packFlt = 'done'; save();
+    K.toast(`${o.addr} — упаковано. Теперь передайте старшему установщику`);
+  }));
+  document.querySelectorAll('[data-give]').forEach(b =>
+    b.addEventListener('click', () => handOver(order(+b.dataset.give))));
+}
+
+/* ── АРХИВ: что уже ушло старшему установщику ── */
+const handedOrders = () => S.orders
+  .filter(o => (o.history || []).some(x => x.what.includes('Передан старшему')))
+  .map(o => ({ o, rec:o.history.slice().reverse().find(x => x.what.includes('Передан старшему')) }))
+  .sort((a,b) => b.rec.at.localeCompare(a.rec.at));
+
+function renderArch(){
+  const list = handedOrders();
+  const pcs = list.reduce((a,x) => a + x.o.items.reduce((y,i) => y + i.qty, 0), 0);
+  document.getElementById('view').innerHTML = `
+    <div class="bar" style="margin-bottom:12px">
+      <span class="dim" style="font-size:12.5px">Заказы, которые цех уже отдал старшему установщику.
+        Видно кто передал, когда и во сколько.</span>
+      <span style="margin-left:auto"></span>
+      <span class="chip gn">${list.length} адресов · ${pcs} изделий</span>
+    </div>
+    <div class="card"><div class="tbl-wrap"><table class="tbl" id="t-arch">
+      <thead><tr><th style="width:80px">Заказ</th><th>Адрес</th>
+        <th class="hide-s" style="width:170px">Клиент</th>
+        <th style="text-align:center;width:90px">Изделий</th>
+        <th style="width:160px">Кто передал</th>
+        <th style="width:150px">Когда передал</th>
+        <th style="width:150px">Статус сейчас</th></tr></thead>
+      <tbody>${list.length ? list.map(x => `<tr>
+        <td class="strong">#${x.o.num}</td>
+        <td>${K.esc(x.o.addr)}</td>
+        <td class="dim hide-s">${K.esc(x.o.client)}</td>
+        <td style="text-align:center" class="num">${x.o.items.reduce((a,i) => a + i.qty, 0)}</td>
+        <td>${K.esc(staff(x.rec.who))}</td>
+        <td class="dim">${x.rec.at}</td>
+        <td><span class="chip ${K.STATUS[x.o.status].cls}">${K.STATUS[x.o.status].label}</span></td>
+      </tr>`).join('') : `<tr><td colspan="7"><div class="empty">
+        <div class="empty-t">Пока ничего не передавали</div>
+        <div class="empty-s">Упакованные адреса появятся здесь после передачи</div></div></td></tr>`}</tbody>
+    </table></div></div>`;
+}
+
+/* ── 3. КТО СКОЛЬКО СДЕЛАЛ ── */
+function periodRange(){ return K.rangeOf(P.preset, P.from, P.to); }
+
+function countBy(id, from, to){
+  const per = {}; let qty = 0, sum = 0;
+  S.orders.forEach(o => o.items.forEach(it => it.marks.forEach(m =>
+    K.OPS.forEach(op => {
+      const e = m[op.key];
+      if(!e || e.by !== id) return;
+      const d = e.at.slice(0,10);
+      if(d < from || d > to) return;
+      per[op.key] = (per[op.key] || 0) + 1;
+      qty++; sum += op.rate;
+    }))));
+  return { per, qty, sum };
+}
+
+function renderPay(){
+  const [from, to] = periodRange();
+  const people = [...K.byRole('shop'), ...K.byRole('packer')]
+    .map(s => ({ s, ...countBy(s.id, from, to) }))
+    .sort((a,b) => b.qty - a.qty);
+  const totQty = people.reduce((a,x) => a + x.qty, 0);
+
+  document.getElementById('view').innerHTML = `
+    <div class="bar" style="margin-bottom:12px">
+      <span class="dim" style="font-size:12.5px">Период: ${K.rangeName(P.preset, P.from, P.to)}</span>
+      <span style="margin-left:auto"></span>
+      <button class="btn sm" id="xls-pay">↓ Excel</button>
+    </div>
+    ${K.dateBar(P.preset, P.from, P.to)}
+
+    <div class="card"><div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th>Сотрудник</th>
+        ${K.OPS.map(op => `<th style="text-align:center;width:96px">${op.label}</th>`).join('')}
+        <th style="text-align:center;width:110px">Всего сделал</th></tr></thead>
+      <tbody>${people.filter(x => x.qty).length ? people.filter(x => x.qty).map(x => `<tr>
+        <td class="strong big">${K.esc(x.s.name)}</td>
+        ${K.OPS.map(op => `<td style="text-align:center" class="${x.per[op.key]?'num big':'q0'}">${x.per[op.key]||'—'}</td>`).join('')}
+        <td style="text-align:center" class="num big">${x.qty}</td></tr>`).join('')
+        : `<tr><td colspan="${K.OPS.length+2}"><div class="empty">
+           <div class="empty-t">За этот период отметок нет</div>
+           <div class="empty-s">Выберите другой период</div></div></td></tr>`}</tbody>
+      ${totQty ? `<tfoot><tr><td>Итого</td>
+        ${K.OPS.map(op => `<td style="text-align:center">${people.reduce((a,x) => a + (x.per[op.key]||0), 0) || ''}</td>`).join('')}
+        <td style="text-align:center">${totQty}</td></tr></tfoot>` : ''}
+    </table></div></div>`;
+
+  K.bindDateBar(v => { P = v; render(); }, P);
+  const xp = document.getElementById('xls-pay');
+  if(xp) xp.onclick = () => K.tableToExcel(document.querySelector('#view table'),
+    'Выработка цеха ' + K.rangeName(P.preset, P.from, P.to));
+}
+
+/* ── ПЕЧАТЬ ── */
+function printSheet(){
+  const list = rows().filter(r => !pieceReady(r.m));
+  if(!list.length){ K.toast('Печатать нечего — всё сделано', 'bad'); return; }
+  const byOrder = {};
+  list.forEach(r => { (byOrder[r.o.id] = byOrder[r.o.id] || { o:r.o, rs:[] }).rs.push(r); });
+
+  const blocks = Object.values(byOrder).map(g => `
+    <div class="ord">
+      <div class="ord-h"><b>Заказ №${g.o.num}</b> · ${K.esc(g.o.addr)}
+        <span class="r">срок ${K.dmy(g.o.deadline)}</span></div>
+      <table><thead><tr>
+        <th style="width:20mm">Ширина</th><th style="width:20mm">Высота</th>
+        <th>Ткань</th><th style="width:32mm">Профиль</th><th style="width:20mm">Тип</th>
+        ${LIST_OPS.map(o => `<th class="c" style="width:19mm">${o.short}</th>`).join('')}
+      </tr></thead>
+      <tbody>${g.rs.map(r => `<tr class="${r.it.urgent?'urg':''}">
+        <td class="c b">${K.qfmt(r.it.w)}</td><td class="c b">${K.qfmt(r.it.h)}</td>
+        <td>${K.esc(r.it.fabric)}${r.it.urgent?' <b>СРОЧНО</b>':''}</td>
+        <td>${K.esc(r.it.profile)}</td><td>${K.esc(r.it.type)}</td>
+        ${LIST_OPS.map(o => `<td class="box">${r.m[o.key] ? '✓' : ''}</td>`).join('')}
+      </tr>`).join('')}</tbody></table>
+    </div>`).join('');
+
+  const html = `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8">
+  <title>Лист цеха ${K.dmy(TODAY)}</title><style>
+    @page{size:A4 landscape;margin:10mm}
+    body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;font-size:10.5pt;color:#111;margin:0}
+    .top{display:flex;align-items:center;gap:7mm;border-bottom:2px solid #111;padding-bottom:3mm;margin-bottom:4mm}
+    .top img{height:14mm}
+    h1{font-size:14pt;margin:0}
+    .muted{color:#666;font-size:9.5pt}
+    .ord{margin-bottom:5mm;break-inside:avoid}
+    .ord-h{background:#eef1f6;border:1px solid #333;padding:1.8mm 3mm;font-size:10.5pt}
+    .ord-h .r{float:right;color:#555}
+    table{width:100%;border-collapse:collapse}
+    th{background:#f6f7fa;border:1px solid #333;padding:1.5mm;font-size:9pt;text-align:left}
+    td{border:1px solid #333;padding:2.6mm 2mm;font-size:10.5pt}
+    .c{text-align:center} .b{font-weight:700}
+    .box{text-align:center;font-size:13pt;font-weight:800}
+    tr.urg td{background:#fdecea}
+    .foot{margin-top:5mm;font-size:9.5pt;color:#666;display:flex;justify-content:space-between}
+    .noprint{margin-bottom:4mm;text-align:right}
+    .noprint button{padding:8px 18px;font-size:13px;font-weight:600;border:1px solid #111;
+      background:#111;color:#fff;border-radius:7px;cursor:pointer}
+    @media print{.noprint{display:none}}
+  </style></head><body>
+  <div class="noprint"><button onclick="window.print()">Печать</button></div>
+  <div class="top"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMzQgMTc2IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9Ikthc3ltb3YiPiA8cGF0aCBkPSJNMzAgMCAgSDk5IFY1MyBIMCBaIiBmaWxsPSIjNDU5OWQ1Ii8+IDxwYXRoIGQ9Ik0zMCA2MSBIOTkgVjExNSBIMCBaIiBmaWxsPSIjMzA3MGFlIi8+IDxwYXRoIGQ9Ik0zMCAxMjIgSDk5IFYxNzUgSDAgWiIgZmlsbD0iIzE2M2E4NCIvPiA8cGF0aCBkPSJNMTc1IDAgSDIzMyBMMTU5IDg4IEwyMzMgMTc1IEgxNzQgTDExNSAxMDUgVjcwIFoiIGZpbGw9IiMzMzZjYWYiLz48L3N2Zz4=" alt="Kasymov">
+    <div><h1>Лист цеха на ${K.dmy(TODAY)}</h1>
+      <div class="muted">${Object.keys(byOrder).length} заказов · ${list.length} изделий ·
+        ставьте галочку в своей колонке</div></div></div>
+  ${blocks}
+  <div class="foot"><span>Смену принял: ______________________</span>
+    <span>Смену сдал: ______________________</span></div>
+  </body></html>`;
+
+  const f = document.getElementById('printer');
+  f.srcdoc = html;
+  f.onload = () => { try{ f.contentWindow.focus(); f.contentWindow.print(); }catch(e){} };
+  K.toast(`Лист на ${list.length} изделий готов к печати`);
+}
+
+/* ═══════════ ОБЩЕЕ ═══════════ */
+function save(){ K.commit(S); render(); }
+document.getElementById('ovl').addEventListener('mousedown', e => {
+  if(e.target.id === 'ovl') document.getElementById('ovl').hidden = true;
+});
+</script>
+</body>
+</html>

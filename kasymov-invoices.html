@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Счета-фактуры — Kasymov ERP</title>
+<link rel="stylesheet" href="kasymov-ui.css">
+<style>
+.modal.xwide{max-width:920px}
+button.stat{text-align:left;font-family:inherit;cursor:pointer;width:100%;transition:border-color .12s,box-shadow .12s}
+button.stat:hover{border-color:var(--line);box-shadow:0 3px 10px rgba(21,29,41,.07)}
+.subtabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--bd);margin-bottom:14px}
+.subtab{padding:8px 13px;font-size:12.5px;font-weight:600;color:var(--t2);white-space:nowrap;
+        border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:7px 7px 0 0}
+.subtab:hover{background:#eef2f9;color:var(--t1)}
+.subtab.on{color:var(--bl-d);border-bottom-color:var(--bl);background:var(--bl-l)}
+.subtab .n{font-size:10px;font-weight:800;color:var(--t3);margin-left:5px}
+
+.num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.q0{color:var(--t3);font-weight:400}
+.pos{color:var(--gn-d)} .neg{color:var(--rd-d)}
+.money{font-variant-numeric:tabular-nums;font-weight:600;text-align:right;white-space:nowrap}
+tr.lnk{cursor:pointer} tr.lnk:hover td{background:#f5f8ff}
+.tbl tfoot td{background:#f6f8fc;border-top:2px solid var(--bd);font-weight:800;padding:11px 12px}
+.invnum{font-weight:800;font-variant-numeric:tabular-nums;color:var(--bl-d)}
+.acts{display:flex;gap:6px;justify-content:flex-end}
+
+.kv{display:flex;justify-content:space-between;gap:14px;padding:7px 0;border-bottom:1px solid #f5f7fc;font-size:12.5px}
+.kv:last-child{border-bottom:none}
+.kv span:first-child{color:var(--t2);flex-shrink:0}
+.kv b{text-align:right}
+.sec{font-size:10px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin:18px 0 4px}
+.sec:first-child{margin-top:0}
+.rows{border:1px solid var(--bd);border-radius:10px;overflow:hidden;margin-bottom:10px}
+.rows .tbl td{padding:6px 8px}
+.ri{width:100%;padding:5px 8px;border:1px solid transparent;border-radius:6px;background:transparent;
+    font-family:inherit;font-size:12.5px;color:inherit}
+.ri:hover{border-color:var(--bd)}
+.ri:focus{outline:none;border-color:var(--bl);background:#fff;box-shadow:0 0 0 3px rgba(55,138,221,.14)}
+.ri.r{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.del{width:24px;height:24px;border-radius:6px;border:none;background:none;color:var(--t3);cursor:pointer;font-size:14px}
+.del:hover{background:var(--rd-l);color:var(--rd-d)}
+.filebox{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+.fileitem{display:flex;align-items:center;gap:9px;border:1px solid var(--bd);border-radius:9px;
+          padding:8px 11px;background:#fff;min-width:230px}
+.fileitem .ic{width:30px;height:30px;border-radius:7px;background:var(--rd-l);color:var(--rd-d);
+              display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.fileitem .ic.akt{background:var(--gn-l);color:var(--gn-d)}
+.fileitem .nm{font-size:12px;font-weight:600;line-height:1.3;word-break:break-all}
+.fileitem .mt{font-size:10.5px;color:var(--t3)}
+.attach{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:1px dashed var(--line);
+        border-radius:9px;font-size:12px;font-weight:600;color:var(--t2);cursor:pointer;background:#fff}
+.attach:hover{border-color:var(--bl);color:var(--bl-d);background:var(--bl-l)}
+.attach input{display:none}
+.nofile{font-size:11.5px;color:var(--t3)}
+.wsum{background:linear-gradient(150deg,#f4f7fd,#eef3fa);border:1px solid #dde6f2;border-radius:10px;
+      padding:10px 13px;font-size:12.5px;line-height:1.5}
+@media (max-width:900px){ .hide-m{display:none} }
+@media (max-width:640px){ .hide-s{display:none} }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="phead">
+    <div>
+      <div class="ptitle">Счета-фактуры</div>
+      <div class="psub" id="sub">—</div>
+    </div>
+    <div class="pright">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input class="inp" id="q" placeholder="Компания, ИНН, номер" style="width:210px">
+      </div>
+      <button class="btn green" id="btn-primary">+ Счёт без запроса</button>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+  <div id="dates"></div>
+  <div class="subtabs" id="subtabs"></div>
+  <div id="view"></div>
+</div>
+
+<div class="ovl" id="ovl" hidden>
+  <div class="modal" id="mdl">
+    <div class="modal-h"><div class="modal-t" id="m-t"></div><button class="modal-x" data-close aria-label="Закрыть">✕</button></div>
+    <div class="modal-b" id="m-b"></div>
+    <div class="modal-f" id="m-f"></div>
+  </div>
+</div>
+
+<script>
+/* сообщаем оболочке о сбое, чтобы он не превратился в пустой экран */
+window.__errHook = true;
+window.addEventListener('error', e => {
+  try{ window.parent.postMessage({ ns:'kasymov', type:'moduleError',
+       msg:(e.message||'') + ' · ' + (e.lineno||'') }, '*'); }catch(_){}
+  const b = document.body;
+  if(b) b.insertAdjacentHTML('afterbegin',
+    '<div style="background:#7d211c;color:#fff;padding:12px 16px;font:13px/1.5 -apple-system,sans-serif">'
+    + '<b>Сбой в разделе.</b> ' + (e.message||'') + '</div>');
+});
+</script>
+<script src="kasymov-data.js"></script>
+<script>
+const K = window.KASYMOV;
+let S = null, tab = 'requested', role = 'accountant', openId = null;
+let P = { preset:'all', from:'', to:'' };
+
+const TABS = [
+  { id:'requested', name:'Запросы от замерщиков' },
+  { id:'issued',    name:'Выставленные' },
+  { id:'all',       name:'Все' },
+];
+
+K.connect(state => { S = state; if(!S.invoices) S.invoices = [];
+  if(S.me){ if(K.ROLES[S.me.role]) role = ['accountant','director'].includes(S.me.role) ? S.me.role : role; }
+  render(); },
+          name  => { if(name === 'primary') newInvoice(); });
+
+/* ═══════════ ХЕЛПЕРЫ ═══════════ */
+const staff = id => K.staffName(id);
+const inv   = id => S.invoices.find(x => x.id === id);
+const order = id => S.orders.find(o => o.id === id);
+const C = K.COMPANY;
+const canIssue = () => ['accountant','director'].includes(role);
+const me = () => (K.byRole(role)[0] || {}).id;
+const nextNum = () => String(Math.max(0, ...S.invoices.map(i => +i.num || 0)) + 1);
+
+function filtered(){
+  const t = document.getElementById('q').value.trim().toLowerCase();
+  const [pf,pt] = K.rangeOf(P.preset, P.from, P.to);
+  return S.invoices.filter(i => {
+    const d = (i.date || i.requestedAt || '').slice(0,10);
+    if(d < pf || d > pt) return false;
+    if(tab !== 'all' && i.status !== tab) return false;
+    if(t && !(i.company.name.toLowerCase().includes(t) || (i.company.inn||'').includes(t) ||
+              String(i.num||'').includes(t))) return false;
+    return true;
+  }).sort((a,b) => (b.issuedAt || b.requestedAt).localeCompare(a.issuedAt || a.requestedAt));
+}
+
+/* оплачен ли счёт — смотрим оплаты связанного заказа */
+function payState(i){
+  const o = order(i.order);
+  if(!o) return null;
+  const paid = K.orderPaid(o), total = K.invSum(i);
+  return { paid, total, owe: Math.max(0, total - paid) };
+}
+
+/* ═══════════ РЕНДЕР ═══════════ */
+function render(){
+  if(!S) return;
+  const req = S.invoices.filter(i => i.status === 'requested');
+  const iss = S.invoices.filter(i => i.status === 'issued');
+  const sum = iss.reduce((a,i) => a + K.invSum(i), 0);
+  const noAkt = iss.filter(i => !i.aktAt).length;
+  const owe = iss.reduce((a,i) => { const p = payState(i); return a + (p ? p.owe : 0); }, 0);
+
+  document.getElementById('sub').textContent =
+    `${S.invoices.length} счетов · ${req.length} запросов ждут бухгалтера`;
+
+  document.getElementById('stats').innerHTML = `
+    <button class="stat ${req.length?'rd':'gn'}" data-go="requested">
+      <div class="stat-l">Новые запросы</div>
+      <div class="stat-v ${req.length?'neg':''}">${req.length}</div>
+      <div class="stat-s">${req.length ? 'нужно выписать счёт' : 'всё выписано'}</div></button>
+    <button class="stat bl" data-go="issued"><div class="stat-l">Выставлено счетов</div>
+      <div class="stat-v">${iss.length}</div>
+      <div class="stat-s">на ${K.fmt(sum)} сом</div></button>
+    <div class="stat rd"><div class="stat-l">Не оплачено по счетам</div>
+      <div class="stat-v ${owe?'neg':''}">${K.fmt(owe)}<span style="font-size:12px"> сом</span></div>
+      <div class="stat-s">по связанным заказам</div></div>
+    <button class="stat ${noAkt?'am':'gn'}" data-go="issued"><div class="stat-l">Без акта</div>
+      <div class="stat-v">${noAkt}</div>
+      <div class="stat-s">АВР ещё не подписан</div></button>`;
+
+  document.querySelectorAll('[data-go]').forEach(b =>
+    b.addEventListener('click', () => { tab = b.dataset.go; render(); }));
+
+  const n = { requested:req.length, issued:iss.length, all:S.invoices.length };
+  document.getElementById('subtabs').innerHTML = TABS.map(t =>
+    `<button class="subtab ${tab===t.id?'on':''}" data-t="${t.id}">${t.name}<span class="n">${n[t.id]}</span></button>`).join('');
+  document.querySelectorAll('.subtab').forEach(b =>
+    b.addEventListener('click', () => { tab = b.dataset.t; render(); }));
+
+  document.getElementById('dates').innerHTML = K.dateBar(P.preset, P.from, P.to);
+  K.bindDateBar(v => { P = v; render(); }, P);
+  document.getElementById('btn-primary').style.display = canIssue() ? '' : 'none';
+  renderList();
+}
+document.getElementById('q').addEventListener('input', render);
+
+function renderList(){
+  const list = filtered();
+  const total = list.reduce((a,i) => a + K.invSum(i), 0);
+
+  document.getElementById('view').innerHTML = `
+    ${tab === 'requested' ? `<div class="bar" style="margin-bottom:12px">
+      <span class="dim" style="font-size:12px;max-width:820px">
+        Сюда падают запросы от замерщиков: клиент попросил счёт-фактуру, замерщик приложил реквизиты компании.
+        Бухгалтеру остаётся проверить их и выписать счёт.</span></div>` : ''}
+    <div class="card"><div class="tbl-wrap"><table class="tbl">
+      <thead><tr>
+        <th style="width:70px">№</th>
+        <th style="width:120px">Дата</th>
+        <th>Компания клиента</th>
+        <th class="hide-s" style="width:150px">ИНН</th>
+        <th class="hide-m" style="width:100px">Заказ</th>
+        <th class="hide-m" style="width:170px">Запросил</th>
+        <th style="text-align:right;width:120px">Сумма</th>
+        <th style="text-align:center;width:130px">Статус</th>
+        <th style="width:230px"></th>
+      </tr></thead>
+      <tbody>${list.length ? list.map(i => {
+        const p = payState(i);
+        return `<tr class="lnk" data-i="${i.id}" tabindex="0" role="button">
+          <td>${i.num ? `<span class="invnum">${i.num}</span>` : '<span class="q0">—</span>'}</td>
+          <td class="dim">${i.date ? K.dmy(i.date) : K.dmy(i.requestedAt.slice(0,10))}</td>
+          <td><div class="strong">${K.esc(i.company.name)}</div>
+            <div class="q0" style="font-size:11.5px">${K.esc(i.company.addr)}</div></td>
+          <td class="dim hide-s" style="font-variant-numeric:tabular-nums">${K.esc(i.company.inn||'—')}</td>
+          <td class="hide-m">${i.order ? '#' + i.order : '<span class="q0">—</span>'}</td>
+          <td class="dim hide-m">${K.esc(staff(i.requestedBy))}</td>
+          <td class="money">${K.fmt(K.invSum(i))}</td>
+          <td style="text-align:center">${i.status === 'requested'
+            ? '<span class="chip am">ждёт счёта</span>'
+            : p && p.owe > 0 ? '<span class="chip rd">не оплачен</span>'
+            : '<span class="chip gn">оплачен</span>'}</td>
+          <td><div class="acts" data-stop>
+            ${i.status === 'requested'
+              ? (canIssue() ? `<button class="btn green sm" data-issue="${i.id}">Загрузить счёт</button>`
+                            : '<span class="q0" style="font-size:11.5px">ждёт бухгалтера</span>')
+              : `${fileOf(i,'inv') ? `<button class="btn sm" data-open="${i.id}|inv">Открыть счёт</button>`
+                                   : '<span class="chip rd">файл не загружен</span>'}
+                 ${fileOf(i,'akt') ? `<button class="btn sm" data-open="${i.id}|akt">АВР</button>`
+                   : (canIssue() ? `<button class="btn sm" data-akt="${i.id}">+ АВР</button>` : '')}`}
+            ${canIssue() ? `<button class="del" data-del="${i.id}" title="Удалить">✕</button>` : ''}
+          </div></td>
+        </tr>`;
+      }).join('') : `<tr><td colspan="9"><div class="empty">
+        <div class="empty-t">${tab === 'requested' ? 'Новых запросов нет' : 'Счетов не найдено'}</div>
+        <div class="empty-s">${tab === 'requested'
+          ? 'Замерщик запрашивает счёт из карточки заказа'
+          : 'Измените поиск или откройте вкладку «Все»'}</div></div></td></tr>`}</tbody>
+      ${list.length ? `<tfoot><tr><td colspan="6">Итого по ${list.length} счетам</td>
+        <td class="money">${K.fmt(total)}</td><td colspan="2"></td></tr></tfoot>` : ''}
+    </table></div></div>`;
+
+  document.querySelectorAll('tr[data-i]').forEach(tr => {
+    const go = e => { if(e.target.closest('[data-stop]')) return; openInv(tr.dataset.i); };
+    tr.addEventListener('click', go);
+    tr.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); openInv(tr.dataset.i); } });
+  });
+  document.querySelectorAll('[data-issue]').forEach(b =>
+    b.addEventListener('click', () => uploadForm(inv(b.dataset.issue))));
+  document.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => {
+    const [id, kind] = b.dataset.open.split('|'); openFile(inv(id), kind);
+  }));
+  document.querySelectorAll('[data-akt]').forEach(b =>
+    b.addEventListener('click', () => attachAkt(inv(b.dataset.akt))));
+  document.querySelectorAll('[data-del]').forEach(b =>
+    b.addEventListener('click', () => delInv(b.dataset.del)));
+}
+
+/* ═══════════ ОКНА ═══════════ */
+function showModal(t, size){
+  document.getElementById('m-t').textContent = t;
+  document.getElementById('mdl').className = 'modal' + (size ? ' ' + size : '');
+  document.getElementById('ovl').hidden = false;
+}
+function closeModal(){ document.getElementById('ovl').hidden = true; openId = null; }
+function bindClose(){ document.querySelectorAll('#ovl [data-close]').forEach(b => b.onclick = closeModal); }
+
+/* ── карточка счёта ── */
+function openInv(id){
+  const i = inv(id); if(!i) return;
+  openId = id;
+  const sum = K.invSum(i), p = payState(i), o = order(i.order);
+
+  showModal(i.num ? `Счёт №${i.num} от ${K.dmy(i.date)}` : `Запрос на счёт от ${K.dmy(i.requestedAt.slice(0,10))}`, 'xwide');
+  document.getElementById('m-b').innerHTML = `
+    <div class="grid2">
+      <div><div class="sec">Плательщик</div>
+        <div class="kv"><span>Организация</span><b>${K.esc(i.company.name)}</b></div>
+        <div class="kv"><span>ИНН</span><b>${K.esc(i.company.inn||'—')}</b></div>
+        <div class="kv"><span>Адрес</span><b>${K.esc(i.company.addr||'—')}</b></div>
+        <div class="kv"><span>Банк</span><b>${K.esc(i.company.bank||'—')}</b></div>
+        <div class="kv"><span>Расчётный счёт</span><b>${K.esc(i.company.acc||'—')}</b></div>
+        <div class="kv"><span>Руководитель</span><b>${K.esc(i.company.dir||'—')}</b></div>
+        <div class="kv"><span>Телефон</span><b>${K.esc(i.company.phone||'—')}</b></div>
+      </div>
+      <div><div class="sec">Движение документа</div>
+        <div class="kv"><span>Запросил</span><b>${K.esc(staff(i.requestedBy))}</b></div>
+        <div class="kv"><span>Когда</span><b>${i.requestedAt}</b></div>
+        <div class="kv"><span>Выписал</span><b>${i.issuedBy ? K.esc(staff(i.issuedBy)) : '<span class="q0">ещё нет</span>'}</b></div>
+        <div class="kv"><span>Когда выписан</span><b>${i.issuedAt || '—'}</b></div>
+        <div class="kv"><span>Акт подписан</span><b class="${i.aktAt?'pos':''}">${i.aktAt || 'нет'}</b></div>
+        <div class="kv"><span>Заказ</span><b>${o ? `#${o.num} · ${K.esc(o.addr)}` : '—'}</b></div>
+        ${p ? `<div class="kv"><span>Оплачено по заказу</span>
+          <b class="${p.owe?'neg':'pos'}">${K.fmt(p.paid)} из ${K.fmt(p.total)}</b></div>` : ''}
+      </div>
+    </div>
+
+    <div class="sec">Позиции</div>
+    <div class="rows"><table class="tbl">
+      <thead><tr><th>Наименование</th><th style="text-align:right;width:90px">Кол-во</th>
+        <th style="text-align:right;width:120px">Цена</th><th style="text-align:right;width:130px">Сумма</th></tr></thead>
+      <tbody>${i.lines.map(l => `<tr><td>${K.esc(l.name)}</td>
+        <td class="money">${l.qty}</td><td class="money">${K.fmt(l.price)}</td>
+        <td class="money">${K.fmt(l.qty*l.price)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td colspan="3">Итого</td><td class="money">${K.fmt(sum)}</td></tr></tfoot>
+    </table></div>
+    <div class="wsum"><b>Сумма прописью:</b> ${K.words(sum)}</div>
+
+    <div class="sec">Файлы из налоговой</div>
+    ${(i.files||[]).length ? `<div class="filebox">${i.files.map(f => `
+      <div class="fileitem">
+        <span class="ic ${f.kind==='akt'?'akt':''}">${f.kind==='akt'?'✓':'PDF'}</span>
+        <div style="min-width:0"><div class="nm">${K.esc(f.name)}</div>
+          <div class="mt">${f.kind==='akt'?'Акт':'Счёт-фактура'} · ${f.at} · ${K.esc(staff(f.by))}</div></div>
+      </div>`).join('')}</div>`
+      : '<div class="nofile">Файлов пока нет. Счёт выписывается на сайте налоговой, потом загружается сюда.</div>'}`;
+
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Закрыть</button><span style="margin-left:auto"></span>
+    ${i.status === 'requested'
+      ? (canIssue() ? '<button class="btn green" id="f-issue">Загрузить счёт из налоговой</button>' : '')
+      : `${fileOf(i,'inv') ? '<button class="btn" id="f-inv">Открыть счёт</button>' : ''}
+         ${fileOf(i,'akt') ? '<button class="btn" id="f-akt">Открыть АВР</button>'
+           : (canIssue() ? '<button class="btn primary" id="f-addakt">Загрузить АВР</button>' : '')}`}`;
+  const on = (id2, fn) => { const el = document.getElementById(id2); if(el) el.onclick = fn; };
+  on('f-issue', () => uploadForm(i));
+  on('f-inv', () => openFile(i, 'inv'));
+  on('f-akt', () => openFile(i, 'akt'));
+  on('f-addakt', () => attachAkt(i));
+  bindClose();
+}
+
+/* ── загрузка выписанного счёта ── */
+const fileOf = (i, kind) => (i.files || []).find(f => f.kind === kind);
+
+function readFile(file, cb){
+  if(!file) return;
+  if(file.size > 6e6){ K.toast('Файл больше 6 МБ — сожмите или пришлите PDF', 'bad'); return; }
+  const r = new FileReader();
+  r.onload = () => cb({ name:file.name, at:'2026-08-03 ' + new Date().toTimeString().slice(0,5),
+                        by:me(), url:r.result });
+  r.readAsDataURL(file);
+}
+
+function openFile(i, kind){
+  const f = fileOf(i, kind);
+  if(!f){ K.toast('Файл не загружен', 'bad'); return; }
+  if(!f.url){ K.toast(`«${f.name}» загружен до переноса в систему — файла нет на диске`, 'bad'); return; }
+  const a = document.createElement('a');
+  a.href = f.url; a.download = f.name; a.click();
+  K.toast(`Скачивается ${f.name}`);
+}
+
+function uploadForm(i){
+  showModal(`Счёт по запросу от ${K.esc(staff(i.requestedBy))}`, 'xwide');
+  const draft = JSON.parse(JSON.stringify(i.lines));
+  let picked = null;
+
+  document.getElementById('m-b').innerHTML = `
+    <div class="hint">Счёт-фактура выписывается на сайте налоговой. Выпишите её там, скачайте файл
+      и загрузите сюда — после этого счёт увидят замерщик, установщик и менеджер в карточке заказа.</div>
+    <div class="grid3">
+      <div class="fld"><label for="v-num">Номер ЭСФ</label><input class="inp" id="v-num" value="${nextNum()}"></div>
+      <div class="fld"><label for="v-date">Дата выписки</label><input class="inp" id="v-date" type="date" value="${K.todayISO()}"></div>
+      <div class="fld"><label>Заказ</label><div class="inp" style="background:#f7f9fd">${i.order ? '#' + i.order : 'не привязан'}</div></div>
+    </div>
+
+    <div class="sec">Файл счёта-фактуры *</div>
+    <label class="attach">Выбрать файл из налоговой<input type="file" accept=".pdf,image/*" id="v-file"></label>
+    <div class="filebox" id="v-prev"></div>
+
+    <div class="sec">Реквизиты плательщика — как их прислал замерщик</div>
+    <div class="grid2">
+      <div class="fld"><label for="v-name">Организация</label><input class="inp" id="v-name" value="${K.esc(i.company.name)}"></div>
+      <div class="fld"><label for="v-inn">ИНН</label><input class="inp" id="v-inn" value="${K.esc(i.company.inn||'')}"></div>
+    </div>
+    <div class="fld"><label for="v-addr">Адрес</label><input class="inp" id="v-addr" value="${K.esc(i.company.addr||'')}"></div>
+    <div class="grid3">
+      <div class="fld"><label for="v-bank">Банк</label><input class="inp" id="v-bank" value="${K.esc(i.company.bank||'')}"></div>
+      <div class="fld"><label for="v-acc">Расчётный счёт</label><input class="inp" id="v-acc" value="${K.esc(i.company.acc||'')}"></div>
+      <div class="fld"><label for="v-dir">Руководитель</label><input class="inp" id="v-dir" value="${K.esc(i.company.dir||'')}"></div>
+    </div>
+
+    <div class="sec">Позиции — должны совпасть с тем, что выписали в налоговой</div>
+    <div class="rows"><table class="tbl">
+      <thead><tr><th>Наименование</th><th style="text-align:right;width:90px">Кол-во</th>
+        <th style="text-align:right;width:120px">Цена</th><th style="text-align:right;width:120px">Сумма</th>
+        <th style="width:32px"></th></tr></thead>
+      <tbody id="v-rows"></tbody>
+    </table></div>
+    <button class="btn sm" id="v-add">+ Строка</button>`;
+
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button>
+    <div style="margin-left:auto;text-align:right;margin-right:16px">
+      <div style="font-size:10px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.05em">Итого</div>
+      <div style="font-size:17px;font-weight:800" id="v-total"></div></div>
+    <button class="btn green" id="v-ok">Сохранить счёт</button>`;
+
+  function drawRows(){
+    document.getElementById('v-rows').innerHTML = draft.map((l,ix) => `<tr>
+      <td><input class="ri" value="${K.esc(l.name)}" data-n="${ix}"></td>
+      <td><input class="ri r" type="number" min="0" step="0.01" value="${l.qty}" data-q="${ix}"></td>
+      <td><input class="ri r" type="number" min="0" value="${l.price}" data-p="${ix}"></td>
+      <td class="money" data-s="${ix}">${K.fmt(l.qty*l.price)}</td>
+      <td><button class="del" data-d="${ix}" aria-label="Удалить">✕</button></td></tr>`).join('');
+    document.querySelectorAll('[data-n]').forEach(el => el.oninput = () => draft[+el.dataset.n].name = el.value);
+    ['q','p'].forEach(k => document.querySelectorAll(`[data-${k}]`).forEach(el => el.oninput = () => {
+      const ix = +el.dataset[k];
+      draft[ix][k === 'q' ? 'qty' : 'price'] = +el.value || 0;
+      document.querySelector(`[data-s="${ix}"]`).textContent = K.fmt(draft[ix].qty * draft[ix].price);
+      upd();
+    }));
+    document.querySelectorAll('[data-d]').forEach(el => el.onclick = () => {
+      draft.splice(+el.dataset.d, 1);
+      if(!draft.length) draft.push({ name:'', qty:1, price:0 });
+      drawRows(); upd();
+    });
+    upd();
+  }
+  const upd = () => document.getElementById('v-total').textContent =
+    K.money(draft.reduce((a,l) => a + l.qty * l.price, 0));
+  drawRows();
+
+  document.getElementById('v-file').onchange = e => readFile(e.target.files[0], f => {
+    picked = { ...f, kind:'inv' };
+    document.getElementById('v-prev').innerHTML = `<div class="fileitem">
+      <span class="ic">PDF</span><div style="min-width:0"><div class="nm">${K.esc(f.name)}</div>
+      <div class="mt">готов к сохранению</div></div></div>`;
+  });
+  document.getElementById('v-add').onclick = () => { draft.push({ name:'', qty:1, price:0 }); drawRows(); };
+
+  document.getElementById('v-ok').onclick = () => {
+    const v = id => document.getElementById(id).value.trim();
+    if(!picked){ K.toast('Загрузите файл счёта из налоговой', 'bad'); return; }
+    if(!v('v-name') || !v('v-inn')){ K.toast('Организация и ИНН обязательны', 'bad'); return; }
+    const lines = draft.filter(l => l.name && l.qty > 0);
+    if(!lines.length){ K.toast('Добавьте хотя бы одну позицию', 'bad'); return; }
+    Object.assign(i, {
+      num:v('v-num'), date:v('v-date'), status:'issued',
+      issuedBy:me(), issuedAt:picked.at, lines,
+      files:[...(i.files || []), picked],
+      company:{ ...i.company, name:v('v-name'), inn:v('v-inn'), addr:v('v-addr'),
+                bank:v('v-bank'), acc:v('v-acc'), dir:v('v-dir') },
+    });
+    const o = order(i.order);
+    if(o) o.history.push({ at:picked.at, who:me(),
+      what:`Загружен счёт-фактура №${i.num} для ${i.company.name}` });
+    tab = 'issued'; closeModal(); save();
+    K.toast(`Счёт №${i.num} загружен — виден в карточке заказа`);
+  };
+  bindClose();
+}
+
+/* ── загрузка акта ── */
+function attachAkt(i){
+  showModal(`Акт по счёту №${K.esc(i.num)}`, 'wide');
+  let picked = null;
+  document.getElementById('m-b').innerHTML = `
+    <div class="hint">Загрузите подписанный акт выполненных работ. Он появится в карточке заказа
+      вместе со счётом.</div>
+    <label class="attach">Выбрать файл акта<input type="file" accept=".pdf,image/*" id="a-file"></label>
+    <div class="filebox" id="a-prev"></div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button><span style="margin-left:auto"></span>
+    <button class="btn green" id="a-ok">Сохранить акт</button>`;
+  document.getElementById('a-file').onchange = e => readFile(e.target.files[0], f => {
+    picked = { ...f, kind:'akt' };
+    document.getElementById('a-prev').innerHTML = `<div class="fileitem">
+      <span class="ic akt">✓</span><div style="min-width:0"><div class="nm">${K.esc(f.name)}</div>
+      <div class="mt">готов к сохранению</div></div></div>`;
+  });
+  document.getElementById('a-ok').onclick = () => {
+    if(!picked){ K.toast('Выберите файл акта', 'bad'); return; }
+    i.files = [...(i.files || []), picked];
+    i.aktAt = picked.at;
+    const o = order(i.order);
+    if(o) o.history.push({ at:picked.at, who:me(), what:`Загружен акт по счёту №${i.num}` });
+    closeModal(); save(); K.toast('Акт загружен');
+  };
+  bindClose();
+}
+
+/* ── счёт вручную, без запроса ── */
+function newInvoice(){
+  const id = 'inv' + Date.now().toString(36);
+  const draft = { id, num:null, date:null, order:null, status:'requested',
+    requestedBy:me(), requestedAt:'2026-08-03 ' + new Date().toTimeString().slice(0,5),
+    issuedBy:null, issuedAt:null, aktAt:null,
+    company:{ name:'', inn:'', addr:'', bank:'', acc:'', dir:'', phone:'' },
+    files:[], lines:[{ name:'Рулонные шторы', qty:1, price:0 }] };
+  S.invoices.push(draft);
+  uploadForm(draft);
+}
+
+function delInv(id){
+  const i = inv(id); if(!i) return;
+  showModal('Удалить счёт');
+  document.getElementById('m-b').innerHTML = `
+    <div class="hint" style="background:var(--rd-l)">
+      ${i.num ? `Счёт №${i.num} на ${K.money(K.invSum(i))} для «${K.esc(i.company.name)}»` :
+                `Запрос на счёт для «${K.esc(i.company.name)}»`} будет удалён без возможности вернуть.</div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button><span style="margin-left:auto"></span>
+    <button class="btn danger" id="d-ok">Удалить</button>`;
+  document.getElementById('d-ok').onclick = () => {
+    S.invoices = S.invoices.filter(x => x.id !== id);
+    closeModal(); save(); K.toast('Удалено');
+  };
+  bindClose();
+}
+
+/* ═══════════ ОБЩЕЕ ═══════════ */
+function save(){ K.commit(S); render(); }
+document.getElementById('ovl').addEventListener('mousedown', e => { if(e.target.id === 'ovl') closeModal(); });
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && !document.getElementById('ovl').hidden) closeModal();
+});
+</script>
+</body>
+</html>

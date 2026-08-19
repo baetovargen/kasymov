@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Финансы — Kasymov ERP</title>
+<style>
+
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f3fa;--w:#fff;--s2:#f5f7fb;--bd:#e4e8f0;--bd2:#cdd4e8;
+  --tx:#1a1f36;--mu:#5c6380;--hi:#9fa6c0;
+  --bl:#378add;--bl-l:#e6f1fb;--bl-d:#0c447c;
+  --gn:#3b6d11;--gn-l:#eaf3de;--gn-d:#173404;--gn-m:#639922;
+  --rd:#a32d2d;--rd-l:#fcebeb;--rd-d:#501313;--rd-m:#e24b4a;
+  --am:#633806;--am-l:#faeeda;--am-d:#412402;--am-m:#ba7517;
+  --pu:#3c3489;--pu-l:#eeedfe;--pu-d:#26215c;--pu-m:#7f77dd;
+  --tl:#085041;--tl-l:#e1f5ee;--tl-d:#04342c;--tl-m:#1d9e75;
+  --r:10px;--rs:7px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tx);display:flex;height:100vh;overflow:hidden;font-size:14px}
+/* SIDEBAR */
+.sb{width:56px;background:#0d1523;display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:4px;flex-shrink:0}
+.sb-logo{width:36px;height:36px;background:var(--bl);border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;color:#fff;margin-bottom:10px;cursor:pointer}
+.sb-ico{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,.35);transition:all .12s;position:relative}
+.sb-ico:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.8)}
+.sb-ico.active{background:rgba(55,138,221,.25);color:#6ab0f5}
+.sb-ico svg{width:18px;height:18px}
+.sb-div{width:28px;height:1px;background:rgba(255,255,255,.07);margin:4px 0}
+.sb-tip{position:absolute;left:46px;background:#1a2540;color:#fff;font-size:11px;font-weight:600;padding:4px 8px;border-radius:5px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s;z-index:100}
+.sb-ico:hover .sb-tip{opacity:1}
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:52px;background:var(--w);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 18px;gap:10px;flex-shrink:0}
+.tb-title{font-size:16px;font-weight:700}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:7px}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--bd2);background:var(--w);color:var(--tx);transition:all .12s;white-space:nowrap}
+.btn:hover{background:var(--s2)}
+.btn-primary{background:var(--bl);color:#fff;border-color:var(--bl)}.btn-primary:hover{background:var(--bl-d)}
+.btn-green{background:var(--gn-m);color:#fff;border-color:var(--gn-m)}.btn-green:hover{background:var(--gn)}
+.btn-red{background:var(--rd-m);color:#fff;border-color:var(--rd-m)}.btn-red:hover{background:var(--rd)}
+.btn-amber{background:var(--am-m);color:#fff;border-color:var(--am-m)}.btn-amber:hover{background:var(--am)}
+.btn-sm{padding:5px 10px;font-size:11px}
+/* SUBNAV */
+.subnav{background:var(--w);border-bottom:1px solid var(--bd);padding:0 18px;display:flex;align-items:center;flex-shrink:0;overflow-x:auto}
+.sn-tab{padding:12px 15px;font-size:13px;font-weight:600;color:var(--mu);border-bottom:2px solid transparent;cursor:pointer;transition:all .12s;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.sn-tab:hover{color:var(--tx)}
+.sn-tab.active{color:var(--bl);border-bottom-color:var(--bl)}
+/* CONTENT */
+.content{flex:1;overflow-y:auto}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:4px}
+.view{display:none;padding:16px 18px}
+.view.active{display:block}
+/* KPI */
+.kpi-row{display:grid;gap:10px;margin-bottom:16px}
+.k4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.k3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.k2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.kpi{background:var(--w);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden;cursor:pointer;transition:border-color .12s}
+.kpi:hover{border-color:var(--bd2)}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.kpi.bl::before{background:var(--bl)}.kpi.gn::before{background:var(--gn-m)}.kpi.rd::before{background:var(--rd-m)}.kpi.am::before{background:var(--am-m)}.kpi.pu::before{background:var(--pu-m)}.kpi.tl::before{background:var(--tl-m)}
+.kpi-l{font-size:10px;color:var(--hi);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.kpi-v{font-size:20px;font-weight:800;line-height:1;margin-bottom:3px}
+.kpi-s{font-size:11px;color:var(--mu);display:flex;align-items:center;gap:4px}
+.d{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px}
+.d.up{background:var(--gn-l);color:var(--gn)}.d.dn{background:var(--rd-l);color:var(--rd)}
+/* CARD */
+.card{background:var(--w);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.card-head{padding:13px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd)}
+.ct{font-size:13px;font-weight:700}
+.ca{font-size:11px;color:var(--bl);cursor:pointer;font-weight:600}
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.g13{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px}
+.g31{display:grid;grid-template-columns:1fr 1.4fr;gap:14px;margin-bottom:14px}
+.gcol{display:flex;flex-direction:column;gap:14px}
+/* TABLES */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:10px;font-weight:700;color:var(--hi);text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;border-bottom:2px solid var(--bd);background:var(--s2);white-space:nowrap;cursor:pointer;user-select:none}
+th:hover{color:var(--tx)}
+td{padding:9px 12px;border-bottom:1px solid var(--bd);font-size:12px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#f0f6ff;cursor:pointer}
+.tr{text-align:right;font-variant-numeric:tabular-nums}
+.tm{color:var(--mu)}
+.tft td{background:var(--s2);font-weight:700;border-top:2px solid var(--bd)}
+/* BADGES */
+.b{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
+.b-green{background:var(--gn-l);color:var(--gn-d)}.b-red{background:var(--rd-l);color:var(--rd-d)}
+.b-blue{background:var(--bl-l);color:var(--bl-d)}.b-amber{background:var(--am-l);color:var(--am-d)}
+.b-purple{background:var(--pu-l);color:var(--pu-d)}.b-teal{background:var(--tl-l);color:var(--tl-d)}
+.b-gray{background:var(--s2);color:var(--mu);border:1px solid var(--bd)}
+/* FILTERS */
+.fbar{background:var(--w);border:1px solid var(--bd);border-radius:var(--r);padding:11px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.inp{background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--tx);padding:7px 10px;font-size:12px;outline:none;transition:border-color .12s}
+.inp:focus{border-color:var(--bl);background:var(--w)}
+.inp::placeholder{color:var(--hi)}
+.sel{background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--tx);padding:7px 10px;font-size:12px;outline:none;cursor:pointer}
+/* ALERTS */
+.alert{border-radius:var(--rs);padding:9px 13px;margin-bottom:12px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:7px}
+.al-r{background:var(--rd-l);color:var(--rd-d);border:1px solid rgba(226,75,74,.2)}
+.al-w{background:var(--am-l);color:var(--am-d);border:1px solid rgba(186,117,23,.2)}
+.al-g{background:var(--gn-l);color:var(--gn-d);border:1px solid rgba(59,109,17,.2)}
+.al-b{background:var(--bl-l);color:var(--bl-d);border:1px solid rgba(55,138,221,.2)}
+/* ACCOUNT CARDS */
+.acc-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:16px}
+.acc{background:var(--w);border:1px solid var(--bd);border-radius:var(--r);padding:16px 18px;position:relative;overflow:hidden;transition:border-color .12s}
+.acc:hover{border-color:var(--bd2)}
+.acc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.acc.gn::before{background:var(--gn-m)}.acc.bl::before{background:var(--bl)}.acc.am::before{background:var(--am-m)}.acc.tl::before{background:var(--tl-m)}
+.acc-type{font-size:10px;font-weight:600;color:var(--hi);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.acc-name{font-size:13px;font-weight:700;margin-bottom:6px}
+.acc-bal{font-size:22px;font-weight:800;line-height:1;margin-bottom:6px}
+.acc-sub{font-size:11px;color:var(--mu);display:flex;justify-content:space-between}
+.acc-actions{display:flex;gap:5px;margin-top:10px;padding-top:10px;border-top:1px solid var(--bd)}
+.acc-total{background:var(--bl-l);border:1px solid rgba(55,138,221,.2);border-radius:var(--r);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+/* BAR CHART */
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:100px;padding:0 2px}
+.bc{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.bc-bars{display:flex;gap:2px;align-items:flex-end}
+.bc-bar{border-radius:3px 3px 0 0;cursor:pointer;transition:opacity .12s}
+.bc-bar:hover{opacity:.75}
+.bc-lbl{font-size:9px;color:var(--hi)}
+/* PNL / BS ROWS */
+.pr{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--bd);font-size:12px}
+.pr:last-child{border-bottom:none}
+.pr-indent{padding-left:14px}
+.pt{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:13px;font-weight:700;border-top:1px solid var(--bd);margin-top:2px}
+.ps{font-size:10px;font-weight:700;color:var(--hi);text-transform:uppercase;letter-spacing:.07em;padding:10px 0 4px}
+.pgrand{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;font-size:14px;font-weight:800;border-radius:var(--rs);margin-top:6px}
+/* WATERFALL */
+.wf{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.wfl{font-size:11px;color:var(--mu);width:150px;flex-shrink:0;font-weight:500}
+.wfw{flex:1;position:relative;height:20px;background:var(--s2);border-radius:4px;overflow:hidden}
+.wfb{position:absolute;top:0;height:100%;border-radius:4px;display:flex;align-items:center;padding:0 8px;font-size:10px;font-weight:700;white-space:nowrap}
+.wfamt{font-size:11px;font-weight:700;width:90px;text-align:right;flex-shrink:0}
+/* BS */
+.bs-head{font-size:10px;font-weight:700;color:var(--hi);text-transform:uppercase;letter-spacing:.06em;padding:7px 10px;background:var(--s2);border-radius:5px;margin-bottom:5px;margin-top:10px}
+.bs-row{display:flex;justify-content:space-between;padding:6px 8px;border-bottom:1px solid var(--bd);font-size:12px}
+.bs-row:last-child{border-bottom:none}
+.bs-total{display:flex;justify-content:space-between;padding:7px 10px;font-weight:700;font-size:13px;background:var(--s2);border-radius:var(--rs);margin-top:5px}
+/* MUTUAL */
+.mut-bar{height:5px;background:var(--s2);border-radius:4px;overflow:hidden;margin-top:4px}
+.mut-bar-fill{height:100%;border-radius:4px}
+/* SALARY */
+.emp-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--bd)}
+.emp-row:last-child{border-bottom:none}
+.ava{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0}
+.kpis{display:flex;gap:12px;flex-shrink:0}
+.ki{text-align:center}
+.kiv{font-size:12px;font-weight:800}
+.kil{font-size:9px;color:var(--hi)}
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(13,21,35,.5);z-index:200;align-items:flex-start;justify-content:center;padding-top:5vh;overflow-y:auto}
+.modal-bg.open{display:flex}
+.modal{background:var(--w);border-radius:14px;padding:24px;width:520px;max-width:95vw;box-shadow:0 24px 64px rgba(0,0,0,.18);margin-bottom:20px}
+.mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.mt{font-size:17px;font-weight:700}
+.mc{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--mu)}
+.mc:hover{background:var(--s2)}
+.mf{display:flex;justify-content:flex-end;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid var(--bd)}
+.fr{margin-bottom:13px}
+.fl{font-size:11px;color:var(--mu);margin-bottom:4px;display:block;font-weight:600}
+.fi{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rs);color:var(--tx);padding:8px 11px;font-size:13px;outline:none;transition:border-color .12s}
+.fi:focus{border-color:var(--bl);background:var(--w)}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.msec{font-size:10px;font-weight:700;color:var(--hi);text-transform:uppercase;letter-spacing:.08em;padding:10px 0 5px;border-top:1px solid var(--bd);margin-top:5px}
+/* PERIOD PILLS */
+.pp-row{display:flex;gap:5px;margin-bottom:16px;align-items:center}
+.pp{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--bd2);background:var(--w);color:var(--mu);transition:all .12s}
+.pp:hover{background:var(--s2)}
+.pp.active{background:var(--bl);color:#fff;border-color:var(--bl)}
+/* TRANSFER */
+.transfer-arrow{width:36px;height:36px;border-radius:50%;background:var(--bl-l);display:flex;align-items:center;justify-content:center;margin:0 auto 8px;color:var(--bl);font-size:18px}
+
+/* модуль живёт внутри оболочки: свой сайдбар и топбар не нужны */
+body{display:block;height:auto;overflow:visible;background:var(--bg)}
+.main{display:block}
+.content{overflow:visible}
+.view{padding:16px 18px 40px}
+.subnav{position:sticky;top:0;z-index:20}
+
+
+
+/* ══════════════════════════════════════════════════
+   Адаптив и защита от обрезания.
+   В исходных стилях не было ни одного медиазапроса,
+   а ширины подписей стояли в 80–120 px — длинные суммы
+   и названия не помещались.
+   ══════════════════════════════════════════════════ */
+
+/* элементы сетки не должны распирать контейнер */
+.kpi-row > *, .g2 > *, .g3 > *, .g13 > *, .g31 > *, .acc-grid > *, .metric-grid > *{min-width:0}
+.kpi-v{font-size:19px;line-height:1.15;overflow-wrap:anywhere}
+.kpi-l,.kpi-s{overflow-wrap:anywhere}
+
+/* счета подстраиваются под ширину, а не по 4 в ряд всегда */
+.acc-grid{grid-template-columns:repeat(auto-fit,minmax(208px,1fr))}
+
+/* подписи и суммы в полосах: не режем длинные значения */
+.prog-val{width:auto;min-width:120px;white-space:nowrap}
+.prog-lbl{min-width:0;overflow-wrap:anywhere}
+.prog-row{gap:10px}
+.fn-lbl{width:auto;min-width:150px;max-width:210px}
+.fn-cnt{white-space:nowrap}
+.mut-bar{min-width:60px}
+.pdiv{height:18px;width:1px;background:var(--bd);margin:0 4px}
+
+/* строки отчётов: длинное название не наезжает на сумму */
+.pr,.pt,.pgrand,.bs-row,.bs-total{gap:12px}
+.pr > span:first-child,.bs-row > span:first-child{min-width:0;overflow-wrap:anywhere}
+.pr > span:last-child,.pt > span:last-child,.pgrand > span:last-child,
+.bs-row > span:last-child,.bs-total > span:last-child{white-space:nowrap;flex-shrink:0}
+
+/* таблицы всегда с горизонтальной прокруткой, ничего не срезается */
+.tw,.card > div[style*="overflow-x"]{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;min-width:620px}
+.card{overflow:hidden}
+
+@media (max-width:1400px){
+  .k4{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:1180px){
+  .g2,.g13,.g31{grid-template-columns:1fr}
+  .g3,.metric-grid{grid-template-columns:repeat(2,1fr)}
+  .k3{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:760px){
+  .k4,.k3,.k2,.g3,.metric-grid{grid-template-columns:1fr}
+  .view,.content{padding:12px 12px 32px}
+  .fn-lbl{min-width:110px}
+  .prog-val{min-width:96px;font-size:11.5px}
+}
+
+/* крупные метрики вместо мелких .ki */
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.mtile{background:var(--s2);border-radius:9px;padding:11px 13px;border-left:3px solid var(--bl)}
+.mtl{font-size:10px;color:var(--hi);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.mtv{font-size:19px;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums}
+.mts{font-size:11px;color:var(--mu);margin-top:3px}
+.bc-val{font-size:10px;font-weight:700;color:var(--mu)}
+.wfw{min-width:60px}
+</style>
+</head>
+<body>
+
+<div class="main">
+  <div class="subnav" id="subnav"></div>
+  <div class="content" id="content"></div>
+</div>
+
+<div class="modal-bg" id="ovl" hidden>
+  <div class="modal" id="mdl">
+    <div class="mh"><div class="mt" id="m-t"></div>
+      <button class="btn btn-sm" data-close aria-label="Закрыть">✕</button></div>
+    <div class="mc" id="m-b"></div>
+    <div class="mf" id="m-f"></div>
+  </div>
+</div>
+
+<script>
+/* сообщаем оболочке о сбое, чтобы он не превратился в пустой экран */
+window.__errHook = true;
+window.addEventListener('error', e => {
+  try{ window.parent.postMessage({ ns:'kasymov', type:'moduleError',
+       msg:(e.message||'') + ' · ' + (e.lineno||'') }, '*'); }catch(_){}
+  const b = document.body;
+  if(b) b.insertAdjacentHTML('afterbegin',
+    '<div style="background:#7d211c;color:#fff;padding:12px 16px;font:13px/1.5 -apple-system,sans-serif">'
+    + '<b>Сбой в разделе.</b> ' + (e.message||'') + '</div>');
+});
+</script>
+<script src="kasymov-data.js"></script>
+<script>
+const K = window.KASYMOV;
+let S = null, view = 'dashboard', accSel = 'all', me = 'u14';
+let P = { preset:'month', from:'', to:'' };
+const TODAY = '2026-08-03';
+const MN = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+const CLOSED = ['installed','paid','done'];
+
+const VIEWS = [
+  ['dashboard','Обзор'], ['operations','Операции'], ['accounts','Счета и кассы'],
+  ['mutual','Взаиморасчёты'], ['salary','Зарплата'], ['pnl','ОПИУ / P&L'],
+  ['dds','ДДС'], ['balance','Баланс'],
+];
+
+K.connect(state => {
+  S = state;
+  if(S.me) me = S.me.id;
+  if(!S.expenses) S.expenses = [];
+  if(!S.transfers) S.transfers = [];
+  render();
+}, name => { if(name === 'primary') mExpense(); });
+
+/* ═════════ ПЕРИОД И РАСЧЁТЫ ═════════ */
+function range(p){ return p ? K.rangeOf(p) : K.rangeOf(P.preset, P.from, P.to); }
+const pName = p => p ? K.rangeName(p) : K.rangeName(P.preset, P.from, P.to);
+const ok = (d,f,t) => { const x = (d||'').slice(0,10); return x >= f && x <= t; };
+const inR = d => { const [f,t] = range(); return ok(d,f,t); };
+const staff = id => K.staffName(id);
+const accName = id => (K.ACCOUNTS.find(a => a.id === id) || {}).name || '—';
+const accShort = id => (K.ACCOUNTS.find(a => a.id === id) || {}).short || '—';
+const f0 = n => K.fmt(n);
+
+function pl(p){
+  const [f,t] = range(p);
+  const ords = S.orders.filter(o => CLOSED.includes(o.status) && ok(o.deadline,f,t));
+  const opts = S.docs.filter(d => d.type === 'opt' && ok(d.date,f,t));
+  const revR = ords.reduce((a,o) => a + K.orderTotal(o), 0);
+  const revO = opts.reduce((a,d) => a + d.lines.reduce((x,l) => x + l.qty * l.price, 0), 0);
+  const cstR = ords.reduce((a,o) => a + K.orderCost(o, S.goods), 0);
+  const cstO = opts.reduce((a,d) => a + d.lines.reduce((x,l) => {
+    const g = S.goods.find(z => z.id === l.good); return x + l.qty * (g ? g.cost : 0); }, 0), 0);
+  const exps = (S.expenses||[]).filter(e => ok(e.date,f,t) && e.cat !== 'Закуп материалов');
+  const byCat = {}; exps.forEach(e => byCat[e.cat] = (byCat[e.cat] || 0) + e.sum);
+  const expSum = exps.reduce((a,e) => a + e.sum, 0);
+  const rev = revR + revO, cost = cstR + cstO;
+  return { ords, opts, revR, revO, rev, cstR, cstO, cost, gross:rev - cost,
+           byCat, expSum, profit:rev - cost - expSum };
+}
+
+/* ═════════ КАРКАС ═════════ */
+function render(){
+  if(!S) return;
+  document.getElementById('subnav').innerHTML = VIEWS.map(([k,n]) =>
+    `<div class="sn-tab ${view===k?'active':''}" data-v="${k}">${n}</div>`).join('');
+  document.querySelectorAll('[data-v]').forEach(b =>
+    b.addEventListener('click', () => { view = b.dataset.v; render(); }));
+  document.getElementById('content').innerHTML =
+    `<div class="view active">${({ dashboard:vDash, operations:vOps, accounts:vAccs,
+       mutual:vMutual, salary:vSalary, pnl:vPnl, dds:vDds, balance:vBal })[view]()}</div>`;
+  bind();
+}
+
+/* единая панель периода — одинаковая во всех разделах */
+function ppRow(){ return K.dateBar(P.preset, P.from, P.to); }
+
+function bind(){
+  K.bindDateBar(v => { P = v; render(); }, P);
+  document.querySelectorAll('[data-open]').forEach(b =>
+    b.addEventListener('click', () => { accSel = b.dataset.open; view = 'operations'; render(); }));
+  document.querySelectorAll('[data-m]').forEach(b =>
+    b.addEventListener('click', () => ({ income:mIncome, expense:mExpense,
+      transfer:mTransfer })[b.dataset.m]()));
+  document.querySelectorAll('[data-acc]').forEach(b =>
+    b.addEventListener('click', () => {
+      accSel = b.dataset.acc === 'all' ? 'all' : (accSel === b.dataset.acc ? 'all' : b.dataset.acc);
+      render();
+    }));
+  document.querySelectorAll('[data-due]').forEach(el => el.onchange = () => {
+    const o = S.orders.find(x => x.id === +el.dataset.due);
+    o.dueDate = el.value;
+    save();
+    K.toast(o.dueDate ? `Заказ #${o.num}: срок оплаты ${K.dmy(o.dueDate)}` : 'Срок снят');
+  });
+  document.querySelectorAll('[data-pay]').forEach(b =>
+    b.addEventListener('click', () => mPaySupplier(S.suppliers.find(s => s.id === b.dataset.pay))));
+  document.querySelectorAll('[data-xls]').forEach(b => b.addEventListener('click', () => {
+    const [id, name] = b.dataset.xls.split('|');
+    K.tableToExcel(document.getElementById(id), name + ' — ' + pName());
+  }));
+  const ps = document.getElementById('pay-salary');
+  if(ps) ps.onclick = mAccrue;
+  const ab = document.getElementById('add-bonus');
+  if(ab) ab.onclick = () => mAdjust('bonus');
+  const af = document.getElementById('add-fine');
+  if(af) af.onclick = () => mAdjust('fine');
+  document.querySelectorAll('[data-detail]').forEach(b2 =>
+    b2.addEventListener('click', e => { e.stopPropagation(); mSalaryDetail(b2.dataset.detail); }));
+  document.querySelectorAll('[data-who]').forEach(tr =>
+    tr.addEventListener('click', () => mSalaryDetail(tr.dataset.who)));
+}
+
+/* ═════════ 1. ОБЗОР ═════════ */
+function accCards(){
+  const bal = K.balances(S);
+  const hands = K.cashOnHand(S);
+  const onH = hands.reduce((a,c) => a + c.sum, 0);
+  const cls = { cash:'gn', mbank:'bl', bank:'tl' };
+  const col = { cash:'var(--gn-m)', mbank:'var(--bl)', bank:'var(--tl-m)' };
+  const type = { cash:'Наличная', mbank:'Безналичная', bank:'Расчётный счёт' };
+  return `<div class="acc-grid">
+    ${K.ACCOUNTS.map((a,i) => `<div class="acc ${cls[a.id]}">
+      <div class="acc-type">${type[a.id]}</div>
+      <div class="acc-name">${a.name}</div>
+      <div class="acc-bal" style="color:${col[a.id]}">${f0(bal[a.id])}
+        <span style="font-size:13px;font-weight:400;color:var(--mu)">сом</span></div>
+      <div class="acc-sub"><span>Счёт №${i+1}</span><span>на начало ${f0(a.start)}</span></div>
+      <div class="acc-actions">
+        <button class="btn btn-sm" style="flex:1;font-size:11px" data-open="${a.id}">Операции</button>
+        <button class="btn btn-sm" style="flex:1;font-size:11px" data-m="expense">− Расход</button>
+      </div></div>`).join('')}
+    <div class="acc am">
+      <div class="acc-type">У сотрудников</div>
+      <div class="acc-name">Деньги на руках</div>
+      <div class="acc-bal" style="color:var(--am-m)">${f0(onH)}
+        <span style="font-size:13px;font-weight:400;color:var(--mu)">сом</span></div>
+      <div class="acc-sub"><span>${hands.length} чел.</span>
+        <span>${hands.length ? hands.map(c => staff(c.who).split(' ')[0]).join(', ') : 'всё сдано'}</span></div>
+      <div class="acc-actions">
+        <button class="btn btn-sm" style="flex:1;font-size:11px" data-m="transfer">⇄ Перевод</button>
+      </div></div>
+  </div>`;
+}
+
+function vDash(){
+  const bal = K.balances(S);
+  const total = K.ACCOUNTS.reduce((a,x) => a + bal[x.id], 0);
+  const hands = K.cashOnHand(S).reduce((a,c) => a + c.sum, 0);
+  const p = pl();
+  const inc = K.moneyIn(S).filter(x => inR(x.date)).reduce((a,x) => a + x.sum, 0);
+  const out = K.moneyOut(S).filter(x => inR(x.date)).reduce((a,x) => a + x.sum, 0);
+  const cats = Object.entries(p.byCat).sort((a,b) => b[1] - a[1]);
+  const mxC = Math.max(1, ...cats.map(c => c[1]));
+  const clients = S.orders.filter(o => o.status !== 'rejected').reduce((a,o) => a + K.orderOwe(o), 0);
+  const buyers = S.buyers.reduce((a,b) => a + b.balance, 0);
+  const sup = S.suppliers.reduce((a,s) => a + s.debt, 0);
+
+  const bars = MN.map((n,i) => {
+    const m = String(i+1).padStart(2,'0');
+    const f = `2026-${m}-01`, t = `2026-${m}-31`;
+    return { n, i:K.moneyIn(S).filter(x => ok(x.date,f,t)).reduce((a,x) => a + x.sum, 0),
+                o:K.moneyOut(S).filter(x => ok(x.date,f,t)).reduce((a,x) => a + x.sum, 0) };
+  }).filter((x,i) => i >= 4 && i <= 7);
+  const mxB = Math.max(1, ...bars.flatMap(b => [b.i, b.o]));
+
+  return `${ppRow()}
+  ${accCards()}
+  <div class="acc-total">
+    <div>
+      <div style="font-size:11px;font-weight:600;color:var(--bl-d);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Итого на всех счетах</div>
+      <div style="font-size:10px;color:var(--bl)">${K.ACCOUNTS.length} кассы${hands ? ' · плюс ' + f0(hands) + ' на руках у сотрудников' : ''}</div>
+    </div>
+    <div style="margin-left:auto;font-size:24px;font-weight:800;color:var(--bl-d)">${f0(total)} <span style="font-size:14px;font-weight:600">сом</span></div>
+  </div>
+
+  <div class="kpi-row k4">
+    <div class="kpi gn"><div class="kpi-l">Поступило</div>
+      <div class="kpi-v" style="color:var(--gn-m)">${f0(inc)} сом</div>
+      <div class="kpi-s">${pName()}</div></div>
+    <div class="kpi rd"><div class="kpi-l">Потрачено</div>
+      <div class="kpi-v" style="color:var(--rd-m)">${f0(out)} сом</div>
+      <div class="kpi-s">${pName()}</div></div>
+    <div class="kpi bl"><div class="kpi-l">Выручка</div>
+      <div class="kpi-v">${f0(p.rev)} сом</div>
+      <div class="kpi-s">розница ${f0(p.revR)} · опт ${f0(p.revO)}</div></div>
+    <div class="kpi ${p.profit>=0?'gn':'rd'}"><div class="kpi-l">Чистая прибыль</div>
+      <div class="kpi-v" style="color:var(--${p.profit>=0?'gn':'rd'}-m)">${f0(p.profit)} сом</div>
+      <div class="kpi-s">рентабельность ${p.rev?Math.round(p.profit/p.rev*100):0}%</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-head"><div class="ct">Доходы и расходы по месяцам</div></div>
+      <div class="bar-chart" style="height:150px;align-items:flex-end">
+        ${bars.map(b => `<div class="bc" style="justify-content:flex-end">
+          <div class="bc-val">${b.i||b.o ? f0(b.i - b.o) : ''}</div>
+          <div class="bc-bars" style="height:110px;align-items:flex-end">
+            <div class="bc-bar" style="width:14px;height:${Math.max(2, b.i/mxB*110)}px;background:var(--gn-m)" title="Приход ${f0(b.i)}"></div>
+            <div class="bc-bar" style="width:14px;height:${Math.max(2, b.o/mxB*110)}px;background:var(--rd-m)" title="Расход ${f0(b.o)}"></div>
+          </div>
+          <div class="bc-lbl">${b.n}</div></div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="ct">Расходы по категориям</div>
+        <div class="ca" data-v2="operations">Все операции →</div></div>
+      <div style="padding:12px 16px">
+        ${cats.length ? cats.map(([c,v]) => `
+          <div class="mut-bar"><div class="mut-bar-fill" style="width:${v/mxC*100}%"></div></div>
+          <div class="pr" style="border:none;padding:2px 0 8px"><span>${c}</span>
+            <span style="font-weight:700">${f0(v)} · ${Math.round(v/p.expSum*100)}%</span></div>`).join('')
+          : '<div style="color:var(--hi);font-size:12px">За период расходов не было</div>'}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="ct">Взаиморасчёты</div>
+      <div class="ca" data-v2="mutual">Подробно →</div></div>
+    <div style="padding:14px 16px">
+      <div class="pr"><span>Должны нам клиенты</span><span style="color:var(--am-m);font-weight:700">${f0(clients)}</span></div>
+      <div class="pr"><span>Должны нам оптовики</span><span style="color:var(--am-m);font-weight:700">${f0(buyers)}</span></div>
+      <div class="pr"><span>Мы должны поставщикам</span><span style="color:var(--rd-m);font-weight:700">−${f0(sup)}</span></div>
+      <div class="pt"><span>Чистая позиция</span>
+        <span style="color:var(--${clients+buyers-sup>=0?'gn':'rd'}-m)">${f0(clients + buyers - sup)} сом</span></div>
+    </div>
+  </div>`;
+}
+
+/* ═════════ 2. ОПЕРАЦИИ ═════════ */
+function vOps(){
+  const okAcc = x => accSel === 'all' || x.acc === accSel;
+  const inc = K.moneyIn(S).filter(x => inR(x.date) && okAcc(x)).map(x => ({ ...x, kind:'in' }));
+  const out = K.moneyOut(S).filter(x => inR(x.date) && okAcc(x)).map(x => ({ ...x, kind:'out', src:x.cat }));
+  const all = [...inc, ...out].sort((a,b) => b.date.localeCompare(a.date));
+  const sIn = inc.reduce((a,x) => a + x.sum, 0), sOut = out.reduce((a,x) => a + x.sum, 0);
+
+  const bal = K.balances(S);
+  return `${ppRow()}
+  <div class="fbar">
+    <button class="btn btn-sm ${accSel==='all'?'btn-primary':''}" data-acc="all">Все кассы</button>
+    ${K.ACCOUNTS.map(a => `<button class="btn btn-sm ${accSel===a.id?'btn-primary':''}" data-acc="${a.id}">
+      ${a.name} · ${f0(bal[a.id])}</button>`).join('')}
+  </div>
+  <div class="kpi-row k3">
+    <div class="kpi gn"><div class="kpi-l">Приход</div>
+      <div class="kpi-v" style="color:var(--gn-m)">${f0(sIn)} сом</div>
+      <div class="kpi-s">${inc.length} операций</div></div>
+    <div class="kpi rd"><div class="kpi-l">Расход</div>
+      <div class="kpi-v" style="color:var(--rd-m)">${f0(sOut)} сом</div>
+      <div class="kpi-s">${out.length} операций</div></div>
+    <div class="kpi ${sIn-sOut>=0?'gn':'rd'}"><div class="kpi-l">Разница</div>
+      <div class="kpi-v" style="color:var(--${sIn-sOut>=0?'gn':'rd'}-m)">${sIn-sOut>=0?'+':''}${f0(sIn-sOut)} сом</div>
+      <div class="kpi-s">${pName()}</div></div>
+  </div>
+  <div class="fbar">
+    <div style="margin-left:auto;display:flex;gap:6px">
+      <button class="btn btn-sm" data-xls="t-ops|Операции">↓ Excel</button>
+      <button class="btn btn-sm" data-m="income">+ Приход</button>
+      <button class="btn btn-green btn-sm" data-m="expense">− Расход</button>
+    </div>
+  </div>
+  <div class="card"><div class="tw"><table id="t-ops">
+    <thead><tr><th style="width:100px">Дата</th><th style="width:100px">Тип</th>
+      <th style="width:160px">Статья</th><th>Назначение</th>
+      <th style="width:110px">Касса</th><th style="width:150px">Кто</th>
+      <th class="tr" style="width:130px">Сумма</th></tr></thead>
+    <tbody>${all.length ? all.map(x => `<tr>
+      <td>${K.dmy(x.date)}</td>
+      <td><span class="b ${x.kind==='in'?'b-green':'b-red'}">${x.kind==='in'?'приход':'расход'}</span></td>
+      <td style="font-weight:600">${K.esc(x.src)}</td>
+      <td>${K.esc(x.note||'')}</td>
+      <td>${accShort(x.acc)}</td>
+      <td>${K.esc(staff(x.who))}</td>
+      <td class="tr" style="font-weight:700;color:var(--${x.kind==='in'?'gn':'rd'}-m)">
+        ${x.kind==='in'?'+':'−'}${f0(x.sum)}</td></tr>`).join('')
+      : '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--hi)">Операций за период нет</td></tr>'}</tbody>
+    ${all.length ? `<tfoot><tr style="background:var(--s2);font-weight:800">
+      <td colspan="6">Итого ${pName()}</td>
+      <td class="tr">${sIn-sOut>=0?'+':''}${f0(sIn-sOut)}</td></tr></tfoot>` : ''}
+  </table></div></div>`;
+}
+
+/* ═════════ 3. СЧЕТА И КАССЫ ═════════ */
+function vAccs(){
+  const inc = K.moneyIn(S).filter(x => inR(x.date) && (accSel==='all' || x.acc===accSel)).map(x => ({...x, kind:'in'}));
+  const out = K.moneyOut(S).filter(x => inR(x.date) && (accSel==='all' || x.acc===accSel)).map(x => ({...x, kind:'out', src:x.cat}));
+  const hist = [...inc, ...out].sort((a,b) => b.date.localeCompare(a.date));
+
+  return `${ppRow()}
+  ${accCards()}
+  <div class="g2">
+    <div class="card">
+      <div class="card-head"><div class="ct">История ${accSel==='all'?'по всем кассам':'— '+accName(accSel)}</div>
+        ${accSel!=='all'?'<div class="ca" data-acc="'+accSel+'">Показать все →</div>':''}</div>
+      <div class="tw"><table>
+        <thead><tr><th style="width:100px">Дата</th><th>Операция</th>
+          <th class="tr" style="width:120px">Сумма</th></tr></thead>
+        <tbody>${hist.length ? hist.slice(0,20).map(x => `<tr>
+          <td>${K.dmy(x.date)}</td>
+          <td><b>${K.esc(x.src)}</b><div style="font-size:11px;color:var(--hi)">${K.esc(x.note||'')}</div></td>
+          <td class="tr" style="font-weight:700;color:var(--${x.kind==='in'?'gn':'rd'}-m)">
+            ${x.kind==='in'?'+':'−'}${f0(x.sum)}</td></tr>`).join('')
+          : '<tr><td colspan="3" style="text-align:center;padding:26px;color:var(--hi)">Движений нет</td></tr>'}</tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="ct">Переводы между кассами</div>
+        <div class="ca" data-m="transfer">+ Перевод</div></div>
+      <div class="tw"><table>
+        <thead><tr><th style="width:100px">Дата</th><th>Откуда → куда</th>
+          <th class="tr" style="width:120px">Сумма</th></tr></thead>
+        <tbody>${(S.transfers||[]).slice().sort((a,b)=>b.date.localeCompare(a.date)).map(t => `<tr>
+          <td>${K.dmy(t.date)}</td>
+          <td><b>${accShort(t.from)}</b> <span class="transfer-arrow">→</span> <b>${accShort(t.to)}</b>
+            <div style="font-size:11px;color:var(--hi)">${K.esc(t.note||'')}</div></td>
+          <td class="tr" style="font-weight:700">${f0(t.sum)}</td></tr>`).join('')
+          || '<tr><td colspan="3" style="text-align:center;padding:26px;color:var(--hi)">Переводов не было</td></tr>'}</tbody>
+      </table></div>
+    </div>
+  </div>`;
+}
+
+/* ═════════ 4. ВЗАИМОРАСЧЁТЫ ═════════ */
+function vMutual(){
+  const cd = S.orders.filter(o => o.status !== 'rejected')
+    .map(o => ({ o, owe:K.orderOwe(o), due:o.dueDate || '' }))
+    .filter(x => x.owe > 0)
+    .sort((a,b) => (a.due || '9999').localeCompare(b.due || '9999') || b.owe - a.owe);
+  const overdue = cd.filter(x => x.due && x.due < TODAY);
+  const dueToday = cd.filter(x => x.due === TODAY);
+  const bd = S.buyers.filter(b => b.balance > 0).sort((a,b) => b.balance - a.balance);
+  const sd = S.suppliers.filter(s => s.debt > 0).sort((a,b) => b.debt - a.debt);
+  const weOwe = sd.reduce((a,s) => a + s.debt, 0);
+  const owedUs = cd.reduce((a,x) => a + x.owe, 0) + bd.reduce((a,b) => a + b.balance, 0);
+  const net = owedUs - weOwe;
+  const mx = Math.max(1, ...cd.map(x => x.owe), ...bd.map(b => b.balance), ...sd.map(s => s.debt));
+
+  return `<div class="alert ${net>=0?'al-g':'al-r'}">${net>=0
+    ? `✓ Нам должны больше, чем должны мы. Чистая позиция <strong>+${f0(net)} сом</strong>.`
+    : `⚠ Мы должны больше, чем нам. Чистая позиция <strong>${f0(net)} сом</strong>.`}</div>
+  <div class="kpi-row k3">
+    <div class="kpi rd"><div class="kpi-l">Мы должны</div>
+      <div class="kpi-v" style="color:var(--rd-m)">${f0(weOwe)} сом</div>
+      <div class="kpi-s">${sd.length} поставщиков</div></div>
+    <div class="kpi gn"><div class="kpi-l">Нам должны</div>
+      <div class="kpi-v" style="color:var(--gn-m)">${f0(owedUs)} сом</div>
+      <div class="kpi-s">${cd.length} заказов · ${bd.length} оптовиков</div></div>
+    <div class="kpi ${net>=0?'gn':'am'}"><div class="kpi-l">Чистая позиция</div>
+      <div class="kpi-v" style="color:var(--${net>=0?'gn':'rd'}-m)">${f0(net)} сом</div>
+      <div class="kpi-s">${net>=0?'актив':'пассив'}</div></div>
+  </div>
+
+  ${overdue.length || dueToday.length ? `<div class="alert al-r">
+    ⚠ ${overdue.length ? `Просрочено платежей: <strong>${overdue.length}</strong> на ${f0(overdue.reduce((a,x)=>a+x.owe,0))} сом. ` : ''}
+    ${dueToday.length ? `Сегодня обещали заплатить: <strong>${dueToday.length}</strong> на ${f0(dueToday.reduce((a,x)=>a+x.owe,0))} сом.` : ''}
+  </div>` : ''}
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-head"><div class="ct">Должны нам клиенты</div>
+      <div class="ca">${f0(cd.reduce((a,x)=>a+x.owe,0))} сом</div></div>
+    <div class="tw"><table>
+      <thead><tr><th style="width:80px">Заказ</th><th>Адрес и клиент</th>
+        <th style="width:150px">Менеджер</th><th style="width:170px">Статус</th>
+        <th class="tr" style="width:110px">Сумма</th><th class="tr" style="width:120px">Долг</th>
+        <th style="width:160px">Обещал оплатить</th></tr></thead>
+      <tbody>${cd.length ? cd.map(x => `<tr>
+        <td style="font-weight:700">#${x.o.num}</td>
+        <td>${K.esc(x.o.addr)}<div style="font-size:11px;color:var(--hi)">${K.esc(x.o.client)} · ${K.esc(x.o.phone)}</div></td>
+        <td>${K.esc(staff(x.o.manager))}</td>
+        <td><span class="b b-blue">${K.STATUS[x.o.status].label}</span></td>
+        <td class="tr">${f0(K.orderTotal(x.o))}</td>
+        <td class="tr" style="font-weight:700;color:var(--rd-m)">${f0(x.owe)}</td>
+        <td><input class="inp" type="date" value="${x.due}" data-due="${x.o.id}" style="width:135px;padding:5px 8px">
+          ${x.due ? `<div style="font-size:10.5px;margin-top:3px;color:var(--${x.due<TODAY?'rd':x.due===TODAY?'am':'hi'}-m,var(--hi))">
+            ${x.due < TODAY ? 'просрочено на ' + Math.round((new Date(TODAY)-new Date(x.due))/864e5) + ' дн.'
+              : x.due === TODAY ? 'срок сегодня' : 'через ' + Math.round((new Date(x.due)-new Date(TODAY))/864e5) + ' дн.'}</div>` : ''}</td>
+      </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--hi)">Все заказы оплачены</td></tr>'}</tbody>
+    </table></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-head"><div class="ct">Должны оптовики</div></div>
+      <div class="tw"><table>
+        <thead><tr><th>Покупатель</th><th class="tr" style="width:110px">Долг</th>
+          <th class="tr" style="width:100px">Лимит</th></tr></thead>
+        <tbody>${bd.length ? bd.map(b => `<tr>
+          <td><b>${K.esc(b.name)}</b><div style="font-size:11px;color:var(--hi)">${b.city} · ${b.phone}</div></td>
+          <td class="tr" style="font-weight:700;color:var(--rd-m)">${f0(b.balance)}</td>
+          <td class="tr" style="color:var(--${b.balance>b.limit?'rd-m':'hi'})">${f0(b.limit)}</td></tr>`).join('')
+          : '<tr><td colspan="3" style="text-align:center;padding:26px;color:var(--hi)">Долгов нет</td></tr>'}</tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="ct">Мы должны поставщикам</div></div>
+      <div class="tw"><table>
+        <thead><tr><th>Поставщик</th><th class="tr" style="width:110px">Долг</th>
+          <th style="width:110px"></th></tr></thead>
+        <tbody>${sd.length ? sd.map(s => `<tr>
+          <td><b>${K.esc(s.name)}</b><div style="font-size:11px;color:var(--hi)">${K.esc(s.cats)}</div></td>
+          <td class="tr" style="font-weight:700;color:var(--rd-m)">${f0(s.debt)}</td>
+          <td><button class="btn btn-green btn-sm" data-pay="${s.id}">Оплатить</button></td></tr>`).join('')
+          : '<tr><td colspan="3" style="text-align:center;padding:26px;color:var(--hi)">Долгов нет</td></tr>'}</tbody>
+      </table></div>
+    </div>
+  </div>`;
+}
+
+/* ═════════ 5. ЗАРПЛАТА ═════════ */
+function vSalary(){
+  const [f,t] = range();
+  const rows = K.payroll(S, f, t);
+  const T = k => rows.reduce((a,r) => a + r[k], 0);
+  const nach = T('total'), paid = T('paid'), left = nach - paid;
+
+  return `${ppRow()}
+  <div class="kpi-row k4">
+    <div class="kpi bl"><div class="kpi-l">Начислено</div>
+      <div class="kpi-v">${f0(nach)} сом</div>
+      <div class="kpi-s">${rows.length} человек</div></div>
+    <div class="kpi gn"><div class="kpi-l">Выплачено</div>
+      <div class="kpi-v" style="color:var(--gn-m)">${f0(paid)} сом</div>
+      <div class="kpi-s">авансы и расчёты</div></div>
+    <div class="kpi ${left>0?'rd':'gn'}"><div class="kpi-l">Осталось выплатить</div>
+      <div class="kpi-v" style="color:var(--${left>0?'rd':'gn'}-m)">${f0(Math.max(0,left))} сом</div>
+      <div class="kpi-s">${pName()}</div></div>
+    <div class="kpi am"><div class="kpi-l">Премии минус штрафы</div>
+      <div class="kpi-v" style="color:var(--am-m)">${T('bonus')-T('fine')>=0?'+':''}${f0(T('bonus')-T('fine'))} сом</div>
+      <div class="kpi-s">премии ${f0(T('bonus'))} · штрафы ${f0(T('fine'))}</div></div>
+  </div>
+
+  <div class="fbar">
+    <div style="margin-left:auto;display:flex;gap:6px">
+      <button class="btn btn-sm" data-xls="t-sal|Зарплатная ведомость">↓ Excel</button>
+      <button class="btn btn-sm" id="add-bonus">+ Премия</button>
+      <button class="btn btn-sm" id="add-fine">− Штраф</button>
+      <button class="btn btn-green" id="pay-salary" ${left>0?'':'disabled'}>💰 Выплатить</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><div class="ct">Расчёт зарплаты — ${pName()}</div>
+      <div class="ca">${rows.length} человек</div></div>
+    <div class="tw"><table id="t-sal">
+      <thead><tr><th>Сотрудник</th><th style="width:150px">Роль</th>
+        <th class="tr" style="width:100px">Оклад</th>
+        <th class="tr" style="width:110px">Сдельно</th>
+        <th class="tr" style="width:100px">Премия</th>
+        <th class="tr" style="width:100px">Штраф</th>
+        <th class="tr" style="width:120px">Начислено</th>
+        <th class="tr" style="width:120px">Выплачено</th>
+        <th class="tr" style="width:120px">К выдаче</th>
+        <th style="width:44px"></th></tr></thead>
+      <tbody>${rows.length ? rows.map(r => `<tr class="lnk" data-who="${r.id}">
+        <td><b>${K.esc(r.name)}</b></td>
+        <td><span class="b b-${r.role==='manager'?'blue':r.role==='measurer'?'purple':r.role==='installer'?'green':'gray'}">${r.roleName}</span></td>
+        <td class="tr" style="color:${r.salary?'var(--tx)':'var(--hi)'}">${r.salary?f0(r.salary):'—'}</td>
+        <td class="tr" style="color:${r.piece?'var(--tx)':'var(--hi)'}">${r.piece?f0(r.piece):'—'}</td>
+        <td class="tr" style="color:var(--gn-m)">${r.bonus?'+'+f0(r.bonus):'—'}</td>
+        <td class="tr" style="color:var(--rd-m)">${r.fine?'−'+f0(r.fine):'—'}</td>
+        <td class="tr" style="font-weight:700">${f0(r.total)}</td>
+        <td class="tr" style="color:var(--gn-m)">${r.paid?f0(r.paid):'—'}</td>
+        <td class="tr" style="font-weight:800;color:var(--${r.left>0?'rd':'gn'}-m)">${f0(r.left)}</td>
+        <td><button class="btn btn-sm" data-detail="${r.id}" title="Из чего складывается">?</button></td>
+      </tr>`).join('') : '<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--hi)">За период начислений нет</td></tr>'}</tbody>
+      ${rows.length ? `<tfoot><tr style="background:var(--s2);font-weight:800">
+        <td colspan="2">Итого</td>
+        <td class="tr">${f0(T('salary'))}</td><td class="tr">${f0(T('piece'))}</td>
+        <td class="tr">${f0(T('bonus'))}</td><td class="tr">${f0(T('fine'))}</td>
+        <td class="tr">${f0(nach)}</td><td class="tr">${f0(paid)}</td>
+        <td class="tr">${f0(left)}</td><td></td></tr></tfoot>` : ''}
+    </table></div>
+    <div style="padding:11px 16px;font-size:11px;color:var(--hi)">
+      Оклад считается пропорционально длине периода. Цех — сдельно по галочкам в производстве.
+      Замерщик ${K.PAY.measurer.trip} за выезд + ${K.PAY.measurer.m2} за м².
+      Менеджер ${K.PAY.manager.pct}% от заказа. Установщик ${K.PAY.installer.piece} за изделие +
+      ${K.PAY.installer.trip} за адрес. Нажмите «?», чтобы увидеть расшифровку по человеку.</div>
+  </div>`;
+}
+
+/* расшифровка по одному человеку */
+function mSalaryDetail(id){
+  const [f,t] = range();
+  const r = K.payroll(S, f, t).find(x => x.id === id);
+  if(!r) return;
+  const L = { salary:'Оклад', piece:'Сдельно', bonus:'Премия', fine:'Штраф', paid:'Выплачено' };
+  openM(`${r.name} — ${pName()}`);
+  document.getElementById('m-b').innerHTML = `
+    <div class="pr"><span>Роль</span><span>${r.roleName}</span></div>
+    ${r.parts.map(p => `<div class="pr"><span>${L[p.part]} · ${K.esc(p.note || '')}</span>
+      <span style="font-weight:700;color:var(--${p.part==='fine'?'rd':p.part==='bonus'?'gn':'tx'}-m,var(--tx))">
+        ${p.part==='fine'?'−':p.part==='bonus'?'+':''}${f0(p.sum)}</span></div>`).join('')}
+    ${r.per ? `<div class="ps">Операции в цеху</div>` +
+      K.OPS.filter(o => r.per[o.key]).map(o => `<div class="pr"><span>${o.label}</span>
+        <span>${r.per[o.key]} шт × ${o.rate} = ${f0(r.per[o.key]*o.rate)}</span></div>`).join('') : ''}
+    <div class="pt"><span>Начислено</span><span>${f0(r.total)} сом</span></div>
+    <div class="pr"><span>Уже выплачено</span><span style="color:var(--gn-m)">${f0(r.paid)}</span></div>
+    <div class="pgrand"><span>К выдаче</span>
+      <span style="color:var(--${r.left>0?'rd':'gn'}-m)">${f0(r.left)} сом</span></div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Закрыть</button>
+    ${r.left > 0 ? `<button class="btn btn-green" id="d-pay">Выплатить ${f0(r.left)}</button>` : ''}`;
+  const b = document.getElementById('d-pay');
+  if(b) b.onclick = () => mPayout(id, r.left);
+  bindClose();
+}
+
+/* премия, штраф, выплата */
+function mAdjust(kind, who, sum){
+  const T = { bonus:['Премия','bonuses','За что премия'],
+              fine:['Штраф','fines','За что штраф'],
+              payout:['Выплата','payouts','Комментарий'] }[kind];
+  openM(T[0]);
+  const people = K.STAFF.filter(s => s.role !== 'director');
+  document.getElementById('m-b').innerHTML = `
+    <div class="fg"><div class="fi"><div class="fl">Сотрудник</div>
+      <select class="sel" id="j-who" style="width:100%">${people.map(s =>
+        `<option value="${s.id}" ${who===s.id?'selected':''}>${K.esc(s.name)} — ${K.ROLES[s.role].label}</option>`).join('')}</select></div>
+      <div class="fi"><div class="fl">Сумма, сом</div>
+        <input class="inp" id="j-sum" type="number" min="0" value="${sum||0}"></div></div>
+    <div class="fg"><div class="fi"><div class="fl">Дата</div>
+      <input class="inp" id="j-date" type="date" value="${TODAY}"></div>
+      ${kind==='payout' ? `<div class="fi"><div class="fl">Из какой кассы</div>
+        <select class="sel" id="j-acc" style="width:100%">${K.ACCOUNTS.map(a =>
+          `<option value="${a.id}" ${a.id==='cash'?'selected':''}>${a.name}</option>`).join('')}</select></div>` : '<div class="fi"></div>'}</div>
+    <div class="fi"><div class="fl">${T[2]}</div><input class="inp" id="j-note"></div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button>
+    <button class="btn btn-green" id="j-ok">Сохранить</button>`;
+  document.getElementById('j-ok').onclick = () => {
+    const v = +document.getElementById('j-sum').value || 0;
+    if(v <= 0){ K.toast('Укажите сумму', 'bad'); return; }
+    const rec = { id:uid(), date:document.getElementById('j-date').value,
+                  who:document.getElementById('j-who').value, sum:v,
+                  note:document.getElementById('j-note').value.trim() };
+    S[T[1]] = S[T[1]] || [];
+    S[T[1]].push(rec);
+    if(kind === 'payout'){
+      /* выплата — это ещё и расход из кассы */
+      S.expenses.push({ id:uid(), date:rec.date, cat:'Зарплата',
+        acc:document.getElementById('j-acc').value, sum:v, who:me,
+        note:'Зарплата · ' + K.staffName(rec.who) + (rec.note ? ' · ' + rec.note : '') });
+    }
+    closeM(); save();
+    K.toast(`${T[0]}: ${K.money(v)} · ${K.staffName(rec.who)}`);
+  };
+  bindClose();
+}
+const mPayout = (who, sum) => mAdjust('payout', who, sum);
+
+/* ═════════ 6. ОПИУ ═════════ */
+function vPnl(){
+  const p = pl(), prev = pl('prev');
+  const cats = Object.entries(p.byCat).sort((a,b) => b[1] - a[1]);
+  const wf = [
+    { n:'Выручка', v:p.rev, c:'var(--bl)' },
+    { n:'Материалы', v:-p.cost, c:'var(--am-m)' },
+    { n:'Расходы', v:-p.expSum, c:'var(--rd-m)' },
+    { n:'Прибыль', v:p.profit, c:p.profit>=0?'var(--gn-m)':'var(--rd-m)' },
+  ];
+  const mx = Math.max(...wf.map(x => Math.abs(x.v)), 1);
+
+  return `${ppRow()}
+  <div class="al-b alert">ℹ Отчёт о прибылях и убытках — финансовый результат за ${pName()}.</div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-head"><div class="ct">ОПИУ — ${pName()}</div></div>
+      <div style="padding:14px 16px">
+        <div class="ps">Доходы</div>
+        <div class="pr"><span>Розничные заказы (${p.ords.length})</span>
+          <span style="color:var(--gn-m);font-weight:600">${f0(p.revR)}</span></div>
+        <div class="pr"><span>Оптовые продажи (${p.opts.length})</span>
+          <span style="color:var(--gn-m);font-weight:600">${f0(p.revO)}</span></div>
+        <div class="pt"><span>Итого доходов</span><span style="color:var(--gn-m)">${f0(p.rev)} сом</span></div>
+
+        <div class="ps">Себестоимость</div>
+        <div class="pr"><span>Материалы на заказы</span>
+          <span style="color:var(--rd-m);font-weight:600">−${f0(p.cstR)}</span></div>
+        <div class="pr"><span>Материалы на опт</span>
+          <span style="color:var(--rd-m);font-weight:600">−${f0(p.cstO)}</span></div>
+        <div class="pt"><span>Валовая прибыль</span>
+          <span style="color:var(--gn-m)">${f0(p.gross)} сом</span></div>
+
+        <div class="ps">Операционные расходы</div>
+        ${cats.map(([c,v]) => `<div class="pr pr-indent"><span>${c}</span>
+          <span style="color:var(--rd-m);font-weight:600">−${f0(v)}</span></div>`).join('')
+          || '<div class="pr"><span style="color:var(--hi)">Расходов не было</span><span>0</span></div>'}
+        <div class="pt"><span>Итого расходов</span><span style="color:var(--rd-m)">−${f0(p.expSum)} сом</span></div>
+
+        <div class="pgrand"><span>Чистая прибыль</span>
+          <span style="color:var(--${p.profit>=0?'gn':'rd'}-m)">${f0(p.profit)} сом</span></div>
+      </div>
+      <div style="padding:0 16px 14px;font-size:11px;color:var(--hi)">
+        Закуп материалов не показан отдельной строкой расходов — он уже в себестоимости,
+        иначе деньги посчитались бы дважды.</div>
+    </div>
+
+    <div class="gcol">
+      <div class="card">
+        <div class="card-head"><div class="ct">Из чего складывается прибыль</div></div>
+        <div style="padding:14px 16px">${wf.map(x => `<div class="wf">
+          <div class="wfl">${x.n}</div>
+          <div class="wfw"><div class="wfb" style="width:${Math.max(3, Math.abs(x.v)/mx*100)}%;background:${x.c}"></div></div>
+          <div class="wfamt" style="color:${x.v<0?'var(--rd-m)':'var(--gn-m)'}">${x.v<0?'−':''}${f0(Math.abs(x.v))}</div>
+        </div>`).join('')}</div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="ct">Ключевые метрики</div></div>
+        <div class="mgrid">
+          <div class="mtile"><div class="mtl">Валовая маржа</div>
+            <div class="mtv">${p.rev?Math.round(p.gross/p.rev*100):0}%</div></div>
+          <div class="mtile"><div class="mtl">Чистая рентабельность</div>
+            <div class="mtv" style="color:var(--${p.profit>=0?'gn':'rd'}-m)">${p.rev?Math.round(p.profit/p.rev*100):0}%</div></div>
+          <div class="mtile"><div class="mtl">Средний чек</div>
+            <div class="mtv">${p.ords.length?f0(p.revR/p.ords.length):0}</div>
+            <div class="mts">розница, ${p.ords.length} заказов</div></div>
+          <div class="mtile"><div class="mtl">Доля опта в выручке</div>
+            <div class="mtv">${p.rev?Math.round(p.revO/p.rev*100):0}%</div></div>
+          <div class="mtile"><div class="mtl">Точка безубыточности</div>
+            <div class="mtv">${p.gross>0?f0(p.expSum/(p.gross/p.rev)):'—'}</div>
+            <div class="mts">выручки, чтобы выйти в ноль</div></div>
+          <div class="mtile"><div class="mtl">К прошлому месяцу</div>
+            <div class="mtv" style="color:var(--${p.profit>=prev.profit?'gn':'rd'}-m)">${prev.profit?
+              (p.profit>=prev.profit?'+':'')+Math.round((p.profit-prev.profit)/Math.abs(prev.profit)*100)+'%':'—'}</div></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ═════════ 7. ДДС ═════════ */
+function vDds(){
+  const [f,t] = range();
+  const cf = K.cashflow(S, f, t);
+  const src = Object.entries(cf.bySrc).sort((a,b) => b[1] - a[1]);
+  const cat = Object.entries(cf.byCat).sort((a,b) => b[1] - a[1]);
+  const mxS = Math.max(1, ...src.map(x => x[1]));
+
+  return `${ppRow()}
+  <div class="alert ${cf.op>=0?'al-g':'al-r'}">${cf.op>=0
+    ? `✓ Денежный поток положительный: <strong>+${f0(cf.op)} сом</strong>. Компания зарабатывает наличность.`
+    : `⚠ Денежный поток отрицательный: <strong>${f0(cf.op)} сом</strong>. Тратим больше, чем получаем.`}</div>
+  <div class="kpi-row k3">
+    <div class="kpi ${cf.op>=0?'gn':'rd'}"><div class="kpi-l">Операционный CF</div>
+      <div class="kpi-v" style="color:var(--${cf.op>=0?'gn':'rd'}-m)">${cf.op>=0?'+':''}${f0(cf.op)} сом</div>
+      <div class="kpi-s">основная деятельность</div></div>
+    <div class="kpi bl"><div class="kpi-l">Остаток на начало</div>
+      <div class="kpi-v">${f0(cf.start)} сом</div><div class="kpi-s">${K.dmy(f)}</div></div>
+    <div class="kpi tl"><div class="kpi-l">Остаток на конец</div>
+      <div class="kpi-v" style="color:var(--tl-m)">${f0(cf.end)} сом</div><div class="kpi-s">${K.dmy(t)}</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-head"><div class="ct">Отчёт ДДС — ${pName()}</div></div>
+      <div style="padding:14px 16px">
+        <div class="bs-head" style="margin-top:0">Остаток на начало периода</div>
+        <div class="bs-row"><span>Все кассы и счета</span><span>${f0(cf.start)}</span></div>
+
+        <div class="bs-head">I. Поступления</div>
+        ${src.map(([n,v]) => `<div class="bs-row"><span>${n}</span>
+          <span style="color:var(--gn-m)">+${f0(v)}</span></div>`).join('')
+          || '<div class="bs-row"><span style="color:var(--hi)">Поступлений не было</span><span>0</span></div>'}
+        <div class="bs-total"><span>Итого поступило</span>
+          <span style="color:var(--gn-m)">+${f0(cf.opIn)}</span></div>
+
+        <div class="bs-head">II. Выплаты</div>
+        ${cat.map(([n,v]) => `<div class="bs-row"><span>${n}</span>
+          <span style="color:var(--rd-m)">−${f0(v)}</span></div>`).join('')
+          || '<div class="bs-row"><span style="color:var(--hi)">Выплат не было</span><span>0</span></div>'}
+        <div class="bs-total"><span>Итого выплачено</span>
+          <span style="color:var(--rd-m)">−${f0(cf.opOut)}</span></div>
+
+        <div class="bs-head">III. Результат</div>
+        <div class="bs-row"><span>Чистый денежный поток</span>
+          <span style="color:var(--${cf.op>=0?'gn':'rd'}-m)">${cf.op>=0?'+':''}${f0(cf.op)}</span></div>
+        <div class="bs-total"><span>Остаток на конец периода</span><span>${f0(cf.end)}</span></div>
+      </div>
+      <div style="padding:0 16px 14px;font-size:11px;color:var(--hi)">
+        Переводы между своими кассами в ДДС не входят — общая сумма денег от них не меняется.
+        Наличные у сотрудников попадают сюда только после сдачи в кассу.</div>
+    </div>
+
+    <div class="gcol">
+      <div class="card">
+        <div class="card-head"><div class="ct">Структура поступлений</div>
+          <div class="ca">${f0(cf.opIn)} сом</div></div>
+        <div style="padding:12px 16px">
+          ${src.length ? src.map(([n,v]) => `
+            <div class="mut-bar"><div class="mut-bar-fill" style="width:${v/mxS*100}%;background:var(--gn-m)"></div></div>
+            <div class="pr" style="border:none;padding:2px 0 8px"><span>${n}</span>
+              <span style="font-weight:700">${f0(v)} · ${Math.round(v/cf.opIn*100)}%</span></div>`).join('')
+            : '<div style="color:var(--hi);font-size:12px">Поступлений нет</div>'}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="ct">Структура выплат</div>
+          <div class="ca">${f0(cf.opOut)} сом</div></div>
+        <div style="padding:12px 16px">
+          ${cat.length ? cat.map(([n,v]) => `
+            <div class="mut-bar"><div class="mut-bar-fill" style="width:${v/Math.max(1,cf.opOut)*100}%;background:var(--rd-m)"></div></div>
+            <div class="pr" style="border:none;padding:2px 0 8px"><span>${n}</span>
+              <span style="font-weight:700">${f0(v)} · ${Math.round(v/cf.opOut*100)}%</span></div>`).join('')
+            : '<div style="color:var(--hi);font-size:12px">Выплат нет</div>'}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ═════════ 8. БАЛАНС ═════════ */
+function vBal(){
+  const b = K.balanceSheet(S);
+  const bal = K.balances(S);
+  const sheetOk = Math.round(b.assets) === Math.round(b.liab + b.capital);
+
+  return `<div class="al-b alert">ℹ Баланс на ${K.dmy(TODAY)}. Активы ${sheetOk?'= Пассивы ✓':'≠ Пассивы'}</div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-head"><div class="ct" style="color:var(--gn-m)">АКТИВЫ</div>
+        <div class="ca">${f0(b.assets)} сом</div></div>
+      <div style="padding:14px 16px">
+        <div class="bs-head" style="margin-top:0">Денежные средства</div>
+        ${K.ACCOUNTS.map(a => `<div class="bs-row"><span>${a.name}</span><span>${f0(bal[a.id])}</span></div>`).join('')}
+        <div class="bs-row"><span>Деньги у сотрудников</span><span>${f0(b.hands)}</span></div>
+        <div class="bs-total"><span>Итого денег</span>
+          <span style="color:var(--gn-m)">${f0(b.money + b.hands)}</span></div>
+
+        <div class="bs-head">Запасы</div>
+        <div class="bs-row"><span>Материалы на складах</span><span>${f0(b.stock)}</span></div>
+
+        <div class="bs-head">Дебиторская задолженность</div>
+        <div class="bs-row"><span>Клиенты по заказам</span><span>${f0(b.clients)}</span></div>
+        <div class="bs-row"><span>Оптовые покупатели</span><span>${f0(b.buyers)}</span></div>
+        <div class="bs-total"><span>Итого нам должны</span>
+          <span style="color:var(--gn-m)">${f0(b.clients + b.buyers)}</span></div>
+
+        <div class="pgrand"><span>Баланс актива</span>
+          <span style="color:var(--gn-m)">${f0(b.assets)} сом</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="ct" style="color:var(--rd-m)">ПАССИВЫ</div>
+        <div class="ca">${f0(b.liab + b.capital)} сом</div></div>
+      <div style="padding:14px 16px">
+        <div class="bs-head" style="margin-top:0">Обязательства</div>
+        ${S.suppliers.filter(s => s.debt > 0).map(s => `<div class="bs-row">
+          <span>${K.esc(s.name)}</span><span>${f0(s.debt)}</span></div>`).join('')
+          || '<div class="bs-row"><span style="color:var(--hi)">Долгов перед поставщиками нет</span><span>0</span></div>'}
+        <div class="bs-total"><span>Итого обязательств</span>
+          <span style="color:var(--rd-m)">${f0(b.liab)}</span></div>
+
+        <div class="bs-head">Собственный капитал</div>
+        <div class="bs-row"><span>Чистые активы</span><span>${f0(b.capital)}</span></div>
+        <div class="bs-total"><span>Итого капитал</span>
+          <span style="color:var(--bl)">${f0(b.capital)}</span></div>
+
+        <div class="pgrand"><span>Баланс пассива</span>
+          <span style="color:var(--bl)">${f0(b.liab + b.capital)} сом</span></div>
+      </div>
+      <div style="padding:0 16px 16px">
+        <div class="mgrid">
+          <div class="mtile"><div class="mtl">Живых денег в активах</div>
+            <div class="mtv" style="color:var(--${b.money/b.assets>=.3?'gn':'am'}-m)">${Math.round(b.money/b.assets*100)}%</div>
+            <div class="mts">${f0(b.money)} сом</div></div>
+          <div class="mtile"><div class="mtl">Заморожено в складе</div>
+            <div class="mtv">${Math.round(b.stock/b.assets*100)}%</div>
+            <div class="mts">${f0(b.stock)} сом</div></div>
+          <div class="mtile"><div class="mtl">Заморожено в долгах</div>
+            <div class="mtv">${Math.round((b.clients+b.buyers)/b.assets*100)}%</div>
+            <div class="mts">${f0(b.clients+b.buyers)} сом</div></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ═════════ МОДАЛКИ ═════════ */
+function openM(title){
+  document.getElementById('m-t').textContent = title;
+  document.getElementById('ovl').hidden = false;
+}
+function closeM(){ document.getElementById('ovl').hidden = true; }
+function bindClose(){ document.querySelectorAll('#ovl [data-close]').forEach(b => b.onclick = closeM); }
+const uid = () => 'f' + Date.now().toString(36) + Math.random().toString(36).slice(2,4);
+
+function mExpense(){
+  const bal = K.balances(S);
+  openM('Новый расход');
+  document.getElementById('m-b').innerHTML = `
+    <div class="fg"><div class="fi"><div class="fl">Статья</div>
+      <select class="sel" id="x-cat" style="width:100%">${K.EXP_CATS.map(c => `<option>${c}</option>`).join('')}</select></div>
+      <div class="fi"><div class="fl">Сумма, сом</div>
+        <input class="inp" id="x-sum" type="number" min="0" value="0"></div></div>
+    <div class="fg"><div class="fi"><div class="fl">Из какой кассы</div>
+      <select class="sel" id="x-acc" style="width:100%">${K.ACCOUNTS.map(a =>
+        `<option value="${a.id}">${a.name} — ${f0(bal[a.id])}</option>`).join('')}</select></div>
+      <div class="fi"><div class="fl">Дата</div>
+        <input class="inp" id="x-date" type="date" value="${TODAY}"></div></div>
+    <div class="fi"><div class="fl">Назначение</div>
+      <input class="inp" id="x-note" placeholder="За что платим"></div>
+    <div class="pr"><span>Останется в кассе</span><span id="x-rest" style="font-weight:700">—</span></div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button>
+    <button class="btn btn-green" id="x-ok">Провести расход</button>`;
+  const upd = () => {
+    const r = bal[document.getElementById('x-acc').value] - (+document.getElementById('x-sum').value || 0);
+    const el = document.getElementById('x-rest');
+    el.textContent = f0(r) + ' сом';
+    el.style.color = r < 0 ? 'var(--rd-m)' : 'var(--tx)';
+  };
+  document.getElementById('x-sum').oninput = upd;
+  document.getElementById('x-acc').onchange = upd; upd();
+  document.getElementById('x-ok').onclick = () => {
+    const sum = +document.getElementById('x-sum').value || 0;
+    const acc = document.getElementById('x-acc').value;
+    if(sum <= 0){ K.toast('Укажите сумму', 'bad'); return; }
+    if(bal[acc] - sum < 0){ K.toast(`В «${accName(acc)}» только ${f0(bal[acc])}`, 'bad'); return; }
+    S.expenses.push({ id:uid(), date:document.getElementById('x-date').value,
+      cat:document.getElementById('x-cat').value, acc, sum, who:me,
+      note:document.getElementById('x-note').value.trim() });
+    view = 'operations'; closeM(); save(); K.toast(`Расход ${K.money(sum)} проведён`);
+  };
+  bindClose();
+}
+
+function mIncome(){
+  openM('Приход не заводится вручную');
+  document.getElementById('m-b').innerHTML = `
+    <div class="al-b alert" style="margin:0">ℹ Поступления собираются автоматически: из оплат по заказам
+      в разделе «Заказы» и из оптовых продаж. Так цифры всегда сходятся с документами.</div>
+    <div class="pr"><span>Оплата от клиента</span><span>Заказы → карточка → Оплата</span></div>
+    <div class="pr"><span>Оплата от оптовика</span><span>Опт → Покупатели → Принять оплату</span></div>
+    <div class="pr"><span>Наличные от установщика</span><span>Заказы → Деньги у сотрудников</span></div>`;
+  document.getElementById('m-f').innerHTML = `<button class="btn" data-close>Понятно</button>`;
+  bindClose();
+}
+
+function mTransfer(){
+  const bal = K.balances(S);
+  openM('Перевод между кассами');
+  document.getElementById('m-b').innerHTML = `
+    <div class="al-b alert" style="margin:0 0 12px">ℹ Снять с расчётного счёта в кассу или сдать наличную
+      выручку на счёт. В ДДС перевод не попадает — общая сумма денег не меняется.</div>
+    <div class="fg"><div class="fi"><div class="fl">Откуда</div>
+      <select class="sel" id="t-from" style="width:100%">${K.ACCOUNTS.map(a =>
+        `<option value="${a.id}">${a.name} — ${f0(bal[a.id])}</option>`).join('')}</select></div>
+      <div class="fi"><div class="fl">Куда</div>
+        <select class="sel" id="t-to" style="width:100%">${K.ACCOUNTS.map((a,i) =>
+          `<option value="${a.id}" ${i===1?'selected':''}>${a.name}</option>`).join('')}</select></div></div>
+    <div class="fg"><div class="fi"><div class="fl">Сумма, сом</div>
+      <input class="inp" id="t-sum" type="number" min="0" value="0"></div>
+      <div class="fi"><div class="fl">Дата</div>
+        <input class="inp" id="t-date" type="date" value="${TODAY}"></div></div>
+    <div class="fi"><div class="fl">Комментарий</div>
+      <input class="inp" id="t-note" placeholder="Например: снятие на зарплату"></div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button>
+    <button class="btn btn-green" id="t-ok">Перевести</button>`;
+  document.getElementById('t-ok').onclick = () => {
+    const from = document.getElementById('t-from').value, to = document.getElementById('t-to').value;
+    const sum = +document.getElementById('t-sum').value || 0;
+    if(from === to){ K.toast('Откуда и куда — одна касса', 'bad'); return; }
+    if(sum <= 0){ K.toast('Укажите сумму', 'bad'); return; }
+    if(bal[from] - sum < 0){ K.toast(`В «${accName(from)}» только ${f0(bal[from])}`, 'bad'); return; }
+    S.transfers.push({ id:uid(), date:document.getElementById('t-date').value, from, to, sum, who:me,
+      note:document.getElementById('t-note').value.trim() });
+    view = 'accounts'; closeM(); save();
+    K.toast(`Переведено ${K.money(sum)}: ${accShort(from)} → ${accShort(to)}`);
+  };
+  bindClose();
+}
+
+function mPaySupplier(s){
+  const bal = K.balances(S);
+  openM(`Оплата поставщику — ${s.name}`);
+  document.getElementById('m-b').innerHTML = `
+    <div class="pr"><span>Наш долг</span><span style="color:var(--rd-m);font-weight:700">${f0(s.debt)} сом</span></div>
+    <div class="fg"><div class="fi"><div class="fl">Сколько платим</div>
+      <input class="inp" id="s-sum" type="number" min="0" value="${s.debt}"></div>
+      <div class="fi"><div class="fl">Из какой кассы</div>
+        <select class="sel" id="s-acc" style="width:100%">${K.ACCOUNTS.map(a =>
+          `<option value="${a.id}" ${a.id==='bank'?'selected':''}>${a.name} — ${f0(bal[a.id])}</option>`).join('')}</select></div></div>
+    <div class="fi"><div class="fl">Дата</div><input class="inp" id="s-date" type="date" value="${TODAY}"></div>
+    <div class="pr"><span>Останется долга</span><span id="s-rest" style="font-weight:700">0</span></div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button>
+    <button class="btn btn-green" id="s-ok">Оплатить</button>`;
+  const upd = () => {
+    const v = +document.getElementById('s-sum').value || 0;
+    document.getElementById('s-rest').textContent = f0(Math.max(0, s.debt - v)) + ' сом';
+  };
+  document.getElementById('s-sum').oninput = upd; upd();
+  document.getElementById('s-ok').onclick = () => {
+    const sum = +document.getElementById('s-sum').value || 0;
+    const acc = document.getElementById('s-acc').value;
+    if(sum <= 0 || sum > s.debt){ K.toast(`Сумма от 1 до ${f0(s.debt)}`, 'bad'); return; }
+    if(bal[acc] - sum < 0){ K.toast(`В «${accName(acc)}» только ${f0(bal[acc])}`, 'bad'); return; }
+    S.expenses.push({ id:uid(), date:document.getElementById('s-date').value, cat:'Закуп материалов',
+      acc, sum, who:me, party:s.id, note:`Оплата поставщику ${s.name}` });
+    s.debt -= sum;
+    closeM(); save(); K.toast(`Оплачено ${K.money(sum)} · остаток ${K.money(s.debt)}`);
+  };
+  bindClose();
+}
+
+/* премия или штраф сотруднику */
+function mAdjust(kind){
+  const isB = kind === 'bonus';
+  openM(isB ? 'Премия сотруднику' : 'Штраф сотруднику');
+  document.getElementById('m-b').innerHTML = `
+    <div class="al-${isB?'g':'r'} alert" style="margin:0 0 12px">${isB
+      ? 'Премия добавится к начислению за период и попадёт в ведомость.'
+      : 'Штраф вычтется из начисления. Сотрудник увидит его в своей строке ведомости.'}</div>
+    <div class="fg"><div class="fi"><div class="fl">Сотрудник</div>
+      <select class="sel" id="j-who" style="width:100%">${K.STAFF.map(s =>
+        `<option value="${s.id}">${K.esc(s.name)} — ${K.ROLES[s.role].label}</option>`).join('')}</select></div>
+      <div class="fi"><div class="fl">Сумма, сом</div>
+        <input class="inp" id="j-sum" type="number" min="0" value="0"></div></div>
+    <div class="fg"><div class="fi"><div class="fl">Дата</div>
+      <input class="inp" id="j-date" type="date" value="${TODAY}"></div>
+      <div class="fi"><div class="fl">За что</div>
+        <input class="inp" id="j-note" placeholder="${isB?'например: закрыл срочный заказ':'например: не сдал деньги вовремя'}"></div></div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button>
+    <button class="btn btn-green" id="j-ok">${isB?'Начислить премию':'Записать штраф'}</button>`;
+  document.getElementById('j-ok').onclick = () => {
+    const sum = +document.getElementById('j-sum').value || 0;
+    const note = document.getElementById('j-note').value.trim();
+    if(sum <= 0){ K.toast('Укажите сумму', 'bad'); return; }
+    if(!note){ K.toast('Напишите, за что — иначе потом не разобраться', 'bad'); return; }
+    const rec = { id:uid(), date:document.getElementById('j-date').value,
+      who:document.getElementById('j-who').value, sum, note };
+    if(isB) (S.bonuses = S.bonuses || []).push(rec); else (S.fines = S.fines || []).push(rec);
+    closeM(); save();
+    K.toast(`${isB?'Премия':'Штраф'} ${K.money(sum)} · ${staff(rec.who)}`);
+  };
+  bindClose();
+}
+
+function mAccrue(){
+  const [f,t] = range();
+  const rows = K.payroll(S, f, t);
+  const total = rows.reduce((a,r) => a + r.total, 0);
+  const paid = rows.reduce((a,r) => a + r.paid, 0);
+  const left = Math.round(total - paid);
+  const bal = K.balances(S);
+  openM(`Выплата зарплаты — ${pName()}`);
+  document.getElementById('m-b').innerHTML = `
+    <div class="al-b alert" style="margin:0 0 12px">ℹ Начислено ${f0(total)}, уже выплачено ${f0(paid)}.
+      К выплате ${f0(left)} сом на ${rows.length} человек.</div>
+    <div class="fi"><div class="fl">Из какой кассы</div>
+      <select class="sel" id="a-acc" style="width:100%">${K.ACCOUNTS.map(a =>
+        `<option value="${a.id}" ${a.id==='cash'?'selected':''}>${a.name} — ${f0(bal[a.id])}</option>`).join('')}</select></div>
+    <div class="tw" style="max-height:260px;overflow-y:auto"><table>
+      <thead><tr><th>Сотрудник</th><th class="tr" style="width:120px">Сумма</th></tr></thead>
+      <tbody>${rows.filter(r => r.left > 0).map(r => `<tr><td>${K.esc(r.name)}
+        <div style="font-size:11px;color:var(--hi)">${r.roleName}</div></td>
+        <td class="tr" style="font-weight:700">${f0(r.left)}</td></tr>`).join('')}</tbody>
+    </table></div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button>
+    <button class="btn btn-green" id="a-ok">Выплатить ${f0(left)} сом</button>`;
+  document.getElementById('a-ok').onclick = () => {
+    const acc = document.getElementById('a-acc').value;
+    if(bal[acc] - left < 0){ K.toast(`В «${accName(acc)}» только ${f0(bal[acc])}`, 'bad'); return; }
+    S.expenses.push({ id:uid(), date:TODAY, cat:'Зарплата', acc, sum:left, who:me,
+      note:`Зарплата за ${pName()} · ${rows.length} человек` });
+    /* пишем каждому персонально, чтобы в ведомости был остаток */
+    rows.forEach(r => { if(r.left > 0)
+      (S.payouts = S.payouts || []).push({ id:uid(), date:TODAY, who:r.id,
+        sum:Math.round(r.left), note:`Зарплата за ${pName()}` }); });
+    view = 'salary'; closeM(); save();
+    K.toast(`Выплачено ${K.money(left)} на ${rows.filter(r => r.left > 0).length} человек`);
+  };
+  bindClose();
+}
+
+/* ═════════ ОБЩЕЕ ═════════ */
+function save(){ K.commit(S); render(); }
+document.getElementById('ovl').addEventListener('mousedown', e => { if(e.target.id === 'ovl') closeM(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeM(); });
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-v2]');
+  if(t){ view = t.dataset.v2; render(); }
+});
+</script>
+
+</body>
+</html>

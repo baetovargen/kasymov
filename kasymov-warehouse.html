@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Склад — Kasymov ERP</title>
+<link rel="stylesheet" href="kasymov-ui.css">
+<style>
+.modal.xwide{max-width:940px}
+.toast.bad{background:var(--rd-d)}
+/* карточки-счётчики кликабельны — сбрасываем стили кнопки */
+button.stat{text-align:left;font-family:inherit;cursor:pointer;width:100%;transition:border-color .12s,box-shadow .12s}
+button.stat:hover{border-color:var(--line);box-shadow:0 3px 10px rgba(0,0,0,.06)}
+
+/* панель вкладок документов */
+.subtabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--bd);margin-bottom:14px;padding-bottom:0}
+.subtab{padding:8px 13px;font-size:12.5px;font-weight:600;color:var(--t2);white-space:nowrap;
+        border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:7px 7px 0 0}
+.subtab:hover{background:#eef2f9;color:var(--t1)}
+.subtab.on{color:var(--bl-d);border-bottom-color:var(--bl);background:var(--bl-l)}
+.subtab .n{font-size:10px;font-weight:800;color:var(--t3);margin-left:5px}
+.subtab.on .n{color:var(--bl)}
+
+.cat-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.cat{border:1px solid var(--bd);background:#fff;border-radius:20px;padding:4px 12px;
+     font-size:11.5px;font-weight:600;color:var(--t2);cursor:pointer}
+.cat:hover{border-color:var(--line)}
+.cat.on{background:var(--t1);border-color:var(--t1);color:#fff}
+
+/* плашка товара вместо битой картинки */
+.sw{width:26px;height:26px;border-radius:6px;border:1px solid rgba(0,0,0,.14);flex-shrink:0}
+.gcell{display:flex;align-items:center;gap:9px;min-width:0}
+.gname{font-weight:600;line-height:1.25}
+.gsku{font-size:10.5px;color:var(--t3);font-variant-numeric:tabular-nums}
+
+tr.lnk{cursor:pointer}
+tr.lnk:hover{background:#f7f9fd}
+.num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.q0{color:var(--t3);font-weight:400}
+.zero{color:var(--rd-d)}
+.locq{font-variant-numeric:tabular-nums}
+
+/* строки документа */
+.rows{border:1px solid var(--bd);border-radius:10px;overflow:hidden;margin-bottom:10px}
+.rows .tbl td{padding:5px 8px}
+.ri{width:100%;padding:5px 8px;border:1px solid transparent;border-radius:6px;background:transparent;
+    font-family:inherit;font-size:12.5px;color:inherit}
+.ri:hover{border-color:var(--bd)}
+.ri:focus{outline:none;border-color:var(--bl);background:#fff;box-shadow:0 0 0 3px var(--bl-l)}
+.ri.r{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.ri.err{border-color:var(--rd);box-shadow:0 0 0 3px var(--rd-l)}
+.del{width:24px;height:24px;border-radius:6px;border:none;background:none;color:var(--t3);cursor:pointer;font-size:14px}
+.del:hover{background:var(--rd-l);color:var(--rd-d)}
+.tot{margin-left:auto;text-align:right}
+.tot-l{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em}
+.tot-v{font-size:17px;font-weight:800}
+.diff-p{color:var(--gn-d);font-weight:700}
+.diff-m{color:var(--rd-d);font-weight:700}
+.arrow{color:var(--t3);margin:0 6px}
+
+/* карточка товара */
+.kv{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #f5f7fc;font-size:12.5px}
+.kv:last-child{border-bottom:none}
+.sec{font-size:10px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 6px}
+.mv{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f5f7fc;font-size:12.5px}
+.mv:last-child{border-bottom:none}
+.mv-d{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex-shrink:0}
+.mv-q{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:700}
+
+/* полоса заполнения к минимуму */
+.gauge{height:4px;border-radius:3px;background:#e9edf5;overflow:hidden;margin-top:4px;min-width:54px}
+.gauge i{display:block;height:100%;border-radius:3px}
+
+.need-row{display:flex;align-items:center;gap:10px;padding:7px 15px;font-size:12.5px}
+.need-row+.need-row{border-top:1px solid #f5f7fc}
+.need-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:1000px){ .hide-m{display:none} }
+@media (max-width:640px){ .hide-s{display:none} }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="phead">
+    <div>
+      <div class="ptitle">Склад</div>
+      <div class="psub" id="sub">—</div>
+    </div>
+    <div class="pright">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input class="inp" id="q" placeholder="Товар или артикул" style="width:190px">
+      </div>
+      <button class="btn green" id="btn-primary">+ Оприходование</button>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+  <div id="dates"></div>
+  <div class="subtabs" id="subtabs"></div>
+  <div id="view"></div>
+</div>
+
+<div class="ovl" id="ovl" hidden>
+  <div class="modal" id="mdl">
+    <div class="modal-h"><div class="modal-t" id="m-t"></div><button class="modal-x" data-close aria-label="Закрыть">✕</button></div>
+    <div class="modal-b" id="m-b"></div>
+    <div class="modal-f" id="m-f"></div>
+  </div>
+</div>
+
+<script>
+/* сообщаем оболочке о сбое, чтобы он не превратился в пустой экран */
+window.__errHook = true;
+window.addEventListener('error', e => {
+  try{ window.parent.postMessage({ ns:'kasymov', type:'moduleError',
+       msg:(e.message||'') + ' · ' + (e.lineno||'') }, '*'); }catch(_){}
+  const b = document.body;
+  if(b) b.insertAdjacentHTML('afterbegin',
+    '<div style="background:#7d211c;color:#fff;padding:12px 16px;font:13px/1.5 -apple-system,sans-serif">'
+    + '<b>Сбой в разделе.</b> ' + (e.message||'') + '</div>');
+});
+</script>
+<script src="kasymov-data.js"></script>
+<script>
+const K = window.KASYMOV;
+let S = null, tab = 'stock', cat = 'Все', locFilter = 'all', flt = 'all', D = null;
+let P = { preset:'all', from:'', to:'' };
+
+/* ── конфигурация типов документов ────────────────────
+   dir: +1 приход, -1 расход, 'move' перемещение, 'set' установка факта */
+const DOC = {
+  po:       { name:'Заказ поставщиком',  chip:'am', party:'sup',   price:true,  cur:true, loc:['to'],           dir:0,     eta:true },
+  receipt:  { name:'Оприходование',      chip:'gn', party:'sup',   price:true,  cur:true, loc:['to'],           dir:1 },
+  transfer: { name:'Перемещение',        chip:'bl',                             loc:['from','to'],             dir:'move' },
+  invent:   { name:'Инвентаризация',     chip:'vl',                             loc:['at'],                    dir:'set' },
+  writeoff: { name:'Списание',           chip:'rd',                             loc:['from'], reason:true,     dir:-1 },
+  ret:      { name:'Возврат поставщику', chip:'rd', party:'sup',   price:true,  loc:['from'],                  dir:-1 },
+  /* опт вынесен в отдельный раздел, здесь остаётся только для подписи в истории товара */
+  opt:      { name:'Продажа оптом',      chip:'am', party:'buyer', price:'opt', loc:['from'], pay:true,        dir:-1 },
+  optret:   { name:'Возврат от покупателя', chip:'gn', party:'buyer', price:'opt', loc:['to'],                 dir:1 },
+};
+
+const TABS = [
+  { id:'stock',    name:'Остатки' },
+  { id:'po',       name:'Заказы поставщиком' },
+  { id:'receipt',  name:'Оприходования' },
+  { id:'transfer', name:'Перемещение' },
+  { id:'invent',   name:'Инвентаризация' },
+  { id:'writeoff', name:'Списание' },
+  { id:'ret',      name:'Возврат поставщику' },
+];
+
+const REASONS = ['В производство по заказу', 'Брак при раскрое', 'Недостача', 'Образец клиенту', 'Порча при хранении'];
+const PAYS = ['Наличные', 'Перечисление', 'В долг'];
+
+K.connect(state => { S = state; render(); },
+          name  => { if(name === 'primary') openDoc('receipt'); });
+
+/* ═══════════ РАСЧЁТЫ ═══════════ */
+const good   = id   => S.goods.find(g => g.id === id);
+const byName = name => S.goods.find(g => g.name === name);
+const supName = id => (S.suppliers.find(s => s.id === id) || {}).name || '—';
+const buyName = id => (S.buyers.find(b => b.id === id) || {}).name || '—';
+const locName = id => (K.LOC.find(l => l.id === id) || {}).name || '—';
+const locShort= id => (K.LOC.find(l => l.id === id) || {}).short || '—';
+
+let _res = null, _ord = null;
+const RES = () => (_res || (_res = K.reserved(S)));
+const ORD = () => (_ord || (_ord = K.onOrder(S)));
+function dropCache(){ _res = null; _ord = null; }
+
+const totalOf = g => locFilter === 'all' ? K.total(g) : (g.q[locFilter] || 0);
+const resOf   = g => RES()[g.name] || 0;
+const ordOf   = g => ORD()[g.id] || 0;
+const availOf = g => +(K.total(g) - resOf(g)).toFixed(2);
+
+function stateOf(g){
+  const t = K.total(g);
+  if(t <= 0) return 'zero';
+  if(availOf(g) < 0) return 'short';        // остаток есть, но заказам не хватает
+  if(t < g.min) return 'low';
+  return 'ok';
+}
+const CHIP = { zero:['rd','нет'], short:['rd','не хватает'], low:['am','ниже мин.'], ok:['gn','в наличии'] };
+
+/* дефицит под активные заказы */
+function deficit(){
+  const need = RES(), out = [];
+  Object.keys(need).forEach(name => {
+    const g = byName(name);
+    const have = g ? K.total(g) : 0;
+    const short = +(need[name] - have).toFixed(2);
+    if(short > 0) out.push({ name, need:need[name], have, short, id:g?g.id:null,
+                             unit:g?g.unit:'шт', missing:!g });
+  });
+  return out.sort((a,b) => b.short - a.short);
+}
+
+/* расход позиции за последние 30 дней — по проведённым списаниям и опту */
+function burn(gid){
+  const from = new Date('2026-07-04');
+  let sum = 0;
+  S.docs.forEach(d => {
+    if(d.status !== 'posted') return;
+    if(d.type !== 'writeoff' && d.type !== 'opt') return;
+    if(new Date(d.date) < from) return;
+    d.lines.forEach(l => { if(l.good === gid) sum += l.qty; });
+  });
+  return sum;
+}
+
+const docsOf = type => S.docs.filter(d => d.type === type)
+  .filter(d => { const [f,t] = K.rangeOf(P.preset, P.from, P.to);
+                 const x = (d.date||'').slice(0,10); return x >= f && x <= t; })
+  .sort((a,b) => (b.date + b.num).localeCompare(a.date + a.num));
+
+function docSum(d){
+  return d.lines.reduce((a,l) => {
+    const price = l.price != null ? l.price : (good(l.good) || {}).cost || 0;
+    return a + l.qty * price;
+  }, 0);
+}
+const inKGS = (d, v) => d.cur === 'USD' ? v * (d.rate || S.finance.rateUSD) : v;
+
+/* ═══════════ РЕНДЕР ═══════════ */
+function render(){
+  if(!S) return;
+  dropCache();
+
+  const zero = S.goods.filter(g => K.total(g) <= 0).length;
+  const low  = S.goods.filter(g => { const t = K.total(g); return t > 0 && t < g.min; }).length;
+  const sum  = S.goods.reduce((a,g) => a + K.total(g) * g.cost, 0);
+  const def  = deficit().length;
+  const waitPO = docsOf('po').filter(d => d.status === 'wait').length;
+
+  document.getElementById('sub').textContent =
+    `${S.goods.length} позиций · ${K.money(sum)} по себестоимости · ${K.LOC.length} склада`;
+
+  document.getElementById('stats').innerHTML = `
+    <button class="stat bl" data-f="all"><div class="stat-l">Всего позиций</div>
+      <div class="stat-v">${S.goods.length}</div>
+      <div class="stat-s">${waitPO ? waitPO + ' заказ поставщику в пути' : 'заказов в пути нет'}</div></button>
+    <div class="stat gn"><div class="stat-l">Стоимость запаса</div>
+      <div class="stat-v">${K.fmt(sum)}<span style="font-size:12px"> сом</span></div>
+      <div class="stat-s">себестоимость, все склады</div></div>
+    <button class="stat rd" data-f="zero"><div class="stat-l">Нулевой остаток</div>
+      <div class="stat-v">${zero}</div><div class="stat-s">нельзя запустить в работу</div></button>
+    <button class="stat am" data-f="low"><div class="stat-l">Ниже точки заказа</div>
+      <div class="stat-v">${low}</div><div class="stat-s">пора закупать</div></button>
+    <button class="stat vl" data-f="short"><div class="stat-l">Дефицит под заказы</div>
+      <div class="stat-v">${def}</div>
+      <div class="stat-s">${def ? 'не хватает на принятые заказы' : 'все заказы обеспечены'}</div></button>`;
+
+  document.querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => {
+    flt = (flt === b.dataset.f ? 'all' : b.dataset.f); tab = 'stock'; render();
+  }));
+
+  const counts = { stock:S.goods.length };
+  TABS.forEach(t => { if(DOC[t.id]) counts[t.id] = docsOf(t.id).length; });
+  document.getElementById('subtabs').innerHTML = TABS.map(t =>
+    `<button class="subtab ${tab===t.id?'on':''}" data-t="${t.id}">${t.name}<span class="n">${counts[t.id]}</span></button>`).join('');
+  document.querySelectorAll('.subtab').forEach(b =>
+    b.addEventListener('click', () => { tab = b.dataset.t; render(); }));
+
+  const pb = document.getElementById('btn-primary');
+  if(tab === 'stock'){ pb.textContent = '+ Оприходование'; pb.onclick = () => openDoc('receipt'); }
+  else if(tab === 'invent'){ pb.textContent = '+ Инвентаризация'; pb.onclick = openInvent; }
+  else { pb.textContent = '+ ' + DOC[tab].name; pb.onclick = () => openDoc(tab); }
+
+  const dz = document.getElementById('dates');
+  dz.style.display = tab === 'stock' ? 'none' : '';
+  if(tab !== 'stock'){
+    dz.innerHTML = K.dateBar(P.preset, P.from, P.to);
+    K.bindDateBar(v => { P = v; render(); }, P);
+  }
+  if(tab === 'stock') renderStock();
+  else renderJournal(tab);
+}
+
+/* ── ОСТАТКИ ── */
+function filteredGoods(){
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  return S.goods.filter(g => {
+    if(cat !== 'Все' && g.cat !== cat) return false;
+    if(flt !== 'all' && stateOf(g) !== flt) return false;
+    if(q && !(g.name.toLowerCase().includes(q) || g.sku.toLowerCase().includes(q))) return false;
+    return true;
+  });
+}
+
+function renderStock(){
+  const list = filteredGoods();
+  const sum = list.reduce((a,g) => a + K.total(g) * g.cost, 0);
+  const cats = ['Все', ...K.CATS.filter(c => S.goods.some(g => g.cat === c))];
+  const def = deficit();
+
+  const rows = list.map(g => {
+    const t = K.total(g), st = stateOf(g), res = resOf(g), av = availOf(g), oo = ordOf(g);
+    const [cls, txt] = CHIP[st];
+    const pct = g.min ? Math.min(100, t / g.min * 100) : 100;
+    const col = st === 'zero' || st === 'short' ? 'var(--rd)' : st === 'low' ? 'var(--am)' : 'var(--gn)';
+    return `<tr class="lnk" tabindex="0" role="button" data-g="${g.id}">
+      <td><div class="gcell">
+        <span class="sw" style="background:${g.tone}"></span>
+        <div style="min-width:0"><div class="gname">${K.esc(g.name)}</div>
+          <div class="gsku">${g.sku} · ${g.cat}</div></div>
+      </div></td>
+      ${K.LOC.map(l => `<td style="text-align:right" class="${l.id==='ceh'?'hide-s':''}">
+        <span class="locq ${g.q[l.id]>0?'':'q0'}">${K.qfmt(g.q[l.id]||0)}</span></td>`).join('')}
+      <td style="text-align:right"><span class="num ${t<=0?'zero':''}">${K.qfmt(t)}</span>
+        <div class="gauge"><i style="width:${pct}%;background:${col}"></i></div></td>
+      <td style="text-align:right" class="hide-m"><span class="num ${res?'':'q0'}">${res?K.qfmt(res):'—'}</span></td>
+      <td style="text-align:right"><span class="num ${av<0?'zero':''}">${K.qfmt(av)}</span></td>
+      <td style="text-align:right" class="hide-m"><span class="num ${oo?'':'q0'}">${oo?K.qfmt(oo):'—'}</span></td>
+      <td style="text-align:right" class="hide-m"><span class="num q0">${K.qfmt(g.min)}</span></td>
+      <td style="text-align:right" class="hide-s"><span class="num q0">${K.fmt(g.cost)}</span></td>
+      <td style="text-align:right"><span class="num">${K.fmt(t * g.cost)}</span></td>
+      <td style="text-align:center"><span class="chip ${cls}">${txt}</span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('view').innerHTML = `
+    ${def.length ? `<div class="card" style="margin-bottom:12px">
+      <div class="card-h"><div class="card-t">Не хватает под принятые заказы</div>
+        <span class="chip rd">${def.length}</span>
+        <span style="margin-left:auto"></span>
+        <button class="btn green sm" id="mk-po">Сформировать заказ поставщику</button></div>
+      ${def.slice(0,6).map(d => `<div class="need-row">
+        <div class="need-n">${K.esc(d.name)}${d.missing?' <span class="chip rd">нет в номенклатуре</span>':''}</div>
+        <span class="dim">нужно ${K.qfmt(d.need)} ${d.unit}</span>
+        <span class="dim">есть ${K.qfmt(d.have)}</span>
+        <span class="num" style="color:var(--rd-d)">−${K.qfmt(d.short)}</span>
+      </div>`).join('')}
+    </div>` : ''}
+
+    <div class="cat-tabs">
+      ${cats.map(c => `<button class="cat ${cat===c?'on':''}" data-c="${K.esc(c)}">${K.esc(c)}</button>`).join('')}
+      <span style="flex:1"></span>
+      <button class="cat" id="xls-stock">↓ Excel</button>
+      ${flt !== 'all' ? `<button class="cat on" id="clr">Фильтр: ${({zero:'нулевые',low:'ниже минимума',short:'дефицит'})[flt]} ✕</button>` : ''}
+    </div>
+
+    <div class="card"><div class="tbl-wrap"><table class="tbl" id="t-stock">
+      <thead><tr>
+        <th>Товар</th>
+        ${K.LOC.map(l => `<th style="text-align:right" class="${l.id==='ceh'?'hide-s':''}">${l.short}</th>`).join('')}
+        <th style="text-align:right;width:96px">Всего</th>
+        <th style="text-align:right;width:80px" class="hide-m">Резерв</th>
+        <th style="text-align:right;width:88px">Доступно</th>
+        <th style="text-align:right;width:82px" class="hide-m">Заказано</th>
+        <th style="text-align:right;width:74px" class="hide-m">Мин.</th>
+        <th style="text-align:right;width:82px" class="hide-s">Себест.</th>
+        <th style="text-align:right;width:104px">Сумма</th>
+        <th style="text-align:center;width:112px">Статус</th>
+      </tr></thead>
+      <tbody>${rows || `<tr><td colspan="12"><div class="empty">
+        <div class="empty-t">Ничего не найдено</div>
+        <div class="empty-s">Измените поиск, категорию или снимите фильтр</div></div></td></tr>`}</tbody>
+      ${list.length ? `<tfoot><tr><td class="strong">Итого: ${list.length} поз.</td>
+        ${K.LOC.map(l => `<td class="${l.id==='ceh'?'hide-s':''}"></td>`).join('')}
+        <td></td><td class="hide-m"></td><td></td><td class="hide-m"></td><td class="hide-m"></td>
+        <td class="hide-s"></td>
+        <td style="text-align:right" class="num">${K.fmt(sum)}</td><td></td></tr></tfoot>` : ''}
+    </table></div></div>`;
+
+  document.querySelectorAll('.cat[data-c]').forEach(b =>
+    b.addEventListener('click', () => { cat = b.dataset.c; render(); }));
+  const clr = document.getElementById('clr');
+  if(clr) clr.addEventListener('click', () => { flt = 'all'; render(); });
+  const mk = document.getElementById('mk-po');
+  if(mk) mk.addEventListener('click', autoPO);
+  const xs = document.getElementById('xls-stock');
+  if(xs) xs.onclick = () => K.tableToExcel(document.getElementById('t-stock'),
+    'Остатки склада ' + K.dmy(K.todayISO()));
+  bindRows('[data-g]', el => openCard(el.dataset.g));
+}
+
+/* ── ЖУРНАЛ ДОКУМЕНТОВ ── */
+function renderJournal(type){
+  const cfg = DOC[type], list = docsOf(type);
+
+  const head = {
+    po:       ['Дата','№','Поставщик','Ожидается','Позиций','Сумма','Статус'],
+    receipt:  ['Дата','№','Поставщик','Склад','Позиций','Сумма','Статус'],
+    transfer: ['Дата','№','Откуда → Куда','','Позиций','Себест.','Статус'],
+    invent:   ['Дата','№','Склад','Расхождений','Позиций','Итог','Статус'],
+    writeoff: ['Дата','№','Склад','Причина','Позиций','Себест.','Статус'],
+    ret:      ['Дата','№','Поставщик','Склад','Позиций','Сумма','Статус'],
+    opt:      ['Дата','№','Покупатель','Оплата','Позиций','Выручка','Прибыль'],
+  }[type];
+
+  const rows = list.map(d => {
+    const sum = docSum(d);
+    let c3 = '', c4 = '', last = '';
+    if(type === 'po'){ c3 = K.esc(supName(d.party)); c4 = d.eta ? K.dmy(d.eta) : '—'; }
+    if(type === 'receipt' || type === 'ret'){ c3 = K.esc(supName(d.party)); c4 = locShort(d.to || d.from); }
+    if(type === 'transfer'){ c3 = `${locShort(d.from)}<span class="arrow">→</span>${locShort(d.to)}`; }
+    if(type === 'invent'){ c3 = locShort(d.at); c4 = `<span class="num">${d.lines.length}</span>`; }
+    if(type === 'writeoff'){ c3 = locShort(d.from); c4 = K.esc(d.reason || '—'); }
+    if(type === 'opt'){ c3 = K.esc(buyName(d.party)); c4 = K.esc(d.pay || '—'); }
+
+    if(type === 'opt'){
+      const cost = d.lines.reduce((a,l) => a + l.qty * ((good(l.good)||{}).cost || 0), 0);
+      last = `<span class="num" style="color:var(--gn-d)">+${K.fmt(sum - cost)}</span>`;
+    } else if(type === 'invent'){
+      const delta = d.lines.reduce((a,l) => a + (l.fact - l.was) * ((good(l.good)||{}).cost || 0), 0);
+      last = `<span class="num" style="color:var(--${delta<0?'rd':'gn'}-d)">${delta>0?'+':''}${K.fmt(delta)}</span>`;
+    } else {
+      last = `<span class="chip ${d.status==='wait'?'am':'gn'}">${d.status==='wait'?'ожидается':'проведён'}</span>`;
+    }
+
+    const sumTxt = d.cur === 'USD'
+      ? `<span class="num">$${K.fmt(sum)}</span><div class="gsku">${K.fmt(inKGS(d,sum))} сом</div>`
+      : `<span class="num">${K.fmt(sum)}</span>`;
+
+    return `<tr class="lnk" tabindex="0" role="button" data-d="${d.id}">
+      <td class="dim">${K.dmy(d.date)}</td>
+      <td class="strong">№${d.num}</td>
+      <td>${c3}</td>
+      <td class="dim hide-s">${c4}</td>
+      <td style="text-align:center" class="hide-m">${d.lines.length}</td>
+      <td style="text-align:right">${sumTxt}</td>
+      <td style="text-align:center">${last}</td>
+    </tr>`;
+  }).join('');
+
+  const hint = {
+    po:       'Заказ не меняет остатки. Когда товар приедет — откройте заказ и нажмите «Оприходовать»: строки перенесутся в приход.',
+    receipt:  'Приход увеличивает остаток выбранного склада и пересчитывает себестоимость по средневзвешенной.',
+    transfer: 'Перемещение между складами и цехом. Общий остаток не меняется — меняется место хранения.',
+    invent:   'Пересчёт факта. Проводятся только строки с расхождением, излишки и недостачи попадают в историю товара.',
+    writeoff: 'Списание в производство, брак и недостачи. Уменьшает остаток выбранного склада.',
+    ret:      'Возврат брака поставщику. Уменьшает остаток и уменьшает наш долг перед поставщиком.',
+    opt:      'Третий канал: продажа материалов как товара. Считает выручку, себестоимость и прибыль по каждой продаже.',
+  }[type];
+
+  document.getElementById('view').innerHTML = `
+    <div class="bar" style="margin-bottom:12px">
+      <span class="dim" style="font-size:12px;max-width:760px">${hint}</span>
+      <span style="margin-left:auto"></span>
+      ${type === 'po' ? '<button class="btn sm" id="auto-po">Собрать по дефициту</button>' : ''}
+      ${type === 'ret' ? '<button class="btn sm" id="go-opt">Возврат от оптового покупателя →</button>' : ''}
+      <button class="btn green sm" id="new-doc">+ ${cfg.name}</button>
+    </div>
+    <div class="card"><div class="tbl-wrap"><table class="tbl">
+      <thead><tr>
+        <th style="width:104px">${head[0]}</th><th style="width:64px">${head[1]}</th>
+        <th>${head[2]}</th><th class="hide-s" style="width:190px">${head[3]}</th>
+        <th style="text-align:center;width:80px" class="hide-m">${head[4]}</th>
+        <th style="text-align:right;width:130px">${head[5]}</th>
+        <th style="text-align:center;width:120px">${head[6]}</th>
+      </tr></thead>
+      <tbody>${rows || `<tr><td colspan="7"><div class="empty">
+        <div class="empty-t">Документов пока нет</div>
+        <div class="empty-s">Нажмите «+ ${cfg.name}», чтобы создать первый</div></div></td></tr>`}</tbody>
+    </table></div></div>`;
+
+  document.getElementById('new-doc').addEventListener('click', () =>
+    type === 'invent' ? openInvent() : openDoc(type));
+  const ap = document.getElementById('auto-po');
+  if(ap) ap.addEventListener('click', autoPO);
+  const go = document.getElementById('go-opt');
+  if(go) go.addEventListener('click', () => {
+    if(window.parent !== window) window.parent.postMessage({ ns:'kasymov', type:'goto', page:'wholesale' }, '*');
+  });
+  bindRows('[data-d]', el => openDocView(el.dataset.d));
+}
+
+function bindRows(sel, fn){
+  document.querySelectorAll('tr' + sel).forEach(tr => {
+    tr.addEventListener('click', () => fn(tr));
+    tr.addEventListener('keydown', e => {
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); fn(tr); }
+    });
+  });
+}
+
+/* ═══════════ МОДАЛЬНЫЕ ОКНА ═══════════ */
+function showModal(title, size){
+  document.getElementById('m-t').textContent = title;
+  const m = document.getElementById('mdl');
+  m.className = 'modal' + (size ? ' ' + size : '');
+  document.getElementById('ovl').hidden = false;
+}
+function closeModal(){ document.getElementById('ovl').hidden = true; D = null; }
+function bindClose(){ document.querySelectorAll('#ovl [data-close]').forEach(b => b.onclick = closeModal); }
+
+/* ── карточка товара ── */
+function openCard(id){
+  const g = good(id);
+  if(!g) return;
+  const t = K.total(g), res = resOf(g), av = availOf(g), oo = ordOf(g);
+  const b = burn(id);
+  const cover = b > 0 ? Math.floor(av / (b / 30)) : null;
+
+  const hist = [];
+  S.docs.filter(d => d.status === 'posted').forEach(d => d.lines.forEach(l => {
+    if(l.good !== id) return;
+    let delta = 0, place = '';
+    if(d.type === 'receipt'){ delta = l.qty; place = locName(d.to); }
+    else if(d.type === 'writeoff' || d.type === 'ret' || d.type === 'opt'){ delta = -l.qty; place = locName(d.from); }
+    else if(d.type === 'optret'){ delta = l.qty; place = locName(d.to); }
+    else if(d.type === 'transfer'){ delta = 0; place = `${locShort(d.from)} → ${locShort(d.to)}`; }
+    else if(d.type === 'invent'){ delta = l.fact - l.was; place = locName(d.at); }
+    hist.push({ d, delta, place, qty:l.qty });
+  }));
+  hist.sort((a,b2) => b2.d.date.localeCompare(a.d.date));
+
+  const users = S.orders.filter(o => o.status !== 'installed' &&
+                  K.materials(o).some(m => m.name === g.name));
+
+  showModal(g.name, 'wide');
+  document.getElementById('m-b').innerHTML = `
+    <div class="grid3" style="margin-bottom:8px">
+      <div class="stat ${t<=0?'rd':'bl'}"><div class="stat-l">Всего на складах</div>
+        <div class="stat-v ${t<=0?'zero':''}">${K.qfmt(t)}</div><div class="stat-s">${g.unit}</div></div>
+      <div class="stat am"><div class="stat-l">В резерве</div>
+        <div class="stat-v">${K.qfmt(res)}</div><div class="stat-s">под ${users.length} заказ.</div></div>
+      <div class="stat ${av<0?'rd':'gn'}"><div class="stat-l">Доступно</div>
+        <div class="stat-v ${av<0?'zero':''}">${K.qfmt(av)}</div>
+        <div class="stat-s">${cover !== null ? 'хватит на ~' + cover + ' дн.' : 'свободно'}</div></div>
+    </div>
+
+    <div class="sec">Где лежит</div>
+    ${K.LOC.map(l => `<div class="kv"><span>${l.name}</span>
+      <b class="${(g.q[l.id]||0)<=0?'zero':''}">${K.qfmt(g.q[l.id]||0)} ${g.unit}</b></div>`).join('')}
+    ${oo ? `<div class="kv"><span>Заказано у поставщика</span><b>${K.qfmt(oo)} ${g.unit}</b></div>` : ''}
+
+    <div class="sec">Цены</div>
+    <div class="kv"><span>Себестоимость (средневзвешенная)</span><b>${K.money(g.cost)}</b></div>
+    <div class="kv"><span>Оптовая цена</span><b>${K.money(g.opt)}</b></div>
+    <div class="kv"><span>Наценка на опте</span><b style="color:var(--gn-d)">${Math.round((g.opt/g.cost-1)*100)}% · ${K.money(g.opt-g.cost)} с единицы</b></div>
+    <div class="kv"><span>Стоимость запаса</span><b>${K.money(t * g.cost)}</b></div>
+    <div class="kv"><span>Точка заказа</span><b>${K.qfmt(g.min)} ${g.unit}</b></div>
+    <div class="kv"><span>Расход за 30 дней</span><b>${b ? K.qfmt(b) + ' ' + g.unit : 'не было'}</b></div>
+
+    ${users.length ? `<div class="sec">Зарезервировано под заказы</div>
+      ${users.map(o => {
+        const m = K.materials(o).find(x => x.name === g.name);
+        const ch = K.CHANNEL[o.channel];
+        return `<div class="kv"><span>№${o.id} · ${K.esc(o.client)} <span class="chip ${ch.cls}">${ch.label}</span></span>
+                <b>${K.qfmt(m.qty)} ${m.unit}</b></div>`;
+      }).join('')}` : ''}
+
+    <div class="sec">История движений</div>
+    ${hist.length ? hist.map(h => {
+      const c = DOC[h.d.type];
+      const pos = h.delta > 0, neu = h.delta === 0;
+      const col = neu ? 'bl' : pos ? 'gn' : 'rd';
+      return `<div class="mv">
+        <div class="mv-d" style="background:var(--${col}-l);color:var(--${col}-d)">${neu?'⇄':pos?'↓':'↑'}</div>
+        <div style="min-width:0"><div class="strong" style="font-size:12.5px">${c.name} №${h.d.num}</div>
+          <div class="gsku">${K.dmy(h.d.date)} · ${h.place} · ${K.esc(h.d.who||'—')}</div></div>
+        <div class="mv-q" style="color:var(--${col}-d)">${neu?'':pos?'+':'−'}${K.qfmt(Math.abs(neu?h.qty:h.delta))} ${g.unit}</div>
+      </div>`;
+    }).join('') : '<div class="dim" style="font-size:12px;padding:6px 0">Движений ещё не было</div>'}`;
+
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Закрыть</button>
+    <span style="margin-left:auto"></span>
+    <button class="btn" id="c-mv">Переместить</button>
+    <button class="btn" id="c-out">Списать</button>
+    <button class="btn green" id="c-in">Оприходовать</button>`;
+  document.getElementById('c-in').onclick  = () => openDoc('receipt', id);
+  document.getElementById('c-out').onclick = () => openDoc('writeoff', id);
+  document.getElementById('c-mv').onclick  = () => openDoc('transfer', id);
+  bindClose();
+}
+
+/* ── просмотр документа ── */
+function openDocView(id){
+  const d = S.docs.find(x => x.id === id);
+  if(!d) return;
+  const cfg = DOC[d.type], sum = docSum(d);
+
+  const where = d.type === 'transfer' ? `${locName(d.from)} → ${locName(d.to)}`
+              : locName(d.to || d.from || d.at);
+
+  const lines = d.lines.map(l => {
+    const g = good(l.good) || { name:'—', unit:'', cost:0, tone:'#ccc' };
+    const price = l.price != null ? l.price : g.cost;
+    const right = d.type === 'invent'
+      ? `<span class="${l.fact-l.was>0?'diff-p':'diff-m'}">${l.fact-l.was>0?'+':''}${K.qfmt(l.fact-l.was)}</span>`
+      : `${K.qfmt(l.qty)} ${g.unit}`;
+    const sub = d.type === 'invent'
+      ? `учёт ${K.qfmt(l.was)} → факт ${K.qfmt(l.fact)}`
+      : `${d.cur==='USD'?'$':''}${K.fmt(price)} за ${g.unit}${d.type==='opt'?` · себест. ${K.fmt(g.cost)}`:''}`;
+    return `<div class="mv">
+      <span class="sw" style="background:${g.tone}"></span>
+      <div style="min-width:0"><div class="strong" style="font-size:12.5px">${K.esc(g.name)}</div>
+        <div class="gsku">${sub}</div></div>
+      <div class="mv-q">${right}</div></div>`;
+  }).join('');
+
+  const cost = d.type === 'opt'
+    ? d.lines.reduce((a,l) => a + l.qty * ((good(l.good)||{}).cost || 0), 0) : 0;
+
+  showModal(`${cfg.name} №${d.num} от ${K.dmy(d.date)}`, 'wide');
+  document.getElementById('m-b').innerHTML = `
+    ${d.party ? `<div class="kv"><span>${cfg.party==='buyer'?'Покупатель':'Поставщик'}</span>
+      <b>${K.esc(cfg.party==='buyer'?buyName(d.party):supName(d.party))}</b></div>` : ''}
+    <div class="kv"><span>${d.type==='transfer'?'Маршрут':'Склад'}</span><b>${where}</b></div>
+    ${d.reason ? `<div class="kv"><span>Причина</span><b>${K.esc(d.reason)}</b></div>` : ''}
+    ${d.pay ? `<div class="kv"><span>Оплата</span><b>${K.esc(d.pay)}</b></div>` : ''}
+    ${d.eta ? `<div class="kv"><span>Ожидаемая поставка</span><b>${K.dmy(d.eta)}</b></div>` : ''}
+    <div class="kv"><span>Оформил</span><b>${K.esc(d.who || '—')}</b></div>
+    <div class="kv"><span>Статус</span><b>${d.status === 'wait' ? 'ожидается' : 'проведён'}</b></div>
+    ${d.cur === 'USD' ? `<div class="kv"><span>Валюта</span><b>USD по курсу ${d.rate || S.finance.rateUSD}</b></div>` : ''}
+    ${d.type !== 'transfer' && d.type !== 'invent'
+      ? `<div class="kv"><span>Сумма</span><b>${d.cur==='USD'?'$'+K.fmt(sum)+' · '+K.money(inKGS(d,sum)):K.money(sum)}</b></div>` : ''}
+    ${d.type === 'opt' ? `<div class="kv"><span>Себестоимость</span><b>${K.money(cost)}</b></div>
+      <div class="kv"><span>Прибыль</span><b style="color:var(--gn-d)">${K.money(sum-cost)} · ${Math.round((sum/cost-1)*100)}%</b></div>` : ''}
+    <div class="sec">Позиции (${d.lines.length})</div>${lines}`;
+
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Закрыть</button>
+    <span style="margin-left:auto"></span>
+    ${d.type === 'po' && d.status === 'wait' ? '<button class="btn green" id="po-in">Оприходовать</button>' : ''}`;
+  const p = document.getElementById('po-in');
+  if(p) p.onclick = () => {
+    D = { type:'receipt', date:K.todayISO(), to:d.to || 'tunguch', party:d.party,
+          who:K.USERS[0], cur:d.cur, rate:d.rate, fromPO:d.id,
+          lines:d.lines.map(l => ({ good:l.good, qty:l.qty, price:l.price })) };
+    drawDoc();
+  };
+  bindClose();
+}
+
+/* ── создание документа ── */
+function openDoc(type, gid){
+  const cfg = DOC[type];
+  D = {
+    type, date:K.todayISO(), who:K.USERS[0],
+    from: 'tunguch', to: type === 'transfer' ? 'ceh' : 'tunguch',
+    party: cfg.party === 'sup' ? S.suppliers[0].id : cfg.party === 'buyer' ? S.buyers[0].id : null,
+    cur: 'KGS', rate: S.finance.rateUSD,
+    reason: cfg.reason ? REASONS[0] : null,
+    pay: cfg.pay ? PAYS[0] : null,
+    eta: cfg.eta ? '2026-08-20' : null,
+    lines: gid ? [{ good:gid, qty:1, price:priceFor(type, gid) }]
+                : [{ good:'', qty:1, price:0 }],
+  };
+  drawDoc();
+}
+
+function priceFor(type, gid){
+  const g = good(gid); if(!g) return 0;
+  return DOC[type].price === 'opt' ? g.opt : g.cost;
+}
+
+function autoPO(){
+  const def = deficit().filter(d => d.id);
+  const low = S.goods.filter(g => K.total(g) < g.min && !def.some(d => d.id === g.id));
+  D = {
+    type:'po', date:K.todayISO(), who:K.USERS[0], to:'tunguch',
+    party:S.suppliers[0].id, cur:'KGS', rate:S.finance.rateUSD, eta:'2026-08-20',
+    lines:[
+      ...def.map(d => ({ good:d.id, qty:Math.ceil(d.short + good(d.id).min * 0.3), price:good(d.id).cost })),
+      ...low.map(g => ({ good:g.id, qty:Math.ceil(g.min - K.total(g)), price:g.cost })),
+    ],
+  };
+  if(!D.lines.length) D.lines = [{ good:'', qty:1, price:0 }];
+  drawDoc();
+}
+
+function drawDoc(){
+  const cfg = DOC[D.type];
+  const usePrice = !!cfg.price;
+  const isOpt = cfg.price === 'opt';
+  const src = D.type === 'transfer' || D.type === 'writeoff' || D.type === 'ret' || D.type === 'opt' ? D.from : null;
+
+  showModal(`${cfg.name} от ${K.dmy(D.date)}`, 'xwide');
+
+  const opts = sel => `<option value="">— выберите товар —</option>` +
+    K.CATS.filter(c => S.goods.some(g => g.cat === c)).map(c =>
+      `<optgroup label="${c}">` + S.goods.filter(g => g.cat === c).map(g =>
+        `<option value="${g.id}" ${sel===g.id?'selected':''}>${K.esc(g.name)}</option>`).join('') + `</optgroup>`).join('');
+
+  const fields = [];
+  if(cfg.party === 'sup') fields.push(`<div class="fld"><label for="f-party">Поставщик</label>
+    <select class="inp" id="f-party">${S.suppliers.map(s => `<option value="${s.id}" ${D.party===s.id?'selected':''}>${K.esc(s.name)}</option>`).join('')}</select></div>`);
+  if(cfg.party === 'buyer') fields.push(`<div class="fld"><label for="f-party">Покупатель</label>
+    <select class="inp" id="f-party">${S.buyers.map(b => `<option value="${b.id}" ${D.party===b.id?'selected':''}>${K.esc(b.name)}</option>`).join('')}</select></div>`);
+  if(cfg.loc.includes('from')) fields.push(`<div class="fld"><label for="f-from">Откуда</label>
+    <select class="inp" id="f-from">${K.LOC.map(l => `<option value="${l.id}" ${D.from===l.id?'selected':''}>${l.name}</option>`).join('')}</select></div>`);
+  if(cfg.loc.includes('to')) fields.push(`<div class="fld"><label for="f-to">${D.type==='transfer'?'Куда':'Склад'}</label>
+    <select class="inp" id="f-to">${K.LOC.map(l => `<option value="${l.id}" ${D.to===l.id?'selected':''}>${l.name}</option>`).join('')}</select></div>`);
+  if(cfg.reason) fields.push(`<div class="fld"><label for="f-reason">Причина</label>
+    <select class="inp" id="f-reason">${REASONS.map(r => `<option ${D.reason===r?'selected':''}>${r}</option>`).join('')}</select></div>`);
+  if(cfg.pay) fields.push(`<div class="fld"><label for="f-pay">Оплата</label>
+    <select class="inp" id="f-pay">${PAYS.map(r => `<option ${D.pay===r?'selected':''}>${r}</option>`).join('')}</select></div>`);
+  if(cfg.cur) fields.push(`<div class="fld"><label for="f-cur">Валюта</label>
+    <select class="inp" id="f-cur"><option value="KGS" ${D.cur==='KGS'?'selected':''}>сом</option>
+      <option value="USD" ${D.cur==='USD'?'selected':''}>$ по курсу ${S.finance.rateUSD}</option></select></div>`);
+  if(cfg.eta) fields.push(`<div class="fld"><label for="f-eta">Ожидаем</label>
+    <input class="inp" id="f-eta" type="date" value="${D.eta||''}"></div>`);
+  fields.push(`<div class="fld"><label for="f-who">Оформил</label>
+    <select class="inp" id="f-who">${K.USERS.map(u => `<option ${D.who===u?'selected':''}>${u}</option>`).join('')}</select></div>`);
+  fields.push(`<div class="fld"><label for="f-date">Дата</label>
+    <input class="inp" id="f-date" type="date" value="${D.date}"></div>`);
+
+  const rows = D.lines.map((l,i) => {
+    const g = good(l.good);
+    const have = g && src ? (g.q[src] || 0) : null;
+    const over = have !== null && l.qty > have;
+    const sum = l.qty * (usePrice ? (l.price||0) : (g?g.cost:0));
+    return `<tr>
+      <td><select class="ri" data-good="${i}" aria-label="Товар ${i+1}">${opts(l.good)}</select></td>
+      <td class="dim hide-s" style="width:54px;text-align:center">${g?g.unit:'—'}</td>
+      ${src ? `<td style="width:92px;text-align:right" class="hide-s">
+        <span class="num ${have<=0?'zero':'q0'}">${g?K.qfmt(have):'—'}</span></td>` : ''}
+      <td style="width:92px"><input class="ri r ${over?'err':''}" type="number" min="0" step="0.01"
+            value="${l.qty}" data-qty="${i}" aria-label="Количество ${i+1}"></td>
+      ${usePrice ? `<td style="width:104px"><input class="ri r" type="number" min="0" step="0.01"
+            value="${l.price||0}" data-price="${i}" aria-label="Цена ${i+1}"></td>` : ''}
+      ${isOpt ? `<td style="width:96px;text-align:right" class="hide-m">
+        <span class="num q0">${g?K.fmt(g.cost):'—'}</span></td>` : ''}
+      <td style="width:110px;text-align:right"><span class="num" data-sum="${i}">${K.fmt(sum)}</span></td>
+      <td style="width:32px"><button class="del" data-del="${i}" aria-label="Удалить строку ${i+1}">✕</button></td>
+    </tr>`;
+  }).join('');
+
+  const total = D.lines.reduce((a,l) => a + l.qty * (usePrice ? (l.price||0) : ((good(l.good)||{}).cost || 0)), 0);
+  const anyOver = src && D.lines.some(l => { const g = good(l.good); return g && l.qty > (g.q[src]||0); });
+
+  document.getElementById('m-b').innerHTML = `
+    ${anyOver ? `<div class="hint" style="background:var(--rd-l);color:var(--rd-d)">
+      Красным отмечены строки, где расход больше остатка на складе «${locName(src)}». Исправьте количество или смените склад.</div>` : ''}
+    <div class="grid3">${fields.join('')}</div>
+    <div class="rows"><table class="tbl">
+      <thead><tr>
+        <th>Товар</th><th class="hide-s" style="text-align:center">Ед.</th>
+        ${src ? '<th class="hide-s" style="text-align:right">Остаток</th>' : ''}
+        <th style="text-align:right">Кол-во</th>
+        ${usePrice ? `<th style="text-align:right">${isOpt?'Цена продажи':'Цена'}</th>` : ''}
+        ${isOpt ? '<th style="text-align:right" class="hide-m">Себест.</th>' : ''}
+        <th style="text-align:right">Сумма</th><th></th>
+      </tr></thead><tbody>${rows}</tbody>
+    </table></div>
+    <button class="btn sm" id="add-row">+ Добавить строку</button>`;
+
+  const profit = isOpt
+    ? total - D.lines.reduce((a,l) => a + l.qty * ((good(l.good)||{}).cost || 0), 0) : null;
+
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button>
+    ${profit !== null ? `<div class="tot" style="margin-right:18px"><div class="tot-l">Прибыль</div>
+      <div class="tot-v" id="d-profit" style="color:var(--gn-d)">${K.money(profit)}</div></div>` : ''}
+    <div class="tot"><div class="tot-l">${D.cur==='USD'?'Итого, $':'Итого'}</div>
+      <div class="tot-v" id="d-total">${D.cur==='USD'?'$'+K.fmt(total):K.money(total)}</div></div>
+    <button class="btn green" id="d-save">${D.type==='po'?'Сформировать заказ':'Провести документ'}</button>`;
+
+  const b = document.getElementById('m-b');
+  b.querySelectorAll('[data-good]').forEach(el => el.onchange = () => {
+    const i = +el.dataset.good;
+    D.lines[i].good = el.value;
+    if(usePrice) D.lines[i].price = priceFor(D.type, el.value);
+    drawDoc();
+  });
+  b.querySelectorAll('[data-qty]').forEach(el => el.oninput = () => {
+    D.lines[+el.dataset.qty].qty = +el.value || 0; refresh(usePrice, isOpt, src);
+  });
+  b.querySelectorAll('[data-price]').forEach(el => el.oninput = () => {
+    D.lines[+el.dataset.price].price = +el.value || 0; refresh(usePrice, isOpt, src);
+  });
+  b.querySelectorAll('[data-del]').forEach(el => el.onclick = () => {
+    D.lines.splice(+el.dataset.del, 1);
+    if(!D.lines.length) D.lines.push({ good:'', qty:1, price:0 });
+    drawDoc();
+  });
+  document.getElementById('add-row').onclick = () => { D.lines.push({ good:'', qty:1, price:0 }); drawDoc(); };
+
+  const set = (id, fn) => { const el = document.getElementById(id); if(el) el.onchange = () => fn(el.value); };
+  set('f-party', v => D.party = v);
+  set('f-from',  v => { D.from = v; drawDoc(); });
+  set('f-to',    v => { D.to = v; drawDoc(); });
+  set('f-reason',v => D.reason = v);
+  set('f-pay',   v => D.pay = v);
+  set('f-cur',   v => { D.cur = v; drawDoc(); });
+  set('f-eta',   v => D.eta = v);
+  set('f-who',   v => D.who = v);
+  set('f-date',  v => D.date = v);
+  document.getElementById('d-save').onclick = postDoc;
+  bindClose();
+}
+
+/* точечный пересчёт — чтобы не терять фокус при вводе */
+function refresh(usePrice, isOpt, src){
+  let total = 0, cost = 0;
+  D.lines.forEach((l,i) => {
+    const g = good(l.good);
+    const sum = l.qty * (usePrice ? (l.price||0) : (g?g.cost:0));
+    total += sum; cost += l.qty * (g?g.cost:0);
+    const c = document.querySelector(`[data-sum="${i}"]`);
+    if(c) c.textContent = K.fmt(sum);
+    const inp = document.querySelector(`[data-qty="${i}"]`);
+    if(inp && src && g) inp.classList.toggle('err', l.qty > (g.q[src]||0));
+  });
+  const t = document.getElementById('d-total');
+  if(t) t.textContent = D.cur === 'USD' ? '$' + K.fmt(total) : K.money(total);
+  const p = document.getElementById('d-profit');
+  if(p) p.textContent = K.money(total - cost);
+}
+
+/* ── инвентаризация ── */
+function openInvent(){
+  const at = 'tunguch';
+  D = { type:'invent', date:K.todayISO(), who:K.USERS[0], at,
+        lines:S.goods.map(g => ({ good:g.id, was:g.q[at]||0, fact:g.q[at]||0 })) };
+  drawInvent();
+}
+
+function drawInvent(){
+  showModal(`Инвентаризация от ${K.dmy(D.date)}`, 'xwide');
+  const changed = D.lines.filter(l => l.fact !== l.was).length;
+  const delta = D.lines.reduce((a,l) => a + (l.fact - l.was) * good(l.good).cost, 0);
+
+  document.getElementById('m-b').innerHTML = `
+    <div class="hint">Впишите фактическое количество по складу. Проведутся только строки с расхождением — остальные останутся как есть.</div>
+    <div class="grid3">
+      <div class="fld"><label for="i-at">Склад</label>
+        <select class="inp" id="i-at">${K.LOC.map(l => `<option value="${l.id}" ${D.at===l.id?'selected':''}>${l.name}</option>`).join('')}</select></div>
+      <div class="fld"><label for="i-who">Кто считал</label>
+        <select class="inp" id="i-who">${K.USERS.map(u => `<option ${D.who===u?'selected':''}>${u}</option>`).join('')}</select></div>
+      <div class="fld"><label for="i-date">Дата</label>
+        <input class="inp" id="i-date" type="date" value="${D.date}"></div>
+    </div>
+    <div class="rows"><table class="tbl">
+      <thead><tr><th>Товар</th><th class="hide-s" style="text-align:center;width:56px">Ед.</th>
+        <th style="text-align:right;width:96px">По учёту</th>
+        <th style="text-align:right;width:100px">Факт</th>
+        <th style="text-align:right;width:96px">Разница</th>
+        <th style="text-align:right;width:110px" class="hide-m">Сумма</th></tr></thead>
+      <tbody>${D.lines.map((l,i) => {
+        const g = good(l.good), d = +(l.fact - l.was).toFixed(2);
+        return `<tr>
+          <td><div class="gcell"><span class="sw" style="background:${g.tone}"></span>
+            <span class="gname">${K.esc(g.name)}</span></div></td>
+          <td class="dim hide-s" style="text-align:center">${g.unit}</td>
+          <td style="text-align:right"><span class="num q0">${K.qfmt(l.was)}</span></td>
+          <td><input class="ri r" type="number" min="0" step="0.01" value="${l.fact}" data-fact="${i}"
+                aria-label="Факт ${K.esc(g.name)}"></td>
+          <td style="text-align:right" data-diff="${i}">${d ? `<span class="${d>0?'diff-p':'diff-m'}">${d>0?'+':''}${K.qfmt(d)}</span>` : '<span class="q0">0</span>'}</td>
+          <td style="text-align:right" class="hide-m" data-dsum="${i}">${d ? `<span class="num ${d>0?'diff-p':'diff-m'}">${d>0?'+':''}${K.fmt(d*g.cost)}</span>` : '<span class="q0">—</span>'}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table></div>`;
+
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button>
+    <div class="tot"><div class="tot-l" id="i-cnt">Расхождений: ${changed}</div>
+      <div class="tot-v" id="i-delta" style="color:var(--${delta<0?'rd':'gn'}-d)">${delta>0?'+':''}${K.money(delta)}</div></div>
+    <button class="btn green" id="i-save">Провести инвентаризацию</button>`;
+
+  document.querySelectorAll('[data-fact]').forEach(el => el.oninput = () => {
+    const i = +el.dataset.fact;
+    D.lines[i].fact = +el.value || 0;
+    const g = good(D.lines[i].good), d = +(D.lines[i].fact - D.lines[i].was).toFixed(2);
+    const c = document.querySelector(`[data-diff="${i}"]`);
+    if(c) c.innerHTML = d ? `<span class="${d>0?'diff-p':'diff-m'}">${d>0?'+':''}${K.qfmt(d)}</span>` : '<span class="q0">0</span>';
+    const s = document.querySelector(`[data-dsum="${i}"]`);
+    if(s) s.innerHTML = d ? `<span class="num ${d>0?'diff-p':'diff-m'}">${d>0?'+':''}${K.fmt(d*g.cost)}</span>` : '<span class="q0">—</span>';
+    const n = D.lines.filter(x => x.fact !== x.was).length;
+    const dl = D.lines.reduce((a,x) => a + (x.fact - x.was) * good(x.good).cost, 0);
+    document.getElementById('i-cnt').textContent = 'Расхождений: ' + n;
+    const t = document.getElementById('i-delta');
+    t.textContent = (dl > 0 ? '+' : '') + K.money(dl);
+    t.style.color = `var(--${dl < 0 ? 'rd' : 'gn'}-d)`;
+  });
+  document.getElementById('i-at').onchange = e => {
+    D.at = e.target.value;
+    D.lines = S.goods.map(g => ({ good:g.id, was:g.q[D.at]||0, fact:g.q[D.at]||0 }));
+    drawInvent();
+  };
+  document.getElementById('i-who').onchange = e => D.who = e.target.value;
+  document.getElementById('i-date').onchange = e => D.date = e.target.value;
+  document.getElementById('i-save').onclick = postInvent;
+  bindClose();
+}
+
+/* ═══════════ ПРОВЕДЕНИЕ ═══════════ */
+const uid = () => 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+const nextNum = type => {
+  /* считаем от максимума: количество даёт повторы после удалений */
+  const ns = S.docs.filter(d => d.type === type).map(d => +d.num).filter(Number.isFinite);
+  return String((ns.length ? Math.max(...ns) : 0) + 1).padStart(2,'0');
+};
+
+function postDoc(){
+  const cfg = DOC[D.type];
+  const lines = D.lines.filter(l => l.good && l.qty > 0);
+  if(!lines.length){ K.toast('Добавьте хотя бы одну позицию с количеством', 'bad'); return; }
+
+  const src = cfg.dir === -1 ? D.from : cfg.dir === 'move' ? D.from : null;
+  if(src){
+    const bad = lines.find(l => l.qty > (good(l.good).q[src] || 0));
+    if(bad){ K.toast(`Не хватает: ${good(bad.good).name} на складе «${locName(src)}»`, 'bad'); return; }
+  }
+  if(D.type === 'transfer' && D.from === D.to){ K.toast('Откуда и куда — один и тот же склад', 'bad'); return; }
+
+  /* применяем к остаткам */
+  if(cfg.dir === 1){
+    lines.forEach(l => {
+      const g = good(l.good);
+      const price = D.cur === 'USD' ? (l.price || 0) * (D.rate || S.finance.rateUSD) : (l.price || 0);
+      if(price) g.cost = K.newCost(g, l.qty, price);      // средневзвешенная
+      g.q[D.to] = +((g.q[D.to] || 0) + l.qty).toFixed(2);
+    });
+  } else if(cfg.dir === -1){
+    lines.forEach(l => { const g = good(l.good); g.q[D.from] = +(g.q[D.from] - l.qty).toFixed(2); });
+  } else if(cfg.dir === 'move'){
+    lines.forEach(l => {
+      const g = good(l.good);
+      g.q[D.from] = +(g.q[D.from] - l.qty).toFixed(2);
+      g.q[D.to]   = +((g.q[D.to] || 0) + l.qty).toFixed(2);
+    });
+  }
+
+  /* взаиморасчёты */
+  const sumKGS = inKGS(D, lines.reduce((a,l) => a + l.qty * (l.price || 0), 0));
+  if(D.type === 'receipt'){
+    const s = S.suppliers.find(x => x.id === D.party); if(s) s.debt += sumKGS;
+  }
+  if(D.type === 'ret'){
+    const s = S.suppliers.find(x => x.id === D.party); if(s) s.debt = Math.max(0, s.debt - sumKGS);
+  }
+  if(D.type === 'opt' && D.pay === 'В долг'){
+    const b = S.buyers.find(x => x.id === D.party); if(b) b.balance += sumKGS;
+  }
+
+  const doc = { id:uid(), type:D.type, num:nextNum(D.type), date:D.date, who:D.who,
+                status: D.type === 'po' ? 'wait' : 'posted',
+                lines: lines.map(l => ({ good:l.good, qty:l.qty, ...(cfg.price ? {price:l.price||0} : {}) })) };
+  if(cfg.party) doc.party = D.party;
+  if(cfg.loc.includes('from')) doc.from = D.from;
+  if(cfg.loc.includes('to'))   doc.to   = D.to;
+  if(cfg.reason) doc.reason = D.reason;
+  if(cfg.pay)    doc.pay = D.pay;
+  if(cfg.eta)    doc.eta = D.eta;
+  if(D.cur === 'USD'){ doc.cur = 'USD'; doc.rate = D.rate || S.finance.rateUSD; }
+  S.docs.push(doc);
+
+  if(D.fromPO){
+    const po = S.docs.find(d => d.id === D.fromPO);
+    if(po) po.status = 'posted';
+  }
+
+  const msg = {
+    po:       `Заказ поставщику №${doc.num} сформирован. Остатки изменятся после оприходования.`,
+    receipt:  `Приход №${doc.num}: ${lines.length} поз. на ${K.money(sumKGS)} → ${locName(D.to)}`,
+    transfer: `Перемещено ${lines.length} поз.: ${locShort(D.from)} → ${locShort(D.to)}`,
+    writeoff: `Списано ${lines.length} поз. со склада «${locName(D.from)}» · ${D.reason}`,
+    ret:      `Возврат №${doc.num} на ${K.money(sumKGS)}. Долг перед поставщиком уменьшен.`,
+    opt:      `Продажа №${doc.num}: ${K.money(sumKGS)}${D.pay==='В долг'?' — записано в долг покупателю':''}`,
+  }[D.type];
+
+  tab = D.type; closeModal(); save(); K.toast(msg);
+}
+
+function postInvent(){
+  const changed = D.lines.filter(l => l.fact !== l.was);
+  if(!changed.length){ K.toast('Расхождений нет — проводить нечего', 'bad'); return; }
+  changed.forEach(l => { good(l.good).q[D.at] = l.fact; });
+  S.docs.push({ id:uid(), type:'invent', num:nextNum('invent'), date:D.date, who:D.who,
+                at:D.at, status:'posted',
+                lines:changed.map(l => ({ good:l.good, was:l.was, fact:l.fact, qty:Math.abs(l.fact-l.was) })) });
+  const delta = changed.reduce((a,l) => a + (l.fact - l.was) * good(l.good).cost, 0);
+  tab = 'invent'; closeModal(); save();
+  K.toast(`Инвентаризация проведена · расхождений ${changed.length} на ${K.money(delta)}`);
+}
+
+/* ═══════════ ОБЩЕЕ ═══════════ */
+function save(){ dropCache(); K.commit(S); render(); }
+
+document.getElementById('ovl').addEventListener('mousedown', e => { if(e.target.id === 'ovl') closeModal(); });
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && !document.getElementById('ovl').hidden) closeModal();
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'){
+    e.preventDefault(); const q = document.getElementById('q'); q.focus(); q.select();
+  }
+});
+document.getElementById('q').addEventListener('input', () => {
+  if(tab !== 'stock') tab = 'stock';
+  render();
+});
+</script>
+</body>
+</html>

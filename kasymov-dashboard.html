@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Показатели — Kasymov ERP</title>
+<link rel="stylesheet" href="kasymov-ui.css">
+<style>
+:root{--h1:#16243b;--h2:#28406b;--h3:#3a6fb0}
+.phead{position:relative;overflow:hidden;align-items:center;padding:15px 20px;margin-bottom:16px;
+  border-radius:13px;color:#fff;background:linear-gradient(112deg,var(--h1),var(--h2) 54%,var(--h3));
+  box-shadow:0 3px 10px rgba(21,29,41,.12),0 14px 34px rgba(40,64,107,.22)}
+.phead::after{content:'';position:absolute;right:-40px;top:-30%;width:290px;height:180%;
+  background:repeating-linear-gradient(180deg,rgba(255,255,255,.2) 0 3px,transparent 3px 11px);
+  transform:skewX(-14deg);pointer-events:none}
+.ptitle{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.02em}
+.psub{font-size:12px;color:rgba(255,255,255,.86);margin-top:3px}
+.pright{position:relative;z-index:1}
+.phead .btn{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35);color:#fff}
+.phead .btn:hover{background:rgba(255,255,255,.3)}
+
+.num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.q0{color:var(--t3);font-weight:400}
+.pos{color:var(--gn-d)} .neg{color:var(--rd-d)}
+.money{font-variant-numeric:tabular-nums;font-weight:700;text-align:right;white-space:nowrap}
+.tbl tfoot td{background:#f7f9fd;border-top:2px solid var(--bd);font-weight:800}
+tr.lnk{cursor:pointer} tr.lnk:hover td{background:#f5f8ff}
+
+/* крупные показатели */
+.big{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px;margin-bottom:16px}
+.bg{background:#fff;border:1px solid var(--bd);border-radius:13px;padding:15px 17px;position:relative;overflow:hidden;
+    text-align:left;font-family:inherit;cursor:pointer;transition:box-shadow .14s,border-color .14s}
+.bg:hover{border-color:var(--line);box-shadow:0 4px 14px rgba(21,29,41,.08)}
+.bg::before{content:'';position:absolute;left:0;right:0;top:0;height:3px;background:var(--bl)}
+.bg.gn::before{background:var(--gn)} .bg.rd::before{background:var(--rd)}
+.bg.am::before{background:var(--am)} .bg.vl::before{background:var(--vl)}
+.bg-l{font-size:10.5px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.06em}
+.bg-v{font-size:26px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin-top:6px;line-height:1}
+.bg-s{font-size:11.5px;color:var(--t2);margin-top:5px;line-height:1.4}
+.bg-d{font-size:11.5px;font-weight:800;margin-top:4px}
+
+/* тревоги */
+.alarm{display:flex;align-items:center;gap:11px;padding:11px 15px;border-bottom:1px solid #f2f5fa;
+       cursor:pointer;font-family:inherit;width:100%;text-align:left;background:none;border-left:3px solid transparent}
+.alarm:last-child{border-bottom:none}
+.alarm:hover{background:#fbfcfe}
+.alarm.rd{border-left-color:var(--rd)} .alarm.am{border-left-color:var(--am)}
+.alarm.bl{border-left-color:var(--bl)} .alarm.gn{border-left-color:var(--gn)}
+.al-ic{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+       font-size:14px;font-weight:800;flex-shrink:0}
+.al-t{font-size:13px;font-weight:600;line-height:1.35}
+.al-s{font-size:11.5px;color:var(--t3);margin-top:2px}
+.al-v{margin-left:auto;font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* столбики */
+.chart{display:flex;align-items:flex-end;gap:10px;height:170px;padding:16px 16px 10px}
+.ch{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;height:100%}
+.ch-v{font-size:11px;font-weight:800;font-variant-numeric:tabular-nums}
+.ch-b{width:100%;max-width:46px;border-radius:6px 6px 0 0;background:linear-gradient(180deg,#4fa0e8,#2b7fd4)}
+.ch-b.gn{background:linear-gradient(180deg,#7ab52c,#4d8215)}
+.ch-l{font-size:11px;color:var(--t3);font-weight:700}
+
+.prog{display:flex;align-items:center;gap:11px;padding:8px 16px}
+.prog-n{width:190px;flex-shrink:0;font-size:12.5px;font-weight:600;min-width:0}
+.prog-t{flex:1;height:9px;background:#eef1f7;border-radius:5px;overflow:hidden;min-width:50px}
+.prog-t i{display:block;height:100%;border-radius:5px}
+.prog-v{min-width:130px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:12.5px}
+@media (max-width:1000px){ .hide-m{display:none} .prog-n{width:130px} }
+@media (max-width:640px){ .hide-s{display:none} }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="phead">
+    <div>
+      <div class="ptitle">Показатели</div>
+      <div class="psub" id="sub">—</div>
+    </div>
+    <div class="pright">
+      <select class="inp" id="branch" style="width:180px"></select>
+      <button class="btn green" id="btn-primary">↓ Excel</button>
+    </div>
+  </div>
+
+  <div id="dates"></div>
+  <div id="view"></div>
+</div>
+
+<script>
+/* сообщаем оболочке о сбое, чтобы он не превратился в пустой экран */
+window.__errHook = true;
+window.addEventListener('error', e => {
+  try{ window.parent.postMessage({ ns:'kasymov', type:'moduleError',
+       msg:(e.message||'') + ' · ' + (e.lineno||'') }, '*'); }catch(_){}
+  const b = document.body;
+  if(b) b.insertAdjacentHTML('afterbegin',
+    '<div style="background:#7d211c;color:#fff;padding:12px 16px;font:13px/1.5 -apple-system,sans-serif">'
+    + '<b>Сбой в разделе.</b> ' + (e.message||'') + '</div>');
+});
+</script>
+<script src="kasymov-data.js"></script>
+<script>
+const K = window.KASYMOV;
+let S = null, P = { preset:'month', from:'', to:'' }, branch = 'all';
+const TODAY = '2026-08-03';
+const MN = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+const CLOSED = ['installed','paid','done'];
+
+K.connect(state => { S = state; render(); }, name => { if(name === 'primary') exportAll(); });
+
+/* ═════════ РАСЧЁТЫ ═════════ */
+const staff = id => K.staffName(id);
+const R = () => K.rangeOf(P.preset, P.from, P.to);
+const ok = (d,f,t) => { const x = (d||'').slice(0,10); return x >= f && x <= t; };
+const inR = d => { const [f,t] = R(); return ok(d,f,t); };
+const brOk = o => branch === 'all' || o.branch === branch;
+const f0 = n => K.fmt(n);
+
+function money(f, t){
+  const ords = S.orders.filter(o => CLOSED.includes(o.status) && brOk(o) && ok(o.deadline,f,t));
+  const opts = S.docs.filter(d => d.type === 'opt' && ok(d.date,f,t));
+  const revR = ords.reduce((a,o) => a + K.orderTotal(o), 0);
+  const revO = opts.reduce((a,d) => a + d.lines.reduce((x,l) => x + l.qty * l.price, 0), 0);
+  const cost = ords.reduce((a,o) => a + K.orderCost(o, S.goods), 0) +
+    opts.reduce((a,d) => a + d.lines.reduce((x,l) => {
+      const g = S.goods.find(z => z.id === l.good); return x + l.qty * (g ? g.cost : 0); }, 0), 0);
+  const exp = (S.expenses||[]).filter(e => ok(e.date,f,t) && e.cat !== 'Закуп материалов')
+    .reduce((a,e) => a + e.sum, 0);
+  const rev = revR + revO;
+  return { ords, opts, revR, revO, rev, cost, gross:rev - cost, exp, profit:rev - cost - exp };
+}
+const leads = (f,t) => S.orders.filter(o => brOk(o) && ok(o.created,f,t));
+const won = arr => arr.filter(o => !['new','assigned','measured','thinking','rejected'].includes(o.status));
+
+/* ═════════ РЕНДЕР ═════════ */
+function render(){
+  if(!S) return;
+  document.getElementById('branch').innerHTML =
+    `<option value="all">Все филиалы</option>` +
+    K.BRANCHES.map(b => `<option value="${b.id}" ${branch===b.id?'selected':''}>${b.name}</option>`).join('');
+  document.getElementById('branch').onchange = e => { branch = e.target.value; render(); };
+
+  document.getElementById('dates').innerHTML = K.dateBar(P.preset, P.from, P.to);
+  K.bindDateBar(v => { P = v; render(); }, P);
+
+  const [f,t] = R();
+  const m = money(f,t);
+  const l = leads(f,t), w = won(l);
+  const prevR = K.rangeOf('prev');
+  const pm = money(prevR[0], prevR[1]);
+  const bal = K.balances(S);
+  const cash = K.ACCOUNTS.reduce((a,x) => a + bal[x.id], 0);
+  const hands = K.cashOnHand(S);
+  const onH = hands.reduce((a,c) => a + c.sum, 0);
+  const debt = S.orders.filter(o => brOk(o) && o.status !== 'rejected').reduce((a,o) => a + K.orderOwe(o), 0);
+  const supDebt = S.suppliers.reduce((a,s) => a + s.debt, 0);
+
+  document.getElementById('sub').textContent =
+    `${K.rangeName(P.preset, P.from, P.to)} · выручка ${K.money(m.rev)} · прибыль ${K.money(m.profit)}`;
+
+  const d = (a,b) => b ? Math.round((a - b) / Math.abs(b) * 100) : 0;
+  const arrow = v => v > 0 ? `<span class="pos">▲ +${v}%</span>`
+    : v < 0 ? `<span class="neg">▼ ${v}%</span>` : '<span class="q0">без изменений</span>';
+
+  document.getElementById('view').innerHTML = `
+    <div class="big">
+      <button class="bg" data-go="reports"><div class="bg-l">Выручка</div>
+        <div class="bg-v">${f0(m.rev)}</div>
+        <div class="bg-s">розница ${f0(m.revR)} · опт ${f0(m.revO)}</div>
+        <div class="bg-d">${arrow(d(m.rev, pm.rev))} к прошлому месяцу</div></button>
+      <button class="bg ${m.profit>=0?'gn':'rd'}" data-go="finance"><div class="bg-l">Чистая прибыль</div>
+        <div class="bg-v ${m.profit>=0?'pos':'neg'}">${f0(m.profit)}</div>
+        <div class="bg-s">рентабельность ${m.rev?Math.round(m.profit/m.rev*100):0}%</div>
+        <div class="bg-d">${arrow(d(m.profit, pm.profit))} к прошлому месяцу</div></button>
+      <button class="bg vl" data-go="finance"><div class="bg-l">Деньги в кассах</div>
+        <div class="bg-v">${f0(cash)}</div>
+        <div class="bg-s">${onH ? 'плюс ' + f0(onH) + ' на руках' : 'на руках ничего нет'}</div>
+        <div class="bg-d q0">три кассы</div></button>
+      <button class="bg am" data-go="finance"><div class="bg-l">Должны клиенты</div>
+        <div class="bg-v">${f0(debt)}</div>
+        <div class="bg-s">мы должны поставщикам ${f0(supDebt)}</div>
+        <div class="bg-d ${debt-supDebt>=0?'pos':'neg'}">чистая позиция ${f0(debt - supDebt)}</div></button>
+      <button class="bg" data-go="orders"><div class="bg-l">Заявок</div>
+        <div class="bg-v">${l.length}</div>
+        <div class="bg-s">продано ${w.length} · отказ ${l.filter(o=>o.status==='rejected').length}</div>
+        <div class="bg-d">конверсия ${l.length?Math.round(w.length/l.length*100):0}%</div></button>
+      <button class="bg gn" data-go="orders"><div class="bg-l">Средний чек</div>
+        <div class="bg-v">${m.ords.length?f0(m.revR/m.ords.length):0}</div>
+        <div class="bg-s">${m.ords.length} закрытых заказов</div>
+        <div class="bg-d q0">розница</div></button>
+    </div>
+
+    ${alarms()}
+
+    <div class="grid2" style="margin-bottom:14px">
+      <div class="card">
+        <div class="card-h"><div class="card-t">Выручка и прибыль по месяцам</div>
+          <span class="chip bl">выручка</span><span class="chip gn">прибыль</span></div>
+        ${monthChart()}
+      </div>
+      <div class="card">
+        <div class="card-h"><div class="card-t">Что сейчас в работе</div>
+          <span style="margin-left:auto"></span><button class="btn sm" data-go="orders">Открыть заказы</button></div>
+        ${pipeline()}
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-h"><div class="card-t">Менеджеры</div>
+          <span class="chip gy">${K.rangeName(P.preset,P.from,P.to)}</span></div>
+        ${people()}
+      </div>
+      <div class="card">
+        <div class="card-h"><div class="card-t">Куда уходят деньги</div>
+          <span class="chip rd">${K.money(m.exp)}</span></div>
+        ${expenses(f,t,m)}
+      </div>
+    </div>`;
+
+  document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => {
+    if(window.parent !== window)
+      window.parent.postMessage({ ns:'kasymov', type:'goto', page:b.dataset.go }, '*');
+  }));
+}
+
+/* ── тревоги: что требует решения прямо сейчас ── */
+function alarms(){
+  const list = [];
+  const wait = S.orders.filter(o => brOk(o) && o.status === 'assigned' && o.measurer && !o.accepted);
+  if(wait.length) list.push({ c:'am', i:'⏳', t:'Замерщик не принял заказ',
+    s:wait.map(o => '#' + o.num).join(', '), v:wait.length });
+
+  const late = S.orders.filter(o => brOk(o) && !['done','paid','rejected'].includes(o.status)
+    && o.deadline < TODAY);
+  if(late.length) list.push({ c:'rd', i:'!', t:'Просрочен срок сдачи',
+    s:late.map(o => '#' + o.num + ' до ' + K.dmy(o.deadline)).slice(0,4).join(', '), v:late.length });
+
+  const hands = K.cashOnHand(S);
+  const onH = hands.reduce((a,c) => a + c.sum, 0);
+  if(onH) list.push({ c:'rd', i:'₽', t:'Наличные не сданы в кассу',
+    s:hands.map(c => staff(c.who).split(' ')[0] + ' — ' + K.fmt(c.sum)).join(', '), v:K.fmt(onH) });
+
+  const zero = S.goods.filter(g => K.total(g) <= 0);
+  if(zero.length) list.push({ c:'rd', i:'□', t:'Нет на складе',
+    s:zero.map(g => g.name).slice(0,3).join(', ') + (zero.length > 3 ? ' и ещё ' + (zero.length-3) : ''), v:zero.length });
+
+  const low = S.goods.filter(g => { const q = K.total(g); return q > 0 && q < g.min; });
+  if(low.length) list.push({ c:'am', i:'▼', t:'Ниже точки заказа',
+    s:low.map(g => g.name).slice(0,3).join(', '), v:low.length });
+
+  const due = K.dueToday(S).filter(brOk);
+  if(due.length) list.push({ c:'am', i:'⏰', t:'Обещали оплатить — пора напомнить',
+    s:due.map(o => '#' + o.num + ' ' + o.client + ' · ' + o.phone).slice(0,3).join(' · '),
+    v:K.fmt(due.reduce((a2,o) => a2 + K.orderOwe(o), 0)) });
+
+  const inv = (S.invoices||[]).filter(i => i.status === 'requested');
+  if(inv.length) list.push({ c:'bl', i:'§', t:'Ждут счёт-фактуру',
+    s:inv.map(i => i.company.name).join(', '), v:inv.length });
+
+  const overLimit = S.buyers.filter(b => b.balance > b.limit);
+  if(overLimit.length) list.push({ c:'rd', i:'!', t:'Оптовик превысил лимит долга',
+    s:overLimit.map(b => b.name).join(', '), v:overLimit.length });
+
+  const ready = S.orders.filter(o => brOk(o) && o.status === 'ready');
+  if(ready.length) list.push({ c:'gn', i:'✓', t:'Готовы, ждут установщика',
+    s:ready.map(o => o.addr).slice(0,3).join(' · '), v:ready.length });
+
+  return `<div class="card" style="margin-bottom:14px">
+    <div class="card-h"><div class="card-t">Требует внимания</div>
+      <span class="chip ${list.some(x=>x.c==='rd')?'rd':list.length?'am':'gn'}">${list.length}</span></div>
+    ${list.length ? list.map(x => `<button class="alarm ${x.c}">
+      <span class="al-ic" style="background:var(--${x.c}-l);color:var(--${x.c}-d)">${x.i}</span>
+      <span style="min-width:0"><span class="al-t">${x.t}</span>
+        <span class="al-s">${K.esc(x.s)}</span></span>
+      <span class="al-v">${x.v}</span></button>`).join('')
+      : '<div class="empty"><div class="empty-t">Всё спокойно</div><div class="empty-s">Ничего не горит</div></div>'}
+  </div>`;
+}
+
+/* ── столбики по месяцам ── */
+function monthChart(){
+  const data = MN.map((n,i) => {
+    const mo = String(i+1).padStart(2,'0');
+    const m = money(`2026-${mo}-01`, `2026-${mo}-31`);
+    return { n, rev:m.rev, pr:m.profit };
+  }).filter((x,i) => i >= 2 && i <= 7);
+  const mx = Math.max(1, ...data.map(x => x.rev));
+  const H = 110;
+  return `<div class="chart">${data.map(x => `<div class="ch" title="${x.n}: выручка ${f0(x.rev)}, прибыль ${f0(x.pr)}">
+    <div class="ch-v">${x.rev ? f0(x.rev) : ''}</div>
+    <div style="width:100%;display:flex;gap:3px;align-items:flex-end;justify-content:center">
+      <div class="ch-b" style="height:${Math.max(2, x.rev/mx*H)}px;width:40%"></div>
+      <div class="ch-b gn" style="height:${Math.max(2, Math.abs(x.pr)/mx*H)}px;width:40%"></div>
+    </div>
+    <div class="ch-l">${x.n}</div></div>`).join('')}</div>`;
+}
+
+/* ── воронка текущей работы ── */
+function pipeline(){
+  const g = ks => S.orders.filter(o => brOk(o) && ks.includes(o.status));
+  const rows = [
+    ['Ждут замера', g(['new','assigned']), 'var(--bl)'],
+    ['Замер сделан, решают', g(['measured','thinking']), 'var(--vl)'],
+    ['В цеху', g(['toShop']), 'var(--am)'],
+    ['Готовы к установке', g(['ready','toInstall']), 'var(--gn)'],
+  ];
+  const mx = Math.max(1, ...rows.map(r => r[1].length));
+  return `<div style="padding:8px 0">${rows.map(([n,arr,c]) => `<div class="prog">
+    <span class="prog-n">${n}</span>
+    <span class="prog-t"><i style="width:${arr.length/mx*100}%;background:${c}"></i></span>
+    <span class="prog-v">${arr.length} · ${f0(arr.reduce((a,o) => a + K.orderTotal(o), 0))}</span>
+  </div>`).join('')}</div>`;
+}
+
+/* ── менеджеры ── */
+function people(){
+  const [f,t] = R();
+  const l = leads(f,t);
+  const rows = K.byRole('manager').map(s => {
+    const my = l.filter(o => o.manager === s.id);
+    const w = won(my);
+    const closed = S.orders.filter(o => o.manager === s.id && brOk(o)
+      && CLOSED.includes(o.status) && ok(o.deadline,f,t));
+    return { s, cnt:my.length, won:w.length, sum:closed.reduce((a,o) => a + K.orderTotal(o), 0) };
+  }).filter(x => x.cnt || x.sum).sort((a,b) => b.sum - a.sum);
+  const mx = Math.max(1, ...rows.map(r => r.sum));
+  return rows.length ? `<div style="padding:8px 0">${rows.map(x => `<div class="prog">
+    <span class="prog-n">${K.esc(x.s.name)}
+      <div class="q0" style="font-size:11px">${x.cnt} заявок · продал ${x.won}</div></span>
+    <span class="prog-t"><i style="width:${x.sum/mx*100}%;background:linear-gradient(90deg,#5f9a1e,#8cc23f)"></i></span>
+    <span class="prog-v">${f0(x.sum)}</span></div>`).join('')}</div>`
+    : '<div class="empty"><div class="empty-t">За период нет данных</div></div>';
+}
+
+/* ── расходы ── */
+function expenses(f, t, m){
+  const by = {};
+  (S.expenses||[]).filter(e => ok(e.date,f,t) && e.cat !== 'Закуп материалов')
+    .forEach(e => by[e.cat] = (by[e.cat] || 0) + e.sum);
+  const rows = Object.entries(by).sort((a,b) => b[1] - a[1]);
+  const mx = Math.max(1, ...rows.map(r => r[1]));
+  const COL = ['#e0483f','#c07a12','#2b7fd4','#5f9a1e','#4b3f9e','#8a5f42','#98a1bb'];
+  return rows.length ? `<div style="padding:8px 0">${rows.map(([n,v],i) => `<div class="prog">
+    <span class="prog-n">${n}</span>
+    <span class="prog-t"><i style="width:${v/mx*100}%;background:${COL[i%COL.length]}"></i></span>
+    <span class="prog-v">${f0(v)} · ${Math.round(v/m.exp*100)}%</span></div>`).join('')}</div>`
+    : '<div class="empty"><div class="empty-t">За период расходов не было</div></div>';
+}
+
+/* ── выгрузка сводки ── */
+function exportAll(){
+  const [f,t] = R();
+  const m = money(f,t), l = leads(f,t), w = won(l);
+  K.toExcel('Сводка ' + K.rangeName(P.preset,P.from,P.to),
+    ['Показатель','Значение'],
+    [['Период', K.dmy(f) + ' — ' + K.dmy(t)],
+     ['Филиал', branch === 'all' ? 'Все' : (K.BRANCHES.find(b => b.id === branch)||{}).name],
+     ['Выручка всего', m.rev], ['Выручка розница', m.revR], ['Выручка опт', m.revO],
+     ['Себестоимость', Math.round(m.cost)], ['Валовая прибыль', Math.round(m.gross)],
+     ['Расходы', m.exp], ['Чистая прибыль', Math.round(m.profit)],
+     ['Рентабельность, %', m.rev?Math.round(m.profit/m.rev*100):0],
+     ['Заявок', l.length], ['Продано', w.length],
+     ['Конверсия, %', l.length?Math.round(w.length/l.length*100):0],
+     ['Закрыто заказов', m.ords.length],
+     ['Средний чек', m.ords.length?Math.round(m.revR/m.ords.length):0]]);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Отчёты — Kasymov ERP</title>
+<style>
+
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f3fa;--w:#fff;--s2:#f5f7fb;--bd:#e4e8f0;--bd2:#cdd4e8;
+  --tx:#1a1f36;--mu:#5c6380;--hi:#9fa6c0;
+  --bl:#378add;--bl-l:#e6f1fb;--bl-d:#0c447c;
+  --gn:#3b6d11;--gn-l:#eaf3de;--gn-d:#173404;--gn-m:#639922;
+  --rd:#a32d2d;--rd-l:#fcebeb;--rd-d:#501313;--rd-m:#e24b4a;
+  --am:#633806;--am-l:#faeeda;--am-d:#412402;--am-m:#ba7517;
+  --pu:#3c3489;--pu-l:#eeedfe;--pu-d:#26215c;--pu-m:#7f77dd;
+  --tl:#085041;--tl-l:#e1f5ee;--tl-d:#04342c;--tl-m:#1d9e75;
+  --r:10px;--rs:7px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--tx);display:flex;height:100vh;overflow:hidden;font-size:14px}
+
+/* SIDEBAR */
+.sb{width:56px;background:#0d1523;display:flex;flex-direction:column;align-items:center;padding:12px 0;gap:4px;flex-shrink:0}
+.sb-logo{width:36px;height:36px;background:var(--bl);border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;color:#fff;margin-bottom:10px;cursor:pointer}
+.sb-ico{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,.35);transition:all .12s;position:relative}
+.sb-ico:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.8)}
+.sb-ico.active{background:rgba(55,138,221,.25);color:#6ab0f5}
+.sb-ico svg{width:18px;height:18px}
+.sb-div{width:28px;height:1px;background:rgba(255,255,255,.07);margin:4px 0}
+.sb-tip{position:absolute;left:46px;background:#1a2540;color:#fff;font-size:11px;font-weight:600;padding:4px 8px;border-radius:5px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s;z-index:100}
+.sb-ico:hover .sb-tip{opacity:1}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:52px;background:var(--w);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 18px;gap:10px;flex-shrink:0}
+.tb-title{font-size:16px;font-weight:700}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:7px}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--bd2);background:var(--w);color:var(--tx);transition:all .12s;white-space:nowrap}
+.btn:hover{background:var(--s2)}
+.btn-primary{background:var(--bl);color:#fff;border-color:var(--bl)}.btn-primary:hover{background:var(--bl-d)}
+.btn-green{background:var(--gn-m);color:#fff;border-color:var(--gn-m)}.btn-green:hover{background:var(--gn)}
+.btn-sm{padding:5px 10px;font-size:11px}
+
+/* LAYOUT */
+.layout{flex:1;display:flex;overflow:hidden}
+.sidebar-nav{width:220px;background:var(--w);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sn-section{font-size:10px;font-weight:700;color:var(--hi);text-transform:uppercase;letter-spacing:.08em;padding:14px 16px 5px}
+.sn-item{display:flex;align-items:center;gap:9px;padding:9px 14px;cursor:pointer;color:var(--mu);font-size:13px;font-weight:500;transition:all .12s;border-left:3px solid transparent}
+.sn-item:hover{background:var(--s2);color:var(--tx)}
+.sn-item.active{background:var(--bl-l);color:var(--bl-d);border-left-color:var(--bl);font-weight:600}
+.sn-item svg{width:15px;height:15px;flex-shrink:0;opacity:.7}
+.sn-item.active svg{opacity:1}
+.sn-divider{height:1px;background:var(--bd);margin:6px 14px}
+.sn-new{padding:12px 14px;margin-top:auto}
+
+.content{flex:1;overflow-y:auto;padding:20px 22px}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:4px}
+
+/* PAGE */
+.page{display:none}.page.active{display:block}
+
+/* PERIOD */
+.pp-row{display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.pp{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--bd2);background:var(--w);color:var(--mu);transition:all .12s}
+.pp:hover{background:var(--s2)}
+.pp.active{background:var(--bl);color:#fff;border-color:var(--bl)}
+.pp-custom{display:flex;align-items:center;gap:6px;margin-left:auto}
+.pdiv{height:18px;width:1px;background:var(--bd);margin:0 4px}
+
+/* KPI */
+.kpi-row{display:grid;gap:10px;margin-bottom:16px}
+.k4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.k3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.k2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.kpi{background:var(--w);border:1px solid var(--bd);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.kpi.bl::before{background:var(--bl)}.kpi.gn::before{background:var(--gn-m)}.kpi.rd::before{background:var(--rd-m)}.kpi.am::before{background:var(--am-m)}.kpi.pu::before{background:var(--pu-m)}.kpi.tl::before{background:var(--tl-m)}
+.kpi-l{font-size:10px;color:var(--hi);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.kpi-v{font-size:20px;font-weight:800;line-height:1;margin-bottom:3px}
+.kpi-s{font-size:11px;color:var(--mu)}
+.d{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px}
+.d.up{background:var(--gn-l);color:var(--gn)}.d.dn{background:var(--rd-l);color:var(--rd)}.d.neu{background:var(--s2);color:var(--mu)}
+
+/* CARD */
+.card{background:var(--w);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.card-head{padding:13px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bd)}
+.ct{font-size:13px;font-weight:700}
+.ca{font-size:11px;color:var(--bl);cursor:pointer;font-weight:600}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.g13{display:grid;grid-template-columns:1.5fr 1fr;gap:14px;margin-bottom:14px}
+.g31{display:grid;grid-template-columns:1fr 1.5fr;gap:14px;margin-bottom:14px}
+.gcol{display:flex;flex-direction:column;gap:14px}
+
+/* TABLE */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:10px;font-weight:700;color:var(--hi);text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;border-bottom:2px solid var(--bd);background:var(--s2);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--bd);font-size:12px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#f0f6ff}
+.tr{text-align:right;font-variant-numeric:tabular-nums}
+.tm{color:var(--mu)}
+.tft td{background:var(--s2);font-weight:700;border-top:2px solid var(--bd)}
+
+/* BADGE */
+.b{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
+.b-green{background:var(--gn-l);color:var(--gn-d)}.b-red{background:var(--rd-l);color:var(--rd-d)}
+.b-blue{background:var(--bl-l);color:var(--bl-d)}.b-amber{background:var(--am-l);color:var(--am-d)}
+.b-purple{background:var(--pu-l);color:var(--pu-d)}.b-teal{background:var(--tl-l);color:var(--tl-d)}
+.b-gray{background:var(--s2);color:var(--mu);border:1px solid var(--bd)}
+
+/* CHART BARS */
+.bar-chart{display:flex;align-items:flex-end;gap:0;height:120px;padding:0 4px}
+.bc{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.bc:hover .bc-bar{opacity:.75}
+.bc-stack{display:flex;flex-direction:column-reverse;gap:1px;align-items:center;width:100%}
+.bc-bar{width:78%;border-radius:3px 3px 0 0;transition:opacity .12s}
+.bc-lbl{font-size:9px;color:var(--hi);text-align:center}
+.bc-val{font-size:9px;font-weight:700;color:var(--mu)}
+
+/* LINE CHART (CSS) */
+.line-chart{position:relative;height:120px;background:var(--s2);border-radius:var(--rs);overflow:hidden;margin-bottom:6px}
+.lc-grid{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:4px 0}
+.lc-line{height:1px;background:rgba(255,255,255,.6);width:100%}
+.lc-points{position:absolute;bottom:0;left:0;right:0;top:0;display:flex;align-items:flex-end;padding:4px 8px;gap:0}
+.lc-point{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.lc-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;position:relative;z-index:2}
+.lc-bar{width:3px;border-radius:3px 3px 0 0;flex-shrink:0}
+
+/* PNL / BS */
+.pr{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--bd);font-size:12px}
+.pr:last-child{border-bottom:none}
+.pt{display:flex;justify-content:space-between;padding:8px 0;font-size:13px;font-weight:700;border-top:1px solid var(--bd);margin-top:2px}
+.ps{font-size:10px;font-weight:700;color:var(--hi);text-transform:uppercase;letter-spacing:.07em;padding:10px 0 4px}
+.pgrand{display:flex;justify-content:space-between;padding:10px 12px;font-size:14px;font-weight:800;border-radius:var(--rs);margin-top:6px}
+.bs-head{font-size:10px;font-weight:700;color:var(--hi);text-transform:uppercase;letter-spacing:.06em;padding:7px 10px;background:var(--s2);border-radius:5px;margin-bottom:5px;margin-top:10px}
+.bs-row{display:flex;justify-content:space-between;padding:6px 8px;border-bottom:1px solid var(--bd);font-size:12px}
+.bs-row:last-child{border-bottom:none}
+.bs-total{display:flex;justify-content:space-between;padding:7px 10px;font-weight:700;font-size:13px;background:var(--s2);border-radius:var(--rs);margin-top:5px}
+
+/* WATERFALL */
+.wf{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.wfl{font-size:11px;color:var(--mu);width:160px;flex-shrink:0;font-weight:500}
+.wfw{flex:1;position:relative;height:20px;background:var(--s2);border-radius:4px;overflow:hidden}
+.wfb{position:absolute;top:0;height:100%;border-radius:4px;display:flex;align-items:center;padding:0 8px;font-size:10px;font-weight:700;white-space:nowrap}
+.wfamt{font-size:11px;font-weight:700;width:90px;text-align:right;flex-shrink:0}
+
+/* FUNNEL */
+.fn-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.fn-lbl{font-size:11px;color:var(--mu);width:120px;flex-shrink:0}
+.fn-wrap{flex:1;background:var(--s2);border-radius:4px;height:18px;overflow:hidden}
+.fn-bar{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:10px;font-weight:700;transition:width .5s}
+.fn-cnt{font-size:11px;font-weight:700;width:26px;text-align:right;flex-shrink:0}
+.fn-pct{font-size:10px;color:var(--hi);width:36px;text-align:right;flex-shrink:0}
+
+/* PROGRESS */
+.prog-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.prog-lbl{font-size:12px;font-weight:500;flex:1}
+.prog-wrap{width:160px;background:var(--s2);border-radius:4px;height:7px;overflow:hidden;flex-shrink:0}
+.prog-bar{height:100%;border-radius:4px;transition:width .4s}
+.prog-val{font-size:12px;font-weight:700;width:80px;text-align:right;flex-shrink:0}
+
+/* ALERT */
+.alert{border-radius:var(--rs);padding:9px 13px;margin-bottom:12px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:7px}
+.al-b{background:var(--bl-l);color:var(--bl-d);border:1px solid rgba(55,138,221,.2)}
+.al-g{background:var(--gn-l);color:var(--gn-d);border:1px solid rgba(59,109,17,.2)}
+.al-w{background:var(--am-l);color:var(--am-d);border:1px solid rgba(186,117,23,.2)}
+
+/* METRIC CARD */
+.metric-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.metric{background:var(--s2);border-radius:var(--rs);padding:12px 14px;border-left:3px solid var(--bl)}
+.metric.gn{border-left-color:var(--gn-m)}.metric.rd{border-left-color:var(--rd-m)}.metric.am{border-left-color:var(--am-m)}.metric.pu{border-left-color:var(--pu-m)}
+.metric-l{font-size:10px;color:var(--hi);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.metric-v{font-size:16px;font-weight:800}
+.metric-s{font-size:10px;color:var(--mu);margin-top:2px}
+
+/* COMPARE TABLE */
+.compare td:nth-child(2){color:var(--gn-m);font-weight:600}
+.compare td:nth-child(3){color:var(--bl);font-weight:600}
+.compare td:nth-child(4){font-weight:700}
+.up-cell{color:var(--gn-m)!important}.dn-cell{color:var(--rd-m)!important}
+
+/* EMP KPI */
+.emp-kpi-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bd)}
+.emp-kpi-row:last-child{border-bottom:none}
+.ava{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0}
+.kpi-stats{display:flex;gap:14px;flex-shrink:0}
+.ks{text-align:center}
+.ksv{font-size:13px;font-weight:800}
+.ksl{font-size:9px;color:var(--hi)}
+
+/* модуль внутри оболочки: свой сайдбар и топбар не нужны */
+body{display:block;height:auto;overflow:visible;background:var(--bg)}
+.main{display:block}
+.layout{display:flex;min-height:calc(100vh - 0px);align-items:stretch}
+.sidebar-nav{position:sticky;top:0;align-self:flex-start;max-height:100vh}
+.content{overflow:visible}
+
+th.tc,td.tc{text-align:center}
+th.tr,td.tr{text-align:right;font-variant-numeric:tabular-nums}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;font-size:10px;font-weight:700;color:var(--hi);text-transform:uppercase;
+   letter-spacing:.05em;padding:10px 12px;border-bottom:1px solid var(--bd);background:var(--s2);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid #f1f4fa}
+tbody tr:hover{background:#f8faff}
+
+
+/* ══════════════════════════════════════════════════
+   Адаптив и защита от обрезания.
+   В исходных стилях не было ни одного медиазапроса,
+   а ширины подписей стояли в 80–120 px — длинные суммы
+   и названия не помещались.
+   ══════════════════════════════════════════════════ */
+
+/* элементы сетки не должны распирать контейнер */
+.kpi-row > *, .g2 > *, .g3 > *, .g13 > *, .g31 > *, .acc-grid > *, .metric-grid > *{min-width:0}
+.kpi-v{font-size:19px;line-height:1.15;overflow-wrap:anywhere}
+.kpi-l,.kpi-s{overflow-wrap:anywhere}
+
+/* счета подстраиваются под ширину, а не по 4 в ряд всегда */
+.acc-grid{grid-template-columns:repeat(auto-fit,minmax(208px,1fr))}
+
+/* подписи и суммы в полосах: не режем длинные значения */
+.prog-val{width:auto;min-width:120px;white-space:nowrap}
+.prog-lbl{min-width:0;overflow-wrap:anywhere}
+.prog-row{gap:10px}
+.fn-lbl{width:auto;min-width:150px;max-width:210px}
+.fn-cnt{white-space:nowrap}
+.mut-bar{min-width:60px}
+.pdiv{height:18px;width:1px;background:var(--bd);margin:0 4px}
+
+/* строки отчётов: длинное название не наезжает на сумму */
+.pr,.pt,.pgrand,.bs-row,.bs-total{gap:12px}
+.pr > span:first-child,.bs-row > span:first-child{min-width:0;overflow-wrap:anywhere}
+.pr > span:last-child,.pt > span:last-child,.pgrand > span:last-child,
+.bs-row > span:last-child,.bs-total > span:last-child{white-space:nowrap;flex-shrink:0}
+
+/* таблицы всегда с горизонтальной прокруткой, ничего не срезается */
+.tw,.card > div[style*="overflow-x"]{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;min-width:620px}
+.card{overflow:hidden}
+
+@media (max-width:1400px){
+  .k4{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:1180px){
+  .g2,.g13,.g31{grid-template-columns:1fr}
+  .g3,.metric-grid{grid-template-columns:repeat(2,1fr)}
+  .k3{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:760px){
+  .k4,.k3,.k2,.g3,.metric-grid{grid-template-columns:1fr}
+  .view,.content{padding:12px 12px 32px}
+  .fn-lbl{min-width:110px}
+  .prog-val{min-width:96px;font-size:11.5px}
+}
+
+/* боковое меню отчётов: прокручивается и не обрезает пункты */
+.sidebar-nav{max-height:100vh;overflow-y:auto;overscroll-behavior:contain}
+.sn-item{white-space:normal;line-height:1.35}
+
+@media (max-width:900px){
+  /* на узком экране меню превращается в горизонтальную ленту */
+  .layout{flex-direction:column}
+  .sidebar-nav{width:auto;max-height:none;position:static;flex-direction:row;
+               overflow-x:auto;border-right:none;border-bottom:1px solid var(--bd);
+               padding:6px 8px;gap:4px;align-items:center}
+  .sn-section,.sn-divider{display:none}
+  .sn-item{border-left:none;border-radius:20px;padding:7px 13px;white-space:nowrap;
+           border:1px solid var(--bd)}
+  .sn-item.active{border-color:var(--bl)}
+}
+
+/* контейнер строк рейтинга (дорожка называется .prog-wrap) */
+.progs{padding:12px 16px}
+.progs .prog-row:last-child{margin-bottom:0}
+.prog-wrap{width:100%;min-width:80px}
+.prog-row{gap:10px}
+.fn-lbl{width:170px}
+.fn-cnt{width:44px}
+.fn-pct{width:52px}
+.bar-chart{align-items:flex-end;gap:8px}
+.bc{justify-content:flex-end}
+</style>
+</head>
+<body>
+
+<div class="main"><div class="layout">
+  <div class="sidebar-nav" id="nav"></div>
+  <div class="content" id="content"></div>
+</div></div>
+
+<iframe id="printer" style="position:fixed;width:0;height:0;border:0;left:-9999px" title="Печать"></iframe>
+
+<script>
+/* сообщаем оболочке о сбое, чтобы он не превратился в пустой экран */
+window.__errHook = true;
+window.addEventListener('error', e => {
+  try{ window.parent.postMessage({ ns:'kasymov', type:'moduleError',
+       msg:(e.message||'') + ' · ' + (e.lineno||'') }, '*'); }catch(_){}
+  const b = document.body;
+  if(b) b.insertAdjacentHTML('afterbegin',
+    '<div style="background:#7d211c;color:#fff;padding:12px 16px;font:13px/1.5 -apple-system,sans-serif">'
+    + '<b>Сбой в разделе.</b> ' + (e.message||'') + '</div>');
+});
+</script>
+<script src="kasymov-data.js"></script>
+<script>
+const K = window.KASYMOV;
+let S = null, page = 'pnl';
+let P = { preset:'month', from:'', to:'' };
+const TODAY = '2026-08-03';
+const MN = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+const CLOSED = ['installed','paid','done'];
+
+const NAV = [
+  ['Финансовые отчёты', [
+    ['pnl','ОПИУ / P&L'], ['dds','ДДС — движение денег'], ['balance','Баланс'],
+  ]],
+  ['Продажи', [
+    ['revenue','Выручка'], ['expenses','Расходы'], ['sales','Продажи и менеджеры'],
+    ['funnel','Воронка'], ['sources','Источники заявок'],
+  ]],
+  ['Производство', [
+    ['prod','Выработка цеха'], ['prodtime','Сроки и загрузка'],
+  ]],
+  ['Персонал', [
+    ['employees','KPI сотрудников'], ['salary','Зарплатная ведомость'],
+  ]],
+  ['Склад', [ ['stock','Остатки и ABC'] ]],
+  ['Сравнение', [ ['compare','Период к периоду'] ]],
+];
+
+K.connect(state => { S = state; render(); }, name => { if(name === 'primary') printRep(); });
+
+/* ═════════ ПЕРИОД ═════════ */
+function range(p){ return p ? K.rangeOf(p) : K.rangeOf(P.preset, P.from, P.to); }
+const pName = p => p ? K.rangeName(p) : K.rangeName(P.preset, P.from, P.to);
+const ok = (d,f,t) => { const x = (d||'').slice(0,10); return x >= f && x <= t; };
+const inR = d => { const [f,t] = range(); return ok(d,f,t); };
+const staff = id => K.staffName(id);
+const f0 = n => K.fmt(n);
+
+function pl(p){
+  const [f,t] = range(p);
+  const ords = S.orders.filter(o => CLOSED.includes(o.status) && ok(o.deadline,f,t));
+  const opts = S.docs.filter(d => d.type === 'opt' && ok(d.date,f,t));
+  const revR = ords.reduce((a,o) => a + K.orderTotal(o), 0);
+  const revO = opts.reduce((a,d) => a + d.lines.reduce((x,l) => x + l.qty * l.price, 0), 0);
+  const cstR = ords.reduce((a,o) => a + K.orderCost(o, S.goods), 0);
+  const cstO = opts.reduce((a,d) => a + d.lines.reduce((x,l) => {
+    const g = S.goods.find(z => z.id === l.good); return x + l.qty * (g ? g.cost : 0); }, 0), 0);
+  const exps = (S.expenses||[]).filter(e => ok(e.date,f,t) && e.cat !== 'Закуп материалов');
+  const byCat = {}; exps.forEach(e => byCat[e.cat] = (byCat[e.cat] || 0) + e.sum);
+  const expSum = exps.reduce((a,e) => a + e.sum, 0);
+  const rev = revR + revO, cost = cstR + cstO;
+  return { ords, opts, revR, revO, rev, cstR, cstO, cost, gross:rev - cost,
+           byCat, expSum, profit:rev - cost - expSum };
+}
+const leads = p => { const [f,t] = range(p); return S.orders.filter(o => ok(o.created,f,t)); };
+
+/* ═════════ КАРКАС ═════════ */
+function render(){
+  if(!S) return;
+  document.getElementById('nav').innerHTML = NAV.map(([sec,items]) =>
+    `<div class="sn-section">${sec}</div>` + items.map(([k,n]) =>
+      `<div class="sn-item ${page===k?'active':''}" data-p="${k}">${n}</div>`).join('')
+  ).join('<div class="sn-divider"></div>');
+  document.querySelectorAll('[data-p]').forEach(b =>
+    b.addEventListener('click', () => { page = b.dataset.p; render(); }));
+
+  document.getElementById('content').innerHTML = `<div class="page active">${PAGES[page]()}</div>`;
+  K.bindDateBar(v => { P = v; render(); }, P);
+  const pr = document.getElementById('do-print');
+  if(pr) pr.onclick = printRep;
+  const xl = document.getElementById('do-xls');
+  if(xl) xl.onclick = () => {
+    const t = document.querySelector('.page table');
+    const name = (NAV.flatMap(s => s[1]).find(i => i[0] === page) || [,'Отчёт'])[1];
+    if(t) K.tableToExcel(t, name + ' — ' + pName());
+    else K.toast('На этой странице нет таблицы для выгрузки', 'bad');
+  };
+}
+
+function ppRow(){
+  return K.dateBar(P.preset, P.from, P.to) +
+    `<div style="text-align:right;margin:-6px 0 12px">
+       <button class="btn btn-sm" id="do-xls">↓ Excel</button>
+       <button class="btn btn-sm" id="do-print">🖨 Печать</button></div>`;
+}
+
+/* высота столбика в пикселях */
+const CH = 96;
+const bars = (data, key, color) => {
+  const mx = Math.max(1, ...data.map(d => Math.abs(d[key])));
+  return `<div class="bar-chart" style="height:${CH + 34}px">${data.map(d => `<div class="bc">
+    <div class="bc-val">${d[key] ? f0(d[key]) : ''}</div>
+    <div class="bc-bar" style="height:${Math.max(2, Math.abs(d[key])/mx*CH)}px;background:${color}"></div>
+    <div class="bc-lbl">${d.n}</div></div>`).join('')}</div>`;
+};
+/* полоса рейтинга: дорожка .prog-wrap, заливка .prog-bar внутри */
+const progRow = (label, pct, val, color) => `<div class="prog-row"><div class="prog-lbl">${label}</div>
+  <div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,pct)}%;background:${color||'var(--bl)'}"></div></div>
+  <div class="prog-val">${val}</div></div>`;
+
+/* ═════════ СТРАНИЦЫ ═════════ */
+const PAGES = {};
+
+PAGES.pnl = () => {
+  const p = pl(), prev = pl('prev');
+  const cats = Object.entries(p.byCat).sort((a,b) => b[1] - a[1]);
+  const months = MN.map((n,i) => {
+    const m = String(i+1).padStart(2,'0');
+    const q = pl0(`2026-${m}-01`, `2026-${m}-31`);
+    return { n, v:q.profit, rev:q.rev };
+  }).filter((x,i) => i >= 4 && i <= 7);
+
+  return `${ppRow()}
+  <div class="al-b alert">ℹ Отчёт о прибылях и убытках за ${pName()}.</div>
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi bl"><div class="kpi-l">Выручка</div><div class="kpi-v">${f0(p.rev)} сом</div>
+      <div class="kpi-s">розница ${f0(p.revR)} · опт ${f0(p.revO)}</div></div>
+    <div class="kpi am"><div class="kpi-l">Себестоимость</div>
+      <div class="kpi-v" style="color:var(--am-m)">${f0(p.cost)} сом</div>
+      <div class="kpi-s">маржа ${p.rev?Math.round(p.gross/p.rev*100):0}%</div></div>
+    <div class="kpi rd"><div class="kpi-l">Расходы</div>
+      <div class="kpi-v" style="color:var(--rd-m)">${f0(p.expSum)} сом</div>
+      <div class="kpi-s">${cats.length} статей</div></div>
+    <div class="kpi ${p.profit>=0?'gn':'rd'}"><div class="kpi-l">Чистая прибыль</div>
+      <div class="kpi-v" style="color:var(--${p.profit>=0?'gn':'rd'}-m)">${f0(p.profit)} сом</div>
+      <div class="kpi-s">рентабельность ${p.rev?Math.round(p.profit/p.rev*100):0}%</div></div>
+  </div>
+  <div class="g2" style="display:grid;grid-template-columns:1.3fr 1fr;gap:14px">
+    <div class="card">
+      <div class="card-head"><div class="ct">ОПИУ — ${pName()}</div></div>
+      <div style="padding:14px 16px">
+        <div class="ps">Доходы</div>
+        <div class="pr"><span>Розничные заказы (${p.ords.length})</span>
+          <span style="color:var(--gn-m);font-weight:600">${f0(p.revR)}</span></div>
+        <div class="pr"><span>Оптовые продажи (${p.opts.length})</span>
+          <span style="color:var(--gn-m);font-weight:600">${f0(p.revO)}</span></div>
+        <div class="pt"><span>Итого доходов</span><span style="color:var(--gn-m)">${f0(p.rev)} сом</span></div>
+        <div class="ps">Себестоимость</div>
+        <div class="pr"><span>Материалы на заказы</span><span style="color:var(--rd-m);font-weight:600">−${f0(p.cstR)}</span></div>
+        <div class="pr"><span>Материалы на опт</span><span style="color:var(--rd-m);font-weight:600">−${f0(p.cstO)}</span></div>
+        <div class="pt"><span>Валовая прибыль</span><span style="color:var(--gn-m)">${f0(p.gross)} сом</span></div>
+        <div class="ps">Операционные расходы</div>
+        ${cats.map(([c,v]) => `<div class="pr"><span>${c}</span>
+          <span style="color:var(--rd-m);font-weight:600">−${f0(v)}</span></div>`).join('')
+          || '<div class="pr"><span style="color:var(--hi)">Расходов не было</span><span>0</span></div>'}
+        <div class="pt"><span>Итого расходов</span><span style="color:var(--rd-m)">−${f0(p.expSum)} сом</span></div>
+        <div class="pgrand"><span>Чистая прибыль</span>
+          <span style="color:var(--${p.profit>=0?'gn':'rd'}-m)">${f0(p.profit)} сом</span></div>
+      </div>
+      <div style="padding:0 16px 14px;font-size:11px;color:var(--hi)">
+        Закуп материалов не показан отдельной строкой — он уже в себестоимости.</div>
+    </div>
+    <div class="gcol">
+      <div class="card">
+        <div class="card-head"><div class="ct">Прибыль по месяцам</div></div>
+        ${bars(months, 'v', 'var(--gn-m)')}
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="ct">Метрики рентабельности</div></div>
+        <div class="metric-grid">
+          <div class="metric"><div class="metric-l">Валовая маржа</div>
+            <div class="metric-v">${p.rev?Math.round(p.gross/p.rev*100):0}%</div></div>
+          <div class="metric"><div class="metric-l">Чистая рентабельность</div>
+            <div class="metric-v" style="color:var(--${p.profit>=0?'gn':'rd'}-m)">${p.rev?Math.round(p.profit/p.rev*100):0}%</div></div>
+          <div class="metric"><div class="metric-l">Средний чек</div>
+            <div class="metric-v">${p.ords.length?f0(p.revR/p.ords.length):0}</div></div>
+          <div class="metric"><div class="metric-l">Точка безубыточности</div>
+            <div class="metric-v">${p.gross>0?f0(p.expSum/(p.gross/p.rev)):'—'}</div>
+            <div class="metric-s">выручки, чтобы выйти в ноль</div></div>
+          <div class="metric"><div class="metric-l">Доля опта</div>
+            <div class="metric-v">${p.rev?Math.round(p.revO/p.rev*100):0}%</div></div>
+          <div class="metric"><div class="metric-l">К прошлому месяцу</div>
+            <div class="metric-v" style="color:var(--${p.profit>=prev.profit?'gn':'rd'}-m)">${prev.profit?
+              (p.profit>=prev.profit?'+':'')+Math.round((p.profit-prev.profit)/Math.abs(prev.profit)*100)+'%':'—'}</div></div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+};
+/* вспомогательный расчёт за произвольный отрезок */
+function pl0(f,t){
+  const ords = S.orders.filter(o => CLOSED.includes(o.status) && ok(o.deadline,f,t));
+  const opts = S.docs.filter(d => d.type === 'opt' && ok(d.date,f,t));
+  const rev = ords.reduce((a,o) => a + K.orderTotal(o), 0) +
+    opts.reduce((a,d) => a + d.lines.reduce((x,l) => x + l.qty * l.price, 0), 0);
+  const cost = ords.reduce((a,o) => a + K.orderCost(o, S.goods), 0) +
+    opts.reduce((a,d) => a + d.lines.reduce((x,l) => {
+      const g = S.goods.find(z => z.id === l.good); return x + l.qty * (g ? g.cost : 0); }, 0), 0);
+  const exp = (S.expenses||[]).filter(e => ok(e.date,f,t) && e.cat !== 'Закуп материалов')
+    .reduce((a,e) => a + e.sum, 0);
+  return { rev, cost, exp, profit:rev - cost - exp };
+}
+
+PAGES.dds = () => {
+  const [f,t] = range();
+  const cf = K.cashflow(S, f, t);
+  const src = Object.entries(cf.bySrc).sort((a,b) => b[1] - a[1]);
+  const cat = Object.entries(cf.byCat).sort((a,b) => b[1] - a[1]);
+  const months = MN.map((n,i) => {
+    const m = String(i+1).padStart(2,'0');
+    const c = K.cashflow(S, `2026-${m}-01`, `2026-${m}-31`);
+    return { n, v:c.op };
+  }).filter((x,i) => i >= 4 && i <= 7);
+
+  return `${ppRow()}
+  <div class="alert ${cf.op>=0?'al-g':'al-w'}">${cf.op>=0
+    ? `✓ Денежный поток положительный: <strong>+${f0(cf.op)} сом</strong>.`
+    : `⚠ Денежный поток отрицательный: <strong>${f0(cf.op)} сом</strong>. Тратим больше, чем получаем.`}</div>
+  <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi bl"><div class="kpi-l">Остаток на начало</div>
+      <div class="kpi-v">${f0(cf.start)} сом</div><div class="kpi-s">${K.dmy(f)}</div></div>
+    <div class="kpi ${cf.op>=0?'gn':'rd'}"><div class="kpi-l">Операционный поток</div>
+      <div class="kpi-v" style="color:var(--${cf.op>=0?'gn':'rd'}-m)">${cf.op>=0?'+':''}${f0(cf.op)} сом</div>
+      <div class="kpi-s">приход ${f0(cf.opIn)} · расход ${f0(cf.opOut)}</div></div>
+    <div class="kpi gn"><div class="kpi-l">Остаток на конец</div>
+      <div class="kpi-v" style="color:var(--gn-m)">${f0(cf.end)} сом</div><div class="kpi-s">${K.dmy(t)}</div></div>
+  </div>
+  <div class="g2" style="display:grid;grid-template-columns:1.3fr 1fr;gap:14px">
+    <div class="card">
+      <div class="card-head"><div class="ct">Отчёт ДДС — ${pName()}</div></div>
+      <div style="padding:14px 16px">
+        <div class="bs-head" style="margin-top:0">Остаток на начало</div>
+        <div class="bs-row"><span>Все кассы и счета</span><span>${f0(cf.start)}</span></div>
+        <div class="bs-head">I. Поступления</div>
+        ${src.map(([n,v]) => `<div class="bs-row"><span>${n}</span>
+          <span style="color:var(--gn-m)">+${f0(v)}</span></div>`).join('')
+          || '<div class="bs-row"><span style="color:var(--hi)">Поступлений не было</span><span>0</span></div>'}
+        <div class="bs-total"><span>Итого поступило</span><span style="color:var(--gn-m)">+${f0(cf.opIn)}</span></div>
+        <div class="bs-head">II. Выплаты</div>
+        ${cat.map(([n,v]) => `<div class="bs-row"><span>${n}</span>
+          <span style="color:var(--rd-m)">−${f0(v)}</span></div>`).join('')
+          || '<div class="bs-row"><span style="color:var(--hi)">Выплат не было</span><span>0</span></div>'}
+        <div class="bs-total"><span>Итого выплачено</span><span style="color:var(--rd-m)">−${f0(cf.opOut)}</span></div>
+        <div class="pgrand"><span>Остаток на конец</span><span>${f0(cf.end)} сом</span></div>
+      </div>
+      <div style="padding:0 16px 14px;font-size:11px;color:var(--hi)">
+        Переводы между своими кассами в ДДС не входят. Наличные у сотрудников попадают сюда
+        только после сдачи в кассу.</div>
+    </div>
+    <div class="gcol">
+      <div class="card"><div class="card-head"><div class="ct">Поток по месяцам</div></div>
+        ${bars(months, 'v', 'var(--bl)')}</div>
+      <div class="card">
+        <div class="card-head"><div class="ct">Структура поступлений</div></div>
+        <div class="progs">${src.map(([n,v]) => `<div class="prog-row">
+          <div class="prog-lbl">${n}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,v/Math.max(1,cf.opIn)*100)}%;background:var(--gn-m)"></div></div><div class="prog-val">${f0(v)}</div></div>`).join('')
+          || '<div style="color:var(--hi);font-size:12px;padding:10px 0">Поступлений нет</div>'}</div>
+      </div>
+    </div>
+  </div>`;
+};
+
+PAGES.balance = () => {
+  const b = K.balanceSheet(S);
+  const bal = K.balances(S);
+  const okk = Math.round(b.assets) === Math.round(b.liab + b.capital);
+  return `<div class="al-b alert">ℹ Баланс на ${K.dmy(TODAY)}. Активы ${okk?'= Пассивы ✓':'≠ Пассивы'}</div>
+  <div class="g2" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="card">
+      <div class="card-head"><div class="ct" style="color:var(--gn-m)">АКТИВЫ</div>
+        <div class="ca">${f0(b.assets)} сом</div></div>
+      <div style="padding:14px 16px">
+        <div class="bs-head" style="margin-top:0">Денежные средства</div>
+        ${K.ACCOUNTS.map(a => `<div class="bs-row"><span>${a.name}</span><span>${f0(bal[a.id])}</span></div>`).join('')}
+        <div class="bs-row"><span>Деньги у сотрудников</span><span>${f0(b.hands)}</span></div>
+        <div class="bs-total"><span>Итого денег</span><span style="color:var(--gn-m)">${f0(b.money+b.hands)}</span></div>
+        <div class="bs-head">Запасы</div>
+        <div class="bs-row"><span>Материалы на складах</span><span>${f0(b.stock)}</span></div>
+        <div class="bs-head">Дебиторская задолженность</div>
+        <div class="bs-row"><span>Клиенты по заказам</span><span>${f0(b.clients)}</span></div>
+        <div class="bs-row"><span>Оптовые покупатели</span><span>${f0(b.buyers)}</span></div>
+        <div class="pgrand"><span>Баланс актива</span><span style="color:var(--gn-m)">${f0(b.assets)} сом</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="ct" style="color:var(--rd-m)">ПАССИВЫ</div>
+        <div class="ca">${f0(b.liab+b.capital)} сом</div></div>
+      <div style="padding:14px 16px">
+        <div class="bs-head" style="margin-top:0">Обязательства</div>
+        ${S.suppliers.filter(s => s.debt > 0).map(s => `<div class="bs-row">
+          <span>${K.esc(s.name)}</span><span>${f0(s.debt)}</span></div>`).join('')
+          || '<div class="bs-row"><span style="color:var(--hi)">Долгов нет</span><span>0</span></div>'}
+        <div class="bs-total"><span>Итого обязательств</span><span style="color:var(--rd-m)">${f0(b.liab)}</span></div>
+        <div class="bs-head">Собственный капитал</div>
+        <div class="bs-row"><span>Чистые активы</span><span>${f0(b.capital)}</span></div>
+        <div class="pgrand"><span>Баланс пассива</span><span style="color:var(--bl)">${f0(b.liab+b.capital)} сом</span></div>
+      </div>
+      <div class="metric-grid" style="padding:0 16px 14px">
+        <div class="metric"><div class="metric-l">Живых денег</div>
+          <div class="metric-v">${Math.round(b.money/b.assets*100)}%</div></div>
+        <div class="metric"><div class="metric-l">В складе</div>
+          <div class="metric-v">${Math.round(b.stock/b.assets*100)}%</div></div>
+        <div class="metric"><div class="metric-l">В долгах</div>
+          <div class="metric-v">${Math.round((b.clients+b.buyers)/b.assets*100)}%</div></div>
+      </div>
+    </div>
+  </div>`;
+};
+
+PAGES.revenue = () => {
+  const p = pl();
+  const months = MN.map((n,i) => {
+    const m = String(i+1).padStart(2,'0');
+    return { n, v:pl0(`2026-${m}-01`, `2026-${m}-31`).rev };
+  }).filter((x,i) => i >= 4 && i <= 7);
+  const byBr = {}; p.ords.forEach(o => byBr[o.branch] = (byBr[o.branch] || 0) + K.orderTotal(o));
+  const brs = Object.entries(byBr).sort((a,b) => b[1] - a[1]);
+  const mxB = Math.max(1, ...brs.map(x => x[1]));
+  const byType = {};
+  p.ords.forEach(o => o.items.forEach(i => byType[i.type] = (byType[i.type] || 0) + i.w * i.h * i.qty));
+  const tps = Object.entries(byType).sort((a,b) => b[1] - a[1]);
+  const mxT = Math.max(0.1, ...tps.map(x => x[1]));
+
+  return `${ppRow()}
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi bl"><div class="kpi-l">Выручка всего</div><div class="kpi-v">${f0(p.rev)} сом</div>
+      <div class="kpi-s">${pName()}</div></div>
+    <div class="kpi gn"><div class="kpi-l">Розница</div>
+      <div class="kpi-v" style="color:var(--gn-m)">${f0(p.revR)} сом</div>
+      <div class="kpi-s">${p.ords.length} заказов</div></div>
+    <div class="kpi am"><div class="kpi-l">Опт</div>
+      <div class="kpi-v" style="color:var(--am-m)">${f0(p.revO)} сом</div>
+      <div class="kpi-s">${p.opts.length} продаж</div></div>
+    <div class="kpi tl"><div class="kpi-l">Средний чек</div>
+      <div class="kpi-v" style="color:var(--tl-m)">${p.ords.length?f0(p.revR/p.ords.length):0} сом</div>
+      <div class="kpi-s">розница</div></div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-head"><div class="ct">Динамика выручки по месяцам</div></div>
+    ${bars(months, 'v', 'var(--bl)')}
+  </div>
+  <div class="g2" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="card"><div class="card-head"><div class="ct">По филиалам</div></div>
+      <div class="progs">${brs.length ? brs.map(([b,v]) => `<div class="prog-row"><div class="prog-lbl">${K.esc((K.BRANCHES.find(x=>x.id===b)||{}).name||b)}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,v/mxB*100)}%;background:var(--bl)"></div></div><div class="prog-val">${f0(v)}</div></div>`).join('')
+        : '<div style="color:var(--hi);font-size:12px;padding:10px 0">Нет закрытых заказов</div>'}</div>
+    </div>
+    <div class="card"><div class="card-head"><div class="ct">По типу изделия</div></div>
+      <div class="progs">${tps.length ? tps.map(([t,v]) => `<div class="prog-row"><div class="prog-lbl">${K.esc(t)}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,v/mxT*100)}%;background:var(--pu-m)"></div></div><div class="prog-val">${K.qfmt(v)} м²</div></div>`).join('')
+        : '<div style="color:var(--hi);font-size:12px;padding:10px 0">Нет данных</div>'}</div>
+    </div>
+  </div>`;
+};
+
+PAGES.expenses = () => {
+  const p = pl();
+  const cats = Object.entries(p.byCat).sort((a,b) => b[1] - a[1]);
+  const mx = Math.max(1, ...cats.map(c => c[1]));
+  const months = MN.map((n,i) => {
+    const m = String(i+1).padStart(2,'0');
+    return { n, v:(S.expenses||[]).filter(e => ok(e.date, `2026-${m}-01`, `2026-${m}-31`))
+      .reduce((a,e) => a + e.sum, 0) };
+  }).filter((x,i) => i >= 4 && i <= 7);
+
+  return `${ppRow()}
+  <div class="kpi-row" style="grid-template-columns:repeat(3,1fr)">
+    <div class="kpi rd"><div class="kpi-l">Операционные расходы</div>
+      <div class="kpi-v" style="color:var(--rd-m)">${f0(p.expSum)} сом</div>
+      <div class="kpi-s">${cats.length} статей</div></div>
+    <div class="kpi am"><div class="kpi-l">Себестоимость</div>
+      <div class="kpi-v" style="color:var(--am-m)">${f0(p.cost)} сом</div>
+      <div class="kpi-s">материалы</div></div>
+    <div class="kpi bl"><div class="kpi-l">Доля от выручки</div>
+      <div class="kpi-v">${p.rev?Math.round(p.expSum/p.rev*100):0}%</div>
+      <div class="kpi-s">операционные расходы</div></div>
+  </div>
+  <div class="g2" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+    <div class="card"><div class="card-head"><div class="ct">Расходы по статьям</div></div>
+      <div class="progs">${cats.length ? cats.map(([c,v]) => `<div class="prog-row"><div class="prog-lbl">${c}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,v/mx*100)}%;background:var(--rd-m)"></div></div><div class="prog-val">${f0(v)} · ${Math.round(v/p.expSum*100)}%</div></div>`).join('')
+        : '<div style="color:var(--hi);font-size:12px;padding:10px 0">Расходов нет</div>'}</div>
+      <div style="padding:0 16px 12px;font-size:11px;color:var(--hi)">
+        Закуп материалов сюда не входит — он в себестоимости.</div>
+    </div>
+    <div class="card"><div class="card-head"><div class="ct">Динамика расходов</div></div>
+      ${bars(months, 'v', 'var(--rd-m)')}</div>
+  </div>
+  <div class="card"><div class="card-head"><div class="ct">Все расходы периода</div></div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th style="width:100px">Дата</th><th style="width:170px">Статья</th>
+        <th>Назначение</th><th style="width:150px">Кто провёл</th>
+        <th class="tr" style="width:120px">Сумма</th></tr></thead>
+      <tbody>${(S.expenses||[]).filter(e => inR(e.date)).sort((a,b) => b.date.localeCompare(a.date))
+        .map(e => `<tr><td>${K.dmy(e.date)}</td><td style="font-weight:600">${e.cat}</td>
+        <td>${K.esc(e.note||'')}</td><td>${K.esc(staff(e.who))}</td>
+        <td class="tr" style="font-weight:700;color:var(--rd-m)">${f0(e.sum)}</td></tr>`).join('')
+        || '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--hi)">Расходов нет</td></tr>'}</tbody>
+    </table></div></div>`;
+};
+
+PAGES.sales = () => {
+  const p = pl(), l = leads();
+  const mgr = K.byRole('manager').map(s => {
+    const my = l.filter(o => o.manager === s.id);
+    const won = my.filter(o => !['new','assigned','measured','thinking','rejected'].includes(o.status));
+    const closed = p.ords.filter(o => o.manager === s.id);
+    return { s, cnt:my.length, won:won.length, closed:closed.length,
+             sum:closed.reduce((a,o) => a + K.orderTotal(o), 0) };
+  }).filter(x => x.cnt || x.closed).sort((a,b) => b.sum - a.sum);
+  const mx = Math.max(1, ...mgr.map(m => m.sum));
+
+  return `${ppRow()}
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-head"><div class="ct">Продажи по менеджерам</div><div class="ca">${pName()}</div></div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>Менеджер</th><th class="tc" style="width:90px">Заявок</th>
+        <th class="tc" style="width:90px">Продано</th><th class="tc" style="width:110px">Конверсия</th>
+        <th class="tc" style="width:100px">Закрыто</th><th class="tr" style="width:140px">Выручка</th>
+        <th class="tr" style="width:130px">Средний чек</th></tr></thead>
+      <tbody>${mgr.length ? mgr.map(x => `<tr>
+        <td><b>${K.esc(x.s.name)}</b></td>
+        <td class="tc">${x.cnt}</td><td class="tc">${x.won}</td>
+        <td class="tc">${x.cnt?`<span class="b b-${x.won/x.cnt>=.5?'green':x.won/x.cnt>=.25?'blue':'gray'}">${Math.round(x.won/x.cnt*100)}%</span>`:'—'}</td>
+        <td class="tc">${x.closed}</td>
+        <td class="tr" style="font-weight:700">${f0(x.sum)}</td>
+        <td class="tr" style="color:var(--mu)">${x.closed?f0(x.sum/x.closed):'—'}</td></tr>`).join('')
+        : '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--hi)">Нет данных</td></tr>'}</tbody>
+      <tfoot><tr style="background:var(--s2);font-weight:800">
+        <td>Итого</td><td class="tc">${mgr.reduce((a,x)=>a+x.cnt,0)}</td>
+        <td class="tc">${mgr.reduce((a,x)=>a+x.won,0)}</td><td></td>
+        <td class="tc">${mgr.reduce((a,x)=>a+x.closed,0)}</td>
+        <td class="tr">${f0(mgr.reduce((a,x)=>a+x.sum,0))}</td><td></td></tr></tfoot>
+    </table></div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-head"><div class="ct">Рейтинг по выручке</div></div>
+    <div class="progs">${mgr.map(x => `<div class="prog-row"><div class="prog-lbl">${K.esc(x.s.name)}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,x.sum/mx*100)}%;background:var(--gn-m)"></div></div><div class="prog-val">${f0(x.sum)}</div></div>`).join('')}</div>
+  </div>
+  <div class="card"><div class="card-head"><div class="ct">Детализация закрытых заказов</div>
+    <div class="ca">${p.ords.length} шт</div></div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th style="width:80px">Заказ</th><th>Адрес</th><th style="width:150px">Менеджер</th>
+        <th style="width:150px">Установщик</th><th class="tr" style="width:110px">Сумма</th>
+        <th class="tr" style="width:110px">Материалы</th><th class="tr" style="width:110px">Прибыль</th></tr></thead>
+      <tbody>${p.ords.length ? p.ords.map(o => {
+        const c = K.orderCost(o, S.goods), t = K.orderTotal(o);
+        return `<tr><td style="font-weight:700">#${o.num}</td><td>${K.esc(o.addr)}</td>
+          <td>${K.esc(staff(o.manager))}</td><td>${o.installer?K.esc(staff(o.installer)):'—'}</td>
+          <td class="tr">${f0(t)}</td><td class="tr" style="color:var(--mu)">${f0(c)}</td>
+          <td class="tr" style="font-weight:700;color:var(--gn-m)">${f0(t-c)}</td></tr>`; }).join('')
+        : '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--hi)">Нет закрытых заказов</td></tr>'}</tbody>
+    </table></div></div>`;
+};
+
+PAGES.funnel = () => {
+  const l = leads();
+  const F = [
+    { n:'Поступило заявок', v:l.length, c:'var(--bl)' },
+    { n:'Назначен замерщик', v:l.filter(o => o.measurer).length, c:'#4a8fdb' },
+    { n:'Замер сделан', v:l.filter(o => o.items.length).length, c:'var(--pu-m)' },
+    { n:'Клиент согласился', v:l.filter(o => !['new','assigned','measured','thinking','rejected'].includes(o.status)).length, c:'var(--gn-m)' },
+    { n:'Сдано и установлено', v:l.filter(o => CLOSED.includes(o.status)).length, c:'#3d7a12' },
+  ];
+  const mx = Math.max(1, ...F.map(x => x.v));
+  const lost = l.filter(o => o.status === 'rejected');
+  const think = l.filter(o => o.status === 'thinking');
+  const cyc = l.filter(o => CLOSED.includes(o.status))
+    .map(o => (new Date(o.deadline) - new Date(o.created.slice(0,10))) / 864e5);
+  const avg = cyc.length ? Math.round(cyc.reduce((a,x) => a + x, 0) / cyc.length) : 0;
+
+  return `${ppRow()}
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi bl"><div class="kpi-l">Заявок</div><div class="kpi-v">${l.length}</div>
+      <div class="kpi-s">${pName()}</div></div>
+    <div class="kpi gn"><div class="kpi-l">Сквозная конверсия</div>
+      <div class="kpi-v" style="color:var(--gn-m)">${l.length?Math.round(F[4].v/l.length*100):0}%</div>
+      <div class="kpi-s">от заявки до установки</div></div>
+    <div class="kpi am"><div class="kpi-l">Средний цикл</div>
+      <div class="kpi-v" style="color:var(--am-m)">${avg} дн.</div>
+      <div class="kpi-s">от заявки до сдачи</div></div>
+    <div class="kpi rd"><div class="kpi-l">Потеряно</div>
+      <div class="kpi-v" style="color:var(--rd-m)">${lost.length + think.length}</div>
+      <div class="kpi-s">${f0([...lost,...think].reduce((a,o) => a + K.orderTotal(o), 0))} сом</div></div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-head"><div class="ct">Воронка продаж</div><div class="ca">${pName()}</div></div>
+    <div style="padding:14px 16px">${F.map((x,i) => `<div class="fn-row">
+      <div class="fn-lbl">${x.n}</div>
+      <div class="fn-wrap"><div class="fn-bar" style="width:${Math.max(4, x.v/mx*100)}%;background:${x.c}">${x.v}</div></div>
+      <div class="fn-cnt">${x.v}</div>
+      <div class="fn-pct">${i ? (F[i-1].v ? Math.round(x.v/F[i-1].v*100) : 0) + '%' : '100%'}</div></div>`).join('')}</div>
+  </div>
+  <div class="card"><div class="card-head"><div class="ct">Кого потеряли и почему</div></div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th style="width:80px">Заказ</th><th>Адрес</th><th style="width:150px">Замерщик</th>
+        <th style="width:120px">Статус</th><th class="tr" style="width:110px">Сумма</th>
+        <th style="width:240px">Что записали</th></tr></thead>
+      <tbody>${[...lost,...think].length ? [...lost,...think].map(o => `<tr>
+        <td style="font-weight:700">#${o.num}</td><td>${K.esc(o.addr)}</td>
+        <td>${o.measurer?K.esc(staff(o.measurer)):'—'}</td>
+        <td><span class="b b-${o.status==='rejected'?'gray':'blue'}">${K.STATUS[o.status].label}</span></td>
+        <td class="tr">${K.orderTotal(o)?f0(K.orderTotal(o)):'—'}</td>
+        <td style="color:var(--mu)">${K.esc(o.comment||'причина не записана')}</td></tr>`).join('')
+        : '<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--hi)">Отказов нет</td></tr>'}</tbody>
+    </table></div></div>`;
+};
+
+PAGES.sources = () => {
+  const l = leads(), p = pl();
+  const map = {};
+  l.forEach(o => {
+    const s = o.source || 'Не указан';
+    if(!map[s]) map[s] = { n:0, won:0, sum:0 };
+    map[s].n++;
+    if(!['new','assigned','measured','thinking','rejected'].includes(o.status)) map[s].won++;
+    if(CLOSED.includes(o.status)) map[s].sum += K.orderTotal(o);
+  });
+  const rows = Object.entries(map).sort((a,b) => b[1].n - a[1].n);
+  const mx = Math.max(1, ...rows.map(r => r[1].n));
+  const ads = (S.expenses||[]).filter(e => inR(e.date) && e.cat === 'Реклама').reduce((a,e) => a + e.sum, 0);
+
+  return `${ppRow()}
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi bl"><div class="kpi-l">Заявок</div><div class="kpi-v">${l.length}</div>
+      <div class="kpi-s">${rows.length} источников</div></div>
+    <div class="kpi rd"><div class="kpi-l">Потрачено на рекламу</div>
+      <div class="kpi-v" style="color:var(--rd-m)">${f0(ads)} сом</div><div class="kpi-s">${pName()}</div></div>
+    <div class="kpi am"><div class="kpi-l">Цена заявки</div>
+      <div class="kpi-v" style="color:var(--am-m)">${l.length?f0(ads/l.length):0} сом</div>
+      <div class="kpi-s">реклама / заявки</div></div>
+    <div class="kpi gn"><div class="kpi-l">Окупаемость</div>
+      <div class="kpi-v" style="color:var(--gn-m)">${ads?Math.round(p.revR/ads)+'×':'—'}</div>
+      <div class="kpi-s">выручка к рекламе</div></div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-head"><div class="ct">Заявки по источникам</div></div>
+    <div class="progs">${rows.map(([n,v]) => `<div class="prog-row"><div class="prog-lbl">${n}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,v.n/mx*100)}%;background:var(--bl)"></div></div><div class="prog-val">${v.n} заявок</div></div>`).join('')
+      || '<div style="color:var(--hi);font-size:12px;padding:10px 0">Заявок нет</div>'}</div>
+  </div>
+  <div class="card"><div class="card-head"><div class="ct">Детализация по источникам</div></div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>Источник</th><th class="tc" style="width:100px">Заявок</th>
+        <th class="tc" style="width:100px">Продано</th><th class="tc" style="width:110px">Конверсия</th>
+        <th class="tr" style="width:140px">Выручка</th></tr></thead>
+      <tbody>${rows.map(([n,v]) => `<tr><td><b>${n}</b></td>
+        <td class="tc">${v.n}</td><td class="tc">${v.won}</td>
+        <td class="tc"><span class="b b-${v.won/v.n>=.5?'green':v.won/v.n>=.25?'blue':'gray'}">${Math.round(v.won/v.n*100)}%</span></td>
+        <td class="tr" style="font-weight:700">${f0(v.sum)}</td></tr>`).join('')
+        || '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--hi)">Нет данных</td></tr>'}</tbody>
+    </table></div></div>`;
+};
+
+/* ═════════ ПРОИЗВОДСТВО ═════════ */
+PAGES.prod = () => {
+  const [f,t] = range();
+  /* сколько галочек поставлено за период, по операциям и людям */
+  const byOp = {}, byMan = {};
+  let totalTicks = 0;
+  S.orders.forEach(o => o.items.forEach(it => (it.marks || []).forEach(m =>
+    K.OPS.forEach(op => {
+      const e = m[op.key];
+      if(!e || !ok(e.at,f,t)) return;
+      byOp[op.key] = (byOp[op.key] || 0) + 1;
+      if(!byMan[e.by]) byMan[e.by] = { total:0, per:{} };
+      byMan[e.by].total++; byMan[e.by].per[op.key] = (byMan[e.by].per[op.key] || 0) + 1;
+      totalTicks++;
+    }))));
+  const men = Object.entries(byMan).sort((a,b) => b[1].total - a[1].total);
+  const mxM = Math.max(1, ...men.map(m => m[1].total));
+  const mxO = Math.max(1, ...K.OPS.map(o => byOp[o.key] || 0));
+
+  /* выпуск: изделия, у которых упаковка закрыта в периоде */
+  let made = 0, madeArea = 0;
+  S.orders.forEach(o => o.items.forEach(it => (it.marks || []).forEach(m => {
+    if(m.pack && ok(m.pack.at,f,t)){ made++; madeArea += it.w * it.h; }
+  })));
+  const inShop = S.orders.filter(o => o.status === 'toShop');
+  const pcsInShop = inShop.reduce((a,o) => a + o.items.reduce((x,i) => x + i.qty, 0), 0);
+
+  return `${ppRow()}
+  <div class="al-b alert">ℹ Выработка цеха считается по галочкам, которые ставят рабочие в разделе «Производство».</div>
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi gn"><div class="kpi-l">Изготовлено изделий</div>
+      <div class="kpi-v" style="color:var(--gn-m)">${made}</div>
+      <div class="kpi-s">${K.qfmt(madeArea)} м² упаковано</div></div>
+    <div class="kpi bl"><div class="kpi-l">Операций закрыто</div>
+      <div class="kpi-v">${totalTicks}</div>
+      <div class="kpi-s">${men.length} человек работали</div></div>
+    <div class="kpi am"><div class="kpi-l">Сейчас в цеху</div>
+      <div class="kpi-v" style="color:var(--am-m)">${pcsInShop}</div>
+      <div class="kpi-s">изделий по ${inShop.length} адресам</div></div>
+    <div class="kpi tl"><div class="kpi-l">На человека</div>
+      <div class="kpi-v" style="color:var(--tl-m)">${men.length?Math.round(totalTicks/men.length):0}</div>
+      <div class="kpi-s">операций за период</div></div>
+  </div>
+
+  <div class="g2" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+    <div class="card"><div class="card-head"><div class="ct">По операциям</div></div>
+      <div class="progs">${K.OPS.map(op => `<div class="prog-row"><div class="prog-lbl">${op.label}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,(byOp[op.key]||0)/mxO*100)}%;background:var(--bl)"></div></div><div class="prog-val">${byOp[op.key] || 0}</div></div>`).join('')}</div>
+    </div>
+    <div class="card"><div class="card-head"><div class="ct">Кто сколько сделал</div></div>
+      <div class="progs">${men.length ? men.map(([id,v]) => `<div class="prog-row"><div class="prog-lbl">${K.esc(staff(id))}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,v.total/mxM*100)}%;background:var(--gn-m)"></div></div><div class="prog-val">${v.total} оп.</div></div>`).join('')
+        : '<div style="color:var(--hi);font-size:12px;padding:10px 0">За период отметок нет</div>'}</div>
+    </div>
+  </div>
+
+  <div class="card"><div class="card-head"><div class="ct">Выработка по людям и операциям</div>
+    <div class="ca">${pName()}</div></div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>Сотрудник</th>
+        ${K.OPS.map(o => `<th class="tc" style="width:95px">${o.label}</th>`).join('')}
+        <th class="tc" style="width:100px">Всего</th></tr></thead>
+      <tbody>${men.length ? men.map(([id,v]) => `<tr>
+        <td><b>${K.esc(staff(id))}</b></td>
+        ${K.OPS.map(o => `<td class="tc" style="${v.per[o.key]?'font-weight:700':'color:var(--hi)'}">${v.per[o.key]||'—'}</td>`).join('')}
+        <td class="tc" style="font-weight:800">${v.total}</td></tr>`).join('')
+        : `<tr><td colspan="${K.OPS.length+2}" style="text-align:center;padding:30px;color:var(--hi)">За период отметок нет</td></tr>`}</tbody>
+      ${men.length ? `<tfoot><tr style="background:var(--s2);font-weight:800"><td>Итого</td>
+        ${K.OPS.map(o => `<td class="tc">${byOp[o.key]||0}</td>`).join('')}
+        <td class="tc">${totalTicks}</td></tr></tfoot>` : ''}
+    </table></div></div>`;
+};
+
+PAGES.prodtime = () => {
+  const inShop = S.orders.filter(o => o.status === 'toShop');
+  const before = K.OPS.filter(o => o.key !== 'pack').map(o => o.key);
+  const ready = m => before.every(k => m[k]);
+  const rows = inShop.map(o => {
+    const pcs = o.items.reduce((a,i) => a + i.qty, 0);
+    const done = o.items.reduce((a,i) => a + i.marks.filter(ready).length, 0);
+    const packed = o.items.reduce((a,i) => a + i.marks.filter(m => m.pack).length, 0);
+    const left = Math.round((new Date(o.deadline) - new Date(TODAY)) / 864e5);
+    return { o, pcs, done, packed, left, urgent:o.items.some(i => i.urgent) };
+  }).sort((a,b) => a.left - b.left);
+
+  /* сколько дней проходит от отправки в цех до упаковки */
+  const cyc = [];
+  S.orders.forEach(o => {
+    const shop = (o.history||[]).find(h => h.what.includes('цех'));
+    const pk = o.items.flatMap(i => i.marks || []).filter(m => m.pack).map(m => m.pack.at).sort()[0];
+    if(shop && pk) cyc.push((new Date(pk.slice(0,10)) - new Date(shop.at.slice(0,10))) / 864e5);
+  });
+  const avgCyc = cyc.length ? (cyc.reduce((a,x) => a + x, 0) / cyc.length).toFixed(1) : '—';
+  const late = rows.filter(r => r.left < 0).length;
+
+  return `<div class="alert ${late?'al-w':'al-g'}">${late
+    ? `⚠ ${late} заказов в цеху уже просрочены по сроку сдачи.`
+    : '✓ Все заказы в цеху идут в срок.'}</div>
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi bl"><div class="kpi-l">Заказов в цеху</div><div class="kpi-v">${inShop.length}</div>
+      <div class="kpi-s">${rows.reduce((a,r) => a + r.pcs, 0)} изделий</div></div>
+    <div class="kpi gn"><div class="kpi-l">Готово к упаковке</div>
+      <div class="kpi-v" style="color:var(--gn-m)">${rows.reduce((a,r) => a + r.done, 0)}</div>
+      <div class="kpi-s">изделий закрыто по 4 операциям</div></div>
+    <div class="kpi am"><div class="kpi-l">Средний срок в цеху</div>
+      <div class="kpi-v" style="color:var(--am-m)">${avgCyc} дн.</div>
+      <div class="kpi-s">от отправки до упаковки</div></div>
+    <div class="kpi ${late?'rd':'gn'}"><div class="kpi-l">Просрочено</div>
+      <div class="kpi-v" style="color:var(--${late?'rd':'gn'}-m)">${late}</div>
+      <div class="kpi-s">заказов</div></div>
+  </div>
+  <div class="card"><div class="card-head"><div class="ct">Что сейчас в цеху</div>
+    <div class="ca">${inShop.length} адресов</div></div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th style="width:80px">Заказ</th><th>Адрес</th>
+        <th class="tc" style="width:90px">Изделий</th><th class="tc" style="width:110px">Готово</th>
+        <th class="tc" style="width:110px">Упаковано</th><th style="width:180px">Прогресс</th>
+        <th style="width:110px">Срок</th><th class="tc" style="width:110px">Осталось</th></tr></thead>
+      <tbody>${rows.length ? rows.map(r => `<tr>
+        <td style="font-weight:700">#${r.o.num}${r.urgent?' <span class="b b-gray">срочно</span>':''}</td>
+        <td>${K.esc(r.o.addr)}</td>
+        <td class="tc">${r.pcs}</td>
+        <td class="tc" style="font-weight:700">${r.done}</td>
+        <td class="tc">${r.packed}</td>
+        <td><div class="prog-wrap" style="width:100%"><div class="prog-bar" style="width:${Math.max(3,r.done/r.pcs*100)}%;background:${r.done===r.pcs?'var(--gn-m)':'var(--bl)'}"></div></div></td>
+        <td>${K.dmy(r.o.deadline)}</td>
+        <td class="tc"><span class="b b-${r.left<0?'gray':r.left<=2?'blue':'green'}">${r.left<0?'просрочен':r.left+' дн.'}</span></td>
+      </tr>`).join('') : '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--hi)">В цеху пусто</td></tr>'}</tbody>
+    </table></div></div>`;
+};
+
+PAGES.employees = () => {
+  const [f,t] = range();
+  const l = leads(), p = pl();
+  const meas = K.byRole('measurer').map(s => {
+    const my = l.filter(o => o.measurer === s.id);
+    const done = my.filter(o => o.items.length);
+    const won = my.filter(o => !['new','assigned','measured','thinking','rejected'].includes(o.status));
+    const area = done.reduce((a,o) => a + o.items.reduce((x,i) => x + i.w * i.h * i.qty, 0), 0);
+    return { s, cnt:my.length, done:done.length, won:won.length, area };
+  }).filter(x => x.cnt);
+  const inst = K.byRole('installer').map(s => {
+    const my = S.orders.filter(o => o.installer === s.id && CLOSED.includes(o.status) && ok(o.deadline,f,t));
+    return { s, cnt:my.length, pcs:my.reduce((a,o) => a + o.items.reduce((x,i) => x + i.qty, 0), 0) };
+  }).filter(x => x.cnt);
+  const pay = K.payroll(S, f, t);
+  const mxP = Math.max(1, ...pay.map(r => r.sum));
+
+  return `${ppRow()}
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-head"><div class="ct">Замерщики</div><div class="ca">${pName()}</div></div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>Сотрудник</th><th class="tc" style="width:100px">Назначено</th>
+        <th class="tc" style="width:100px">Выехал</th><th class="tr" style="width:90px">м²</th>
+        <th class="tc" style="width:100px">Продал</th><th class="tc" style="width:110px">Конверсия</th></tr></thead>
+      <tbody>${meas.length ? meas.map(x => `<tr><td><b>${K.esc(x.s.name)}</b></td>
+        <td class="tc">${x.cnt}</td><td class="tc">${x.done}</td>
+        <td class="tr">${K.qfmt(x.area)}</td><td class="tc">${x.won}</td>
+        <td class="tc"><span class="b b-${x.won/x.cnt>=.5?'green':'blue'}">${Math.round(x.won/x.cnt*100)}%</span></td></tr>`).join('')
+        : '<tr><td colspan="6" style="text-align:center;padding:26px;color:var(--hi)">Нет данных</td></tr>'}</tbody>
+    </table></div>
+  </div>
+  <div class="g2" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="card"><div class="card-head"><div class="ct">Установщики</div></div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>Сотрудник</th><th class="tc" style="width:100px">Адресов</th>
+          <th class="tc" style="width:100px">Изделий</th></tr></thead>
+        <tbody>${inst.length ? inst.map(x => `<tr><td><b>${K.esc(x.s.name)}</b></td>
+          <td class="tc">${x.cnt}</td><td class="tc">${x.pcs}</td></tr>`).join('')
+          : '<tr><td colspan="3" style="text-align:center;padding:26px;color:var(--hi)">Нет данных</td></tr>'}</tbody>
+      </table></div>
+    </div>
+    <div class="card"><div class="card-head"><div class="ct">Рейтинг по заработку</div>
+      <div class="ca">${f0(pay.reduce((a,r) => a + r.sum, 0))} сом</div></div>
+      <div class="progs">${pay.slice(0,8).map(r => `<div class="prog-row"><div class="prog-lbl">${K.esc(r.name)}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,r.sum/mxP*100)}%;background:var(--pu-m)"></div></div><div class="prog-val">${f0(r.sum)}</div></div>`).join('')
+        || '<div style="color:var(--hi);font-size:12px;padding:10px 0">Начислений нет</div>'}</div>
+    </div>
+  </div>`;
+};
+
+PAGES.salary = () => {
+  const [f,t] = range();
+  const rows = K.payroll(S, f, t);
+  const total = rows.reduce((a,r) => a + r.sum, 0);
+  const paid = (S.expenses||[]).filter(e => e.cat === 'Зарплата' && inR(e.date)).reduce((a,e) => a + e.sum, 0);
+  const p = pl();
+  const byRole = {};
+  rows.forEach(r => byRole[r.roleName] = (byRole[r.roleName] || 0) + r.sum);
+  const mxR = Math.max(1, ...Object.values(byRole));
+
+  return `${ppRow()}
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi bl"><div class="kpi-l">Начислено</div><div class="kpi-v">${f0(total)} сом</div>
+      <div class="kpi-s">${rows.length} человек</div></div>
+    <div class="kpi gn"><div class="kpi-l">Выплачено</div>
+      <div class="kpi-v" style="color:var(--gn-m)">${f0(paid)} сом</div><div class="kpi-s">${pName()}</div></div>
+    <div class="kpi ${total-paid>0?'rd':'gn'}"><div class="kpi-l">Осталось</div>
+      <div class="kpi-v" style="color:var(--${total-paid>0?'rd':'gn'}-m)">${f0(Math.max(0,total-paid))} сом</div>
+      <div class="kpi-s">к выплате</div></div>
+    <div class="kpi am"><div class="kpi-l">Доля ФОТ</div>
+      <div class="kpi-v" style="color:var(--am-m)">${p.rev?(total/p.rev*100).toFixed(1):0}%</div>
+      <div class="kpi-s">от выручки</div></div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-head"><div class="ct">Фонд по ролям</div></div>
+    <div class="progs">${Object.entries(byRole).sort((a,b)=>b[1]-a[1]).map(([n,v]) => `<div class="prog-row"><div class="prog-lbl">${n}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,v/mxR*100)}%;background:var(--bl)"></div></div><div class="prog-val">${f0(v)} · ${Math.round(v/total*100)}%</div></div>`).join('')
+      || '<div style="color:var(--hi);font-size:12px;padding:10px 0">Начислений нет</div>'}</div>
+  </div>
+  <div class="card"><div class="card-head"><div class="ct">Зарплатная ведомость — ${pName()}</div></div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>Сотрудник</th><th style="width:150px">Роль</th>
+        <th>Из чего складывается</th><th class="tr" style="width:130px">К выплате</th></tr></thead>
+      <tbody>${rows.length ? rows.map(r => `<tr>
+        <td><b>${K.esc(r.name)}</b></td>
+        <td><span class="b b-${r.role==='manager'?'blue':r.role==='measurer'?'purple':r.role==='installer'?'green':'gray'}">${r.roleName}</span></td>
+        <td style="color:var(--mu)">${K.esc(r.base)}${r.per ? ' · ' +
+          K.OPS.filter(o => r.per[o.key]).map(o => `${o.short} ${r.per[o.key]}`).join(', ') : ''}</td>
+        <td class="tr" style="font-weight:700">${f0(r.sum)}</td></tr>`).join('')
+        : '<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--hi)">За период начислений нет</td></tr>'}</tbody>
+      ${rows.length ? `<tfoot><tr style="background:var(--s2);font-weight:800">
+        <td colspan="3">Итого фонд оплаты труда</td><td class="tr">${f0(total)} сом</td></tr></tfoot>` : ''}
+    </table></div>
+    <div style="padding:11px 16px;font-size:11px;color:var(--hi)">
+      Цех — сдельно по галочкам. Замерщик ${K.PAY.measurer.trip} за выезд + ${K.PAY.measurer.m2} за м².
+      Менеджер ${K.PAY.manager.pct}% от заказа. Установщик ${K.PAY.installer.piece} за изделие +
+      ${K.PAY.installer.trip} за адрес. Выплата проводится в разделе «Финансы».</div>
+  </div>`;
+};
+
+PAGES.stock = () => {
+  const l = leads();
+  const use = {};
+  l.forEach(o => o.items.forEach(i => {
+    const a = i.w * i.h * i.qty;
+    if(!use[i.fabric]) use[i.fabric] = { m2:0, rev:0 };
+    use[i.fabric].m2 += a;
+    if(CLOSED.includes(o.status)) use[i.fabric].rev += K.orderTotal(o) * (a /
+      Math.max(0.01, o.items.reduce((x,z) => x + z.w * z.h * z.qty, 0)));
+  }));
+  const list = Object.entries(use).sort((a,b) => b[1].rev - a[1].rev);
+  const tot = list.reduce((a,x) => a + x[1].rev, 0) || 1;
+  let acc = 0;
+  const abc = list.map(([n,v]) => { acc += v.rev;
+    return { n, ...v, cls: acc/tot <= .8 ? 'A' : acc/tot <= .95 ? 'B' : 'C' }; });
+  const mx = Math.max(1, ...abc.map(x => x.rev));
+  const stockSum = S.goods.reduce((a,g) => a + K.total(g) * g.cost, 0);
+  const zero = S.goods.filter(g => K.total(g) <= 0);
+  const dead = S.goods.filter(g => K.total(g) > 0 && !use[g.name])
+    .sort((a,b) => K.total(b) * b.cost - K.total(a) * a.cost).slice(0, 10);
+
+  return `${ppRow()}
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi bl"><div class="kpi-l">Стоимость запаса</div>
+      <div class="kpi-v">${f0(stockSum)} сом</div><div class="kpi-s">${S.goods.length} позиций</div></div>
+    <div class="kpi rd"><div class="kpi-l">Нулевой остаток</div>
+      <div class="kpi-v" style="color:var(--rd-m)">${zero.length}</div>
+      <div class="kpi-s">нельзя запустить в работу</div></div>
+    <div class="kpi am"><div class="kpi-l">Заморожено в неходовых</div>
+      <div class="kpi-v" style="color:var(--am-m)">${f0(dead.reduce((a,g) => a + K.total(g) * g.cost, 0))} сом</div>
+      <div class="kpi-s">${dead.length} позиций без движения</div></div>
+    <div class="kpi gn"><div class="kpi-l">Группа A</div>
+      <div class="kpi-v" style="color:var(--gn-m)">${abc.filter(x => x.cls==='A').length}</div>
+      <div class="kpi-s">тканей дают 80% выручки</div></div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-head"><div class="ct">ABC-анализ тканей</div><div class="ca">${pName()}</div></div>
+    <div class="progs">${abc.length ? abc.map(x => `<div class="prog-row"><div class="prog-lbl"><span class="b b-${x.cls==='A'?'green':x.cls==='B'?'blue':'gray'}">${x.cls}</span>
+        ${K.esc(x.n)}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,x.rev/mx*100)}%;background:var(--bl)"></div></div><div class="prog-val">${f0(x.rev)} · ${K.qfmt(x.m2)} м²</div></div>`).join('')
+      : '<div style="color:var(--hi);font-size:12px;padding:10px 0">За период заказов не было</div>'}</div>
+    <div style="padding:0 16px 12px;font-size:11px;color:var(--hi)">
+      A — дают 80% выручки, держите на складе всегда. B — следующие 15%. C — возите под заказ.</div>
+  </div>
+  <div class="card"><div class="card-head"><div class="ct">Лежит без движения</div>
+    <div class="ca">${dead.length} позиций</div></div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>Товар</th><th style="width:150px">Категория</th>
+        <th class="tr" style="width:110px">Остаток</th><th class="tr" style="width:100px">Себест.</th>
+        <th class="tr" style="width:120px">Заморожено</th></tr></thead>
+      <tbody>${dead.length ? dead.map(g => `<tr><td><b>${K.esc(g.name)}</b></td>
+        <td>${g.cat}</td><td class="tr">${K.qfmt(K.total(g))} ${g.unit}</td>
+        <td class="tr" style="color:var(--mu)">${f0(g.cost)}</td>
+        <td class="tr" style="font-weight:700">${f0(K.total(g)*g.cost)}</td></tr>`).join('')
+        : '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--hi)">Всё в обороте</td></tr>'}</tbody>
+    </table></div></div>`;
+};
+
+PAGES.compare = () => {
+  const a = pl('prev'), b = pl('month');
+  const la = leads('prev'), lb = leads('month');
+  const wn = arr => arr.filter(o => !['new','assigned','measured','thinking','rejected'].includes(o.status)).length;
+  const R = (n, va, vb, money) => {
+    const d = va ? (vb - va) / Math.abs(va) * 100 : 0;
+    return `<tr><td><b>${n}</b></td>
+      <td class="tr" style="color:var(--mu)">${money?f0(va):va}</td>
+      <td class="tr" style="font-weight:700">${money?f0(vb):vb}</td>
+      <td class="tr"><span class="b b-${d>0?'green':d<0?'gray':'blue'}">${va?(d>0?'+':'')+Math.round(d)+'%':'—'}</span></td></tr>`;
+  };
+  return `<div class="al-b alert">ℹ Июль сравнивается с августом. Зелёным — рост, серым — падение.</div>
+  <div class="card"><div class="card-head"><div class="ct">Период к периоду</div></div>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>Показатель</th><th class="tr" style="width:150px">Июль 2026</th>
+        <th class="tr" style="width:150px">Август 2026</th><th class="tr" style="width:120px">Разница</th></tr></thead>
+      <tbody>
+        ${R('Выручка всего', a.rev, b.rev, 1)}
+        ${R('Выручка розница', a.revR, b.revR, 1)}
+        ${R('Выручка опт', a.revO, b.revO, 1)}
+        ${R('Себестоимость материалов', a.cost, b.cost, 1)}
+        ${R('Валовая прибыль', a.gross, b.gross, 1)}
+        ${R('Операционные расходы', a.expSum, b.expSum, 1)}
+        ${R('Чистая прибыль', a.profit, b.profit, 1)}
+        ${R('Закрытых заказов', a.ords.length, b.ords.length)}
+        ${R('Средний чек', a.ords.length?Math.round(a.revR/a.ords.length):0,
+                          b.ords.length?Math.round(b.revR/b.ords.length):0, 1)}
+        ${R('Новых заявок', la.length, lb.length)}
+        ${R('Продано заявок', wn(la), wn(lb))}
+      </tbody>
+      <tfoot><tr style="background:var(--s2);font-weight:800">
+        <td>Рентабельность</td>
+        <td class="tr">${a.rev?Math.round(a.profit/a.rev*100):0}%</td>
+        <td class="tr">${b.rev?Math.round(b.profit/b.rev*100):0}%</td>
+        <td class="tr">${Math.round((b.rev?b.profit/b.rev*100:0)-(a.rev?a.profit/a.rev*100:0))} п.п.</td></tr></tfoot>
+    </table></div></div>`;
+};
+
+/* ═════════ ПЕЧАТЬ ═════════ */
+function printRep(){
+  const p = pl(), l = leads();
+  const won = l.filter(o => !['new','assigned','measured','thinking','rejected'].includes(o.status));
+  const cats = Object.entries(p.byCat).sort((a,b) => b[1] - a[1]);
+  const html = `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Отчёт ${pName()}</title>
+  <style>@page{size:A4;margin:14mm}
+    body{font-family:-apple-system,'Segoe UI',Arial,sans-serif;font-size:11pt;color:#111;margin:0}
+    .top{display:flex;align-items:center;gap:8mm;border-bottom:2px solid #111;padding-bottom:4mm;margin-bottom:6mm}
+    .top img{height:16mm} h1{font-size:15pt;margin:0} h2{font-size:12pt;margin:0 0 3mm}
+    .muted{color:#666;font-size:9.5pt}
+    table{width:100%;border-collapse:collapse;margin-bottom:6mm}
+    th{background:#eef1f6;border:1px solid #333;padding:2mm;font-size:9.5pt;text-align:left}
+    td{border:1px solid #333;padding:2.4mm;font-size:10.5pt}
+    .r{text-align:right;font-variant-numeric:tabular-nums} .tot td{background:#f6f7fa;font-weight:800}
+    .noprint{margin-bottom:5mm;text-align:right}
+    .noprint button{padding:8px 18px;font-size:13px;font-weight:600;border:1px solid #111;
+      background:#111;color:#fff;border-radius:7px;cursor:pointer}
+    @media print{.noprint{display:none}}</style></head><body>
+  <div class="noprint"><button onclick="window.print()">Печать</button></div>
+  <div class="top"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMzQgMTc2IiByb2xlPSJpbWciIGFyaWEtbGFiZWw9Ikthc3ltb3YiPiA8cGF0aCBkPSJNMzAgMCAgSDk5IFY1MyBIMCBaIiBmaWxsPSIjNDU5OWQ1Ii8+IDxwYXRoIGQ9Ik0zMCA2MSBIOTkgVjExNSBIMCBaIiBmaWxsPSIjMzA3MGFlIi8+IDxwYXRoIGQ9Ik0zMCAxMjIgSDk5IFYxNzUgSDAgWiIgZmlsbD0iIzE2M2E4NCIvPiA8cGF0aCBkPSJNMTc1IDAgSDIzMyBMMTU5IDg4IEwyMzMgMTc1IEgxNzQgTDExNSAxMDUgVjcwIFoiIGZpbGw9IiMzMzZjYWYiLz48L3N2Zz4=" alt="Kasymov">
+    <div><h1>Отчёт за ${pName()}</h1>
+      <div class="muted">ОсОО «Kasymov» · сформирован ${K.dmy(TODAY)}</div></div></div>
+  <h2>Прибыль</h2>
+  <table>
+    <tr><td>Выручка розница</td><td class="r">${f0(p.revR)}</td></tr>
+    <tr><td>Выручка опт</td><td class="r">${f0(p.revO)}</td></tr>
+    <tr class="tot"><td>Выручка всего</td><td class="r">${f0(p.rev)}</td></tr>
+    <tr><td>Себестоимость материалов</td><td class="r">−${f0(p.cost)}</td></tr>
+    <tr class="tot"><td>Валовая прибыль</td><td class="r">${f0(p.gross)}</td></tr>
+    <tr><td>Операционные расходы</td><td class="r">−${f0(p.expSum)}</td></tr>
+    <tr class="tot"><td>Чистая прибыль</td><td class="r">${f0(p.profit)}</td></tr>
+  </table>
+  <h2>Расходы по статьям</h2>
+  <table><thead><tr><th>Статья</th><th class="r" style="width:40mm">Сумма</th></tr></thead>
+    <tbody>${cats.map(([c,v]) => `<tr><td>${c}</td><td class="r">${f0(v)}</td></tr>`).join('')
+      || '<tr><td colspan="2">Расходов не было</td></tr>'}</tbody></table>
+  <h2>Продажи</h2>
+  <table>
+    <tr><td>Новых заявок</td><td class="r">${l.length}</td></tr>
+    <tr><td>Из них продано</td><td class="r">${won.length}</td></tr>
+    <tr><td>Конверсия</td><td class="r">${l.length?Math.round(won.length/l.length*100):0}%</td></tr>
+    <tr><td>Закрыто заказов</td><td class="r">${p.ords.length}</td></tr>
+    <tr><td>Средний чек</td><td class="r">${p.ords.length?f0(p.revR/p.ords.length):0}</td></tr>
+  </table>
+  <p class="muted">Закуп материалов не показан отдельной строкой: он учтён в себестоимости.</p>
+  <p style="margin-top:12mm">Директор ____________________ ${K.COMPANY.dir}</p>
+  </body></html>`;
+  const fr = document.getElementById('printer');
+  fr.srcdoc = html;
+  fr.onload = () => { try{ fr.contentWindow.focus(); fr.contentWindow.print(); }catch(e){} };
+  K.toast('Отчёт готов к печати');
+}
+</script>
+
+</body>
+</html>

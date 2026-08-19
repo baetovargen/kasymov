@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Оптовые продажи — Kasymov ERP</title>
+<link rel="stylesheet" href="kasymov-ui.css">
+<style>
+.modal.xwide{max-width:940px}
+.toast.bad{background:var(--rd-d)}
+button.stat{text-align:left;font-family:inherit;cursor:pointer;width:100%;transition:border-color .12s,box-shadow .12s}
+button.stat:hover{border-color:var(--line);box-shadow:0 3px 10px rgba(0,0,0,.06)}
+
+.subtabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--bd);margin-bottom:14px}
+.subtab{padding:8px 13px;font-size:12.5px;font-weight:600;color:var(--t2);white-space:nowrap;
+        border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:7px 7px 0 0}
+.subtab:hover{background:#eef2f9;color:var(--t1)}
+.subtab.on{color:var(--bl-d);border-bottom-color:var(--bl);background:var(--bl-l)}
+.subtab .n{font-size:10px;font-weight:800;color:var(--t3);margin-left:5px}
+.subtab.on .n{color:var(--bl)}
+
+/* ── таблица документов: номер, суммы, оплата ── */
+.docnum{color:var(--bl);font-weight:700;font-variant-numeric:tabular-nums}
+.dt{font-variant-numeric:tabular-nums}
+.dt .tm{color:var(--t3);margin-left:8px}
+.money{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap;text-align:right}
+.paid-on{background:#e9f7ee}
+.owe{color:var(--rd-d);font-weight:700}
+.tbl tfoot td{background:#f7f9fd;border-top:2px solid var(--bd);font-weight:800;padding:11px 12px}
+tr.lnk{cursor:pointer}
+tr.lnk:hover td{background:#f4f7fd}
+tr.lnk:hover td.paid-on{background:#dff2e7}
+.note{color:var(--t3);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+
+.sw{width:26px;height:26px;border-radius:6px;border:1px solid rgba(0,0,0,.14);flex-shrink:0}
+.gcell{display:flex;align-items:center;gap:9px;min-width:0}
+.gname{font-weight:600;line-height:1.25}
+.gsku{font-size:10.5px;color:var(--t3);font-variant-numeric:tabular-nums}
+.num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.q0{color:var(--t3);font-weight:400}
+.pos{color:var(--gn-d)}
+.neg{color:var(--rd-d)}
+
+.rows{border:1px solid var(--bd);border-radius:10px;overflow:hidden;margin-bottom:10px}
+.rows .tbl td{padding:5px 8px}
+.ri{width:100%;padding:5px 8px;border:1px solid transparent;border-radius:6px;background:transparent;
+    font-family:inherit;font-size:12.5px;color:inherit}
+.ri:hover{border-color:var(--bd)}
+.ri:focus{outline:none;border-color:var(--bl);background:#fff;box-shadow:0 0 0 3px var(--bl-l)}
+.ri.r{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.ri.err{border-color:var(--rd);box-shadow:0 0 0 3px var(--rd-l)}
+.del{width:24px;height:24px;border-radius:6px;border:none;background:none;color:var(--t3);cursor:pointer;font-size:14px}
+.del:hover{background:var(--rd-l);color:var(--rd-d)}
+.tot{margin-left:auto;text-align:right}
+.tot-l{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em}
+.tot-v{font-size:17px;font-weight:800}
+
+.kv{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #f5f7fc;font-size:12.5px}
+.kv:last-child{border-bottom:none}
+.sec{font-size:10px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 6px}
+.mv{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f5f7fc;font-size:12.5px}
+.mv:last-child{border-bottom:none}
+.mv-q{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:700}
+@media (max-width:1000px){ .hide-m{display:none} }
+@media (max-width:640px){ .hide-s{display:none} }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="phead">
+    <div>
+      <div class="ptitle">Оптовые продажи</div>
+      <div class="psub" id="sub">—</div>
+    </div>
+    <div class="pright">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input class="inp" id="q" placeholder="Контрагент, номер или товар" style="width:210px">
+      </div>
+      <button class="btn green" id="btn-primary">+ Продажа</button>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+  <div id="dates"></div>
+  <div class="subtabs" id="subtabs"></div>
+  <div id="view"></div>
+</div>
+
+<div class="ovl" id="ovl" hidden>
+  <div class="modal" id="mdl">
+    <div class="modal-h"><div class="modal-t" id="m-t"></div><button class="modal-x" data-close aria-label="Закрыть">✕</button></div>
+    <div class="modal-b" id="m-b"></div>
+    <div class="modal-f" id="m-f"></div>
+  </div>
+</div>
+
+<script>
+/* сообщаем оболочке о сбое, чтобы он не превратился в пустой экран */
+window.__errHook = true;
+window.addEventListener('error', e => {
+  try{ window.parent.postMessage({ ns:'kasymov', type:'moduleError',
+       msg:(e.message||'') + ' · ' + (e.lineno||'') }, '*'); }catch(_){}
+  const b = document.body;
+  if(b) b.insertAdjacentHTML('afterbegin',
+    '<div style="background:#7d211c;color:#fff;padding:12px 16px;font:13px/1.5 -apple-system,sans-serif">'
+    + '<b>Сбой в разделе.</b> ' + (e.message||'') + '</div>');
+});
+</script>
+<script src="kasymov-data.js"></script>
+<script>
+const K = window.KASYMOV;
+let S = null, tab = 'sales', D = null;
+let P = { preset:'all', from:'', to:'' };
+
+const TABS = [
+  { id:'sales',   name:'Продажи' },
+  { id:'buyers',  name:'Покупатели' },
+  { id:'price',   name:'Товары и цены' },
+  { id:'returns', name:'Возвраты' },
+];
+
+K.connect(state => { S = state; render(); },
+          name  => { if(name === 'primary') openSale(); });
+
+/* ═══════════ РАСЧЁТЫ ═══════════ */
+const good    = id => S.goods.find(g => g.id === id);
+const buyer   = id => S.buyers.find(b => b.id === id);
+const buyName = id => (buyer(id) || {}).name || '—';
+const locName = id => (K.LOC.find(l => l.id === id) || {}).name || '—';
+
+/* деньги в формате 68 400,00 — как в вашей таблице */
+const m2 = n => (Math.round(n * 100) / 100).toLocaleString('ru-RU',
+                { minimumFractionDigits:2, maximumFractionDigits:2 });
+
+let _res = null;
+const RES = () => (_res || (_res = K.reserved(S)));
+function dropCache(){ _res = null; }
+
+/* опт нельзя продавать из того, что обещано заказам клиентов */
+const freeFor = g => +(K.total(g) - (RES()[g.name] || 0)).toFixed(2);
+
+const sales   = () => S.docs.filter(d => d.type === 'opt')
+                        .sort((a,b) => (b.date + (b.time||'')).localeCompare(a.date + (a.time||'')));
+const returns = () => S.docs.filter(d => d.type === 'optret').sort((a,b) => b.date.localeCompare(a.date));
+
+const sumOf   = d => d.lines.reduce((a,l) => a + l.qty * (l.price || 0), 0);
+const paidOf  = d => d.paid || 0;
+const oweOf   = d => +(sumOf(d) - paidOf(d)).toFixed(2);
+const costOf  = d => d.lines.reduce((a,l) => a + l.qty * ((good(l.good) || {}).cost || 0), 0);
+const profitOf= d => sumOf(d) - costOf(d);
+
+/* долг покупателя = что отгружено минус что оплачено */
+const debtOf = bid => sales().filter(d => d.party === bid).reduce((a,d) => a + oweOf(d), 0);
+function syncBalances(){ S.buyers.forEach(b => b.balance = debtOf(b.id)); }
+
+const last30 = d => new Date(d.date) >= new Date('2026-07-04');
+/* общий фильтр периода */
+const inP = d => { const [f,t] = K.rangeOf(P.preset, P.from, P.to);
+                   const x = (d||'').slice(0,10); return x >= f && x <= t; };
+
+/* ═══════════ РЕНДЕР ═══════════ */
+function render(){
+  if(!S) return;
+  dropCache(); syncBalances();
+
+  const all = sales();
+  const recent = all.filter(last30);
+  const rev  = recent.reduce((a,d) => a + sumOf(d), 0);
+  const prof = recent.reduce((a,d) => a + profitOf(d), 0);
+  const owe  = all.reduce((a,d) => a + oweOf(d), 0);
+  const paid = all.reduce((a,d) => a + paidOf(d), 0);
+  const cnt  = all.filter(d => oweOf(d) > 0).length;
+
+  document.getElementById('sub').textContent =
+    `${all.length} продаж · оплачено ${K.money(paid)} · не оплачено ${K.money(owe)}`;
+
+  document.getElementById('stats').innerHTML = `
+    <div class="stat bl"><div class="stat-l">Выручка за 30 дней</div>
+      <div class="stat-v">${K.fmt(rev)}<span style="font-size:12px"> сом</span></div>
+      <div class="stat-s">${recent.length} продаж</div></div>
+    <div class="stat gn"><div class="stat-l">Прибыль за 30 дней</div>
+      <div class="stat-v pos">${K.fmt(prof)}<span style="font-size:12px"> сом</span></div>
+      <div class="stat-s">маржа ${rev ? Math.round(prof / rev * 100) : 0}%</div></div>
+    <button class="stat am" data-go="buyers"><div class="stat-l">Не оплачено</div>
+      <div class="stat-v ${owe?'neg':''}">${K.fmt(owe)}<span style="font-size:12px"> сом</span></div>
+      <div class="stat-s">${cnt} документов ждут оплаты</div></button>
+    <button class="stat vl" data-go="buyers"><div class="stat-l">Оплачено всего</div>
+      <div class="stat-v">${K.fmt(paid)}<span style="font-size:12px"> сом</span></div>
+      <div class="stat-s">из ${K.fmt(paid + owe)} отгруженных</div></button>`;
+
+  document.querySelectorAll('[data-go]').forEach(b =>
+    b.addEventListener('click', () => { tab = b.dataset.go; render(); }));
+
+  const n = { sales:all.length, buyers:S.buyers.length, price:S.goods.length, returns:returns().length };
+  document.getElementById('subtabs').innerHTML = TABS.map(t =>
+    `<button class="subtab ${tab===t.id?'on':''}" data-t="${t.id}">${t.name}<span class="n">${n[t.id]}</span></button>`).join('');
+  document.querySelectorAll('.subtab').forEach(b =>
+    b.addEventListener('click', () => { tab = b.dataset.t; render(); }));
+
+  const pb = document.getElementById('btn-primary');
+  if(tab === 'returns'){ pb.textContent = '+ Возврат'; pb.onclick = openReturn; }
+  else if(tab === 'price'){ pb.textContent = '+ Новый товар'; pb.onclick = openNewGood; }
+  else if(tab === 'buyers'){ pb.textContent = '+ Оплата'; pb.onclick = () => openPay(); }
+  else { pb.textContent = '+ Продажа'; pb.onclick = () => openSale(); }
+
+  document.getElementById('dates').innerHTML = K.dateBar(P.preset, P.from, P.to);
+  K.bindDateBar(v => { P = v; render(); }, P);
+  ({ sales:renderSales, buyers:renderBuyers, price:renderPrice, returns:renderReturns })[tab]();
+}
+
+const term = () => document.getElementById('q').value.trim().toLowerCase();
+
+/* ── ПРОДАЖИ ── */
+function renderSales(){
+  const t = term();
+  const list = sales().filter(d => inP(d.date)).filter(d => !t || buyName(d.party).toLowerCase().includes(t) ||
+    d.num.includes(t) || d.lines.some(l => (good(l.good) || {}).name.toLowerCase().includes(t)));
+
+  const rows = list.map(d => {
+    const s = sumOf(d), p = paidOf(d), o = oweOf(d);
+    return `<tr class="lnk" tabindex="0" role="button" data-d="${d.id}">
+      <td><span class="docnum">${d.num}</span></td>
+      <td class="dt">${K.dmy(d.date)}<span class="tm">${d.time || ''}</span></td>
+      <td class="hide-s">${locName(d.from)}</td>
+      <td class="strong">${K.esc(buyName(d.party))}</td>
+      <td class="money">${m2(s)}</td>
+      <td class="money ${o<=0?'paid-on':''}">${m2(p)}</td>
+      <td class="money ${o>0?'owe':''}">${m2(o)}</td>
+      <td class="note hide-m">${K.esc(d.note || '')}</td>
+    </tr>`;
+  }).join('');
+
+  const TS = list.reduce((a,d) => a + sumOf(d), 0);
+  const TP = list.reduce((a,d) => a + paidOf(d), 0);
+  const TO = list.reduce((a,d) => a + oweOf(d), 0);
+
+  document.getElementById('view').innerHTML = `
+    <div class="card"><div class="tbl-wrap"><table class="tbl">
+      <thead><tr>
+        <th style="width:88px">Номер</th>
+        <th style="width:170px">Дата и время</th>
+        <th class="hide-s" style="width:150px">Со склада</th>
+        <th>Контрагент</th>
+        <th style="text-align:right;width:130px">Сумма</th>
+        <th style="text-align:right;width:130px">Оплачено</th>
+        <th style="text-align:right;width:130px">Не оплачено</th>
+        <th class="hide-m" style="width:230px">Комментарий</th>
+      </tr></thead>
+      <tbody>${rows || `<tr><td colspan="8"><div class="empty">
+        <div class="empty-t">Продаж пока нет</div>
+        <div class="empty-s">Нажмите «+ Продажа», чтобы оформить первую отгрузку</div></div></td></tr>`}</tbody>
+      ${list.length ? `<tfoot><tr>
+        <td colspan="4">1–${list.length} из ${list.length}</td>
+        <td class="money">${K.fmt(TS)}</td>
+        <td class="money">${K.fmt(TP)}</td>
+        <td class="money ${TO>0?'owe':''}">${K.fmt(TO)}</td>
+        <td class="hide-m"></td></tr></tfoot>` : ''}
+    </table></div></div>`;
+
+  bindRows('[data-d]', el => openSaleView(el.dataset.d));
+}
+
+/* ── ПОКУПАТЕЛИ ── */
+function renderBuyers(){
+  const rows = S.buyers.map(b => {
+    const mine = sales().filter(d => d.party === b.id);
+    const s = mine.reduce((a,d) => a + sumOf(d), 0);
+    const p = mine.reduce((a,d) => a + paidOf(d), 0);
+    const o = mine.reduce((a,d) => a + oweOf(d), 0);
+    return `<tr class="lnk" tabindex="0" role="button" data-b="${b.id}">
+      <td class="strong">${K.esc(b.name)}</td>
+      <td class="dim hide-s">${b.city} · ${b.phone}</td>
+      <td style="text-align:center"><span class="chip bl">−${b.discount}%</span></td>
+      <td style="text-align:center" class="hide-m">${mine.length}</td>
+      <td class="money">${m2(s)}</td>
+      <td class="money ${o<=0&&s>0?'paid-on':''}">${m2(p)}</td>
+      <td class="money ${o>0?'owe':''}">${m2(o)}</td>
+      <td style="text-align:center">${o > b.limit ? '<span class="chip rd">лимит превышен</span>'
+        : o ? '<span class="chip am">есть долг</span>' : '<span class="chip gn">расчёт закрыт</span>'}</td>
+    </tr>`;
+  }).join('');
+
+  const TS = sales().reduce((a,d) => a + sumOf(d), 0);
+  const TP = sales().reduce((a,d) => a + paidOf(d), 0);
+  const TO = sales().reduce((a,d) => a + oweOf(d), 0);
+
+  document.getElementById('view').innerHTML = `
+    <div class="bar" style="margin-bottom:12px">
+      <span class="dim" style="font-size:12px">Долг считается сам: сумма отгрузок минус оплаты. Строка открывает все документы покупателя.</span>
+      <span style="margin-left:auto"></span>
+      <button class="btn sm" id="new-pay">+ Принять оплату</button>
+    </div>
+    <div class="card"><div class="tbl-wrap"><table class="tbl">
+      <thead><tr>
+        <th>Контрагент</th>
+        <th class="hide-s" style="width:230px">Контакты</th>
+        <th style="text-align:center;width:90px">Скидка</th>
+        <th style="text-align:center;width:80px" class="hide-m">Продаж</th>
+        <th style="text-align:right;width:130px">Сумма</th>
+        <th style="text-align:right;width:130px">Оплачено</th>
+        <th style="text-align:right;width:130px">Не оплачено</th>
+        <th style="text-align:center;width:150px">Статус</th>
+      </tr></thead><tbody>${rows}</tbody>
+      <tfoot><tr>
+        <td colspan="4">Итого по ${S.buyers.length} контрагентам</td>
+        <td class="money">${K.fmt(TS)}</td>
+        <td class="money">${K.fmt(TP)}</td>
+        <td class="money ${TO>0?'owe':''}">${K.fmt(TO)}</td>
+        <td></td></tr></tfoot>
+    </table></div></div>`;
+
+  document.getElementById('new-pay').onclick = () => openPay();
+  bindRows('[data-b]', el => openBuyer(el.dataset.b));
+}
+
+/* ── ТОВАРЫ И ЦЕНЫ ── */
+function renderPrice(){
+  const t = term();
+  const list = S.goods.filter(g => !t || g.name.toLowerCase().includes(t) || g.sku.toLowerCase().includes(t));
+
+  const rows = list.map(g => {
+    const free = freeFor(g), res = RES()[g.name] || 0;
+    const marg = g.cost ? Math.round((g.opt / g.cost - 1) * 100) : 0;
+    return `<tr>
+      <td><div class="gcell"><span class="sw" style="background:${g.tone}"></span>
+        <div><div class="gname">${K.esc(g.name)}</div><div class="gsku">${g.sku} · ${g.cat}</div></div></div></td>
+      <td style="text-align:center" class="dim">${g.unit}</td>
+      <td style="text-align:right" class="hide-s"><span class="num q0">${K.qfmt(K.total(g))}</span></td>
+      <td style="text-align:right" class="hide-m"><span class="num ${res?'':'q0'}">${res?K.qfmt(res):'—'}</span></td>
+      <td style="text-align:right"><span class="num ${free<=0?'neg':''}">${K.qfmt(free)}</span></td>
+      <td style="text-align:right" class="hide-s"><span class="num q0">${K.fmt(g.cost)}</span></td>
+      <td style="width:110px"><input class="ri r" type="number" min="0" step="0.5" value="${g.opt}"
+            data-price="${g.id}" aria-label="Оптовая цена ${K.esc(g.name)}"></td>
+      <td style="text-align:right"><span class="num ${marg<20?'neg':'pos'}" data-marg="${g.id}">${marg}%</span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('view').innerHTML = `
+    <div class="bar" style="margin-bottom:12px">
+      <span class="dim" style="font-size:12px">«Свободно» — остаток минус материал, зарезервированный под заказы клиентов. Оптом продаём только его.</span>
+      <span style="margin-left:auto"></span>
+      <button class="btn sm" id="save-price">Сохранить цены</button>
+      <button class="btn primary sm" id="add-good">+ Новый товар</button>
+    </div>
+    <div class="card"><div class="tbl-wrap"><table class="tbl">
+      <thead><tr>
+        <th>Товар</th><th style="text-align:center;width:64px">Ед.</th>
+        <th style="text-align:right;width:92px" class="hide-s">Остаток</th>
+        <th style="text-align:right;width:86px" class="hide-m">Резерв</th>
+        <th style="text-align:right;width:96px">Свободно</th>
+        <th style="text-align:right;width:100px" class="hide-s">Себест.</th>
+        <th style="text-align:right;width:110px">Опт. цена</th>
+        <th style="text-align:right;width:86px">Наценка</th>
+      </tr></thead><tbody>${rows}</tbody>
+    </table></div></div>`;
+
+  document.querySelectorAll('[data-price]').forEach(el => el.oninput = () => {
+    const g = good(el.dataset.price), v = +el.value || 0;
+    const m = document.querySelector(`[data-marg="${g.id}"]`);
+    const pct = g.cost ? Math.round((v / g.cost - 1) * 100) : 0;
+    if(m){ m.textContent = pct + '%'; m.className = 'num ' + (pct < 20 ? 'neg' : 'pos'); }
+  });
+  document.getElementById('save-price').onclick = () => {
+    document.querySelectorAll('[data-price]').forEach(el => { good(el.dataset.price).opt = +el.value || 0; });
+    save(); K.toast('Оптовые цены сохранены');
+  };
+  document.getElementById('add-good').onclick = openNewGood;
+}
+
+/* ── ВОЗВРАТЫ ── */
+function renderReturns(){
+  const list = returns();
+  const rows = list.map(d => `<tr class="lnk" tabindex="0" role="button" data-d="${d.id}">
+    <td><span class="docnum">${d.num}</span></td>
+    <td class="dt">${K.dmy(d.date)}<span class="tm">${d.time || ''}</span></td>
+    <td class="hide-s">${locName(d.to)}</td>
+    <td class="strong">${K.esc(buyName(d.party))}</td>
+    <td class="money neg">−${m2(sumOf(d))}</td>
+    <td class="note">${K.esc(d.reason || '')}</td>
+  </tr>`).join('');
+  const T = list.reduce((a,d) => a + sumOf(d), 0);
+
+  document.getElementById('view').innerHTML = `
+    <div class="bar" style="margin-bottom:12px">
+      <span class="dim" style="font-size:12px">Возврат ставит товар обратно на склад и уменьшает долг покупателя.</span>
+      <span style="margin-left:auto"></span>
+      <button class="btn sm" id="new-ret">+ Возврат</button>
+    </div>
+    <div class="card"><div class="tbl-wrap"><table class="tbl">
+      <thead><tr><th style="width:88px">Номер</th><th style="width:170px">Дата и время</th>
+        <th class="hide-s" style="width:150px">Вернули на склад</th><th>Контрагент</th>
+        <th style="text-align:right;width:130px">Сумма</th><th style="width:230px">Причина</th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="6"><div class="empty">
+        <div class="empty-t">Возвратов не было</div>
+        <div class="empty-s">Это хорошо — значит опт уходит без претензий</div></div></td></tr>`}</tbody>
+      ${list.length ? `<tfoot><tr><td colspan="4">1–${list.length} из ${list.length}</td>
+        <td class="money neg">−${K.fmt(T)}</td><td></td></tr></tfoot>` : ''}
+    </table></div></div>`;
+  document.getElementById('new-ret').onclick = openReturn;
+  bindRows('[data-d]', el => openSaleView(el.dataset.d));
+}
+
+function bindRows(sel, fn){
+  document.querySelectorAll('tr' + sel).forEach(tr => {
+    tr.addEventListener('click', () => fn(tr));
+    tr.addEventListener('keydown', e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); fn(tr); } });
+  });
+}
+
+/* ═══════════ МОДАЛЬНЫЕ ОКНА ═══════════ */
+function showModal(t, size){
+  document.getElementById('m-t').textContent = t;
+  document.getElementById('mdl').className = 'modal' + (size ? ' ' + size : '');
+  document.getElementById('ovl').hidden = false;
+}
+function closeModal(){ document.getElementById('ovl').hidden = true; D = null; }
+function bindClose(){ document.querySelectorAll('#ovl [data-close]').forEach(b => b.onclick = closeModal); }
+
+/* ── карточка покупателя: те же колонки, только его документы ── */
+function openBuyer(id){
+  const b = buyer(id);
+  const mine = sales().filter(d => d.party === id);
+  const rets = returns().filter(d => d.party === id);
+  const s = mine.reduce((a,d) => a + sumOf(d), 0);
+  const p = mine.reduce((a,d) => a + paidOf(d), 0);
+  const o = mine.reduce((a,d) => a + oweOf(d), 0);
+  const prof = mine.reduce((a,d) => a + profitOf(d), 0);
+
+  showModal(b.name, 'xwide');
+  document.getElementById('m-b').innerHTML = `
+    <div class="grid3" style="margin-bottom:8px">
+      <div class="stat bl"><div class="stat-l">Отгружено</div>
+        <div class="stat-v">${K.fmt(s)}</div><div class="stat-s">${mine.length} продаж</div></div>
+      <div class="stat gn"><div class="stat-l">Оплачено</div>
+        <div class="stat-v pos">${K.fmt(p)}</div>
+        <div class="stat-s">прибыль с него ${K.fmt(prof)}</div></div>
+      <div class="stat ${o>b.limit?'rd':'am'}"><div class="stat-l">Не оплачено</div>
+        <div class="stat-v ${o?'neg':''}">${K.fmt(o)}</div>
+        <div class="stat-s">лимит ${K.fmt(b.limit)}</div></div>
+    </div>
+    <div class="kv"><span>Город и телефон</span><b>${b.city} · ${b.phone}</b></div>
+    <div class="kv"><span>Скидка от прайса</span><b>${b.discount}%</b></div>
+    <div class="kv"><span>Свободно к отгрузке в долг</span>
+      <b class="${b.limit-o<=0?'neg':'pos'}">${K.money(Math.max(0, b.limit - o))}</b></div>
+
+    <div class="sec">Документы</div>
+    <div class="rows"><table class="tbl">
+      <thead><tr><th style="width:80px">Номер</th><th style="width:150px">Дата и время</th>
+        <th style="text-align:right">Сумма</th><th style="text-align:right">Оплачено</th>
+        <th style="text-align:right">Не оплачено</th></tr></thead>
+      <tbody>${mine.map(d => `<tr>
+        <td><span class="docnum">${d.num}</span></td>
+        <td class="dt">${K.dmy(d.date)}<span class="tm">${d.time||''}</span></td>
+        <td class="money">${m2(sumOf(d))}</td>
+        <td class="money ${oweOf(d)<=0?'paid-on':''}">${m2(paidOf(d))}</td>
+        <td class="money ${oweOf(d)>0?'owe':''}">${m2(oweOf(d))}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td colspan="2">Итого</td><td class="money">${K.fmt(s)}</td>
+        <td class="money">${K.fmt(p)}</td>
+        <td class="money ${o>0?'owe':''}">${K.fmt(o)}</td></tr></tfoot>
+    </table></div>
+    ${rets.length ? `<div class="sec">Возвраты</div>${rets.map(d => `<div class="mv">
+      <div><div class="strong" style="font-size:12.5px">Возврат №${d.num}</div>
+        <div class="gsku">${K.dmy(d.date)} · ${K.esc(d.reason||'')}</div></div>
+      <div class="mv-q pos">−${m2(sumOf(d))}</div></div>`).join('')}` : ''}`;
+
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Закрыть</button><span style="margin-left:auto"></span>
+    ${o ? '<button class="btn" id="b-pay">Принять оплату</button>' : ''}
+    <button class="btn green" id="b-sale">Оформить продажу</button>`;
+  const bp = document.getElementById('b-pay');
+  if(bp) bp.onclick = () => openPay(id);
+  document.getElementById('b-sale').onclick = () => openSale(id);
+  bindClose();
+}
+
+/* ── просмотр продажи / возврата ── */
+function openSaleView(id){
+  const d = S.docs.find(x => x.id === id);
+  if(!d) return;
+  const isRet = d.type === 'optret';
+  const s = sumOf(d), c = costOf(d), p = paidOf(d), o = oweOf(d);
+
+  showModal(`${isRet ? 'Возврат' : 'Продажа'} №${d.num} от ${K.dmy(d.date)} ${d.time || ''}`, 'wide');
+  document.getElementById('m-b').innerHTML = `
+    <div class="kv"><span>Контрагент</span><b>${K.esc(buyName(d.party))}</b></div>
+    <div class="kv"><span>${isRet ? 'Вернули на склад' : 'Со склада'}</span><b>${locName(d.from || d.to)}</b></div>
+    ${d.disc ? `<div class="kv"><span>Скидка</span><b>${d.disc}% от прайса</b></div>` : ''}
+    ${d.reason ? `<div class="kv"><span>Причина</span><b>${K.esc(d.reason)}</b></div>` : ''}
+    ${d.note ? `<div class="kv"><span>Комментарий</span><b>${K.esc(d.note)}</b></div>` : ''}
+    <div class="kv"><span>Оформил</span><b>${K.esc(d.who || '—')}</b></div>
+    <div class="kv"><span>Сумма</span><b>${K.money(s)}</b></div>
+    ${!isRet ? `<div class="kv"><span>Оплачено</span><b class="pos">${K.money(p)}</b></div>
+      <div class="kv"><span>Не оплачено</span><b class="${o>0?'neg':''}">${K.money(o)}</b></div>
+      <div class="kv"><span>Себестоимость</span><b>${K.money(c)}</b></div>
+      <div class="kv"><span>Прибыль</span><b class="pos">${K.money(s-c)} · ${c?Math.round((s/c-1)*100):0}%</b></div>` : ''}
+    <div class="sec">Позиции (${d.lines.length})</div>
+    ${d.lines.map(l => {
+      const g = good(l.good) || { name:'—', unit:'', cost:0, tone:'#ccc' };
+      return `<div class="mv"><span class="sw" style="background:${g.tone}"></span>
+        <div style="min-width:0"><div class="strong" style="font-size:12.5px">${K.esc(g.name)}</div>
+          <div class="gsku">${K.fmt(l.price)} × ${K.qfmt(l.qty)} ${g.unit}${isRet?'':` · себест. ${K.fmt(g.cost)}`}</div></div>
+        <div class="mv-q">${m2(l.qty * l.price)}</div></div>`;
+    }).join('')}`;
+
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Закрыть</button><span style="margin-left:auto"></span>
+    ${!isRet && o > 0 ? '<button class="btn green" id="v-pay">Принять оплату</button>' : ''}`;
+  const vp = document.getElementById('v-pay');
+  if(vp) vp.onclick = () => openPay(d.party, d.id);
+  bindClose();
+}
+
+/* ── новая продажа ── */
+function openSale(bid){
+  const b = bid ? buyer(bid) : S.buyers[0];
+  D = { type:'opt', date:K.todayISO(), time:'12:00', who:K.USERS[0], from:'tunguch',
+        party:b.id, disc:b.discount, paid:0, note:'',
+        lines:[{ good:'', qty:1, price:0 }] };
+  drawSale();
+}
+const priceWithDisc = g => Math.round(g.opt * (1 - D.disc / 100) * 100) / 100;
+
+function drawSale(){
+  const b = buyer(D.party);
+  showModal(`Оптовая продажа от ${K.dmy(D.date)}`, 'xwide');
+
+  const opts = sel => `<option value="">— выберите товар —</option>` +
+    K.CATS.filter(c => S.goods.some(g => g.cat === c)).map(c =>
+      `<optgroup label="${c}">` + S.goods.filter(g => g.cat === c).map(g =>
+        `<option value="${g.id}" ${sel===g.id?'selected':''}>${K.esc(g.name)}</option>`).join('') + `</optgroup>`).join('');
+
+  const rows = D.lines.map((l,i) => {
+    const g = good(l.good);
+    const free = g ? freeFor(g) : null;
+    const over = g && l.qty > free;
+    return `<tr>
+      <td><select class="ri" data-good="${i}" aria-label="Товар ${i+1}">${opts(l.good)}</select></td>
+      <td class="dim hide-s" style="width:54px;text-align:center">${g?g.unit:'—'}</td>
+      <td style="width:92px;text-align:right" class="hide-s">
+        <span class="num ${free<=0?'neg':'q0'}">${g?K.qfmt(free):'—'}</span></td>
+      <td style="width:88px"><input class="ri r ${over?'err':''}" type="number" min="0" step="0.01"
+            value="${l.qty}" data-qty="${i}" aria-label="Количество ${i+1}"></td>
+      <td style="width:92px;text-align:right" class="hide-m"><span class="num q0">${g?K.fmt(g.opt):'—'}</span></td>
+      <td style="width:100px"><input class="ri r" type="number" min="0" step="0.01"
+            value="${l.price||0}" data-price="${i}" aria-label="Цена ${i+1}"></td>
+      <td style="width:92px;text-align:right" class="hide-m"><span class="num q0">${g?K.fmt(g.cost):'—'}</span></td>
+      <td style="width:104px;text-align:right"><span class="num" data-sum="${i}">${m2(l.qty*(l.price||0))}</span></td>
+      <td style="width:32px"><button class="del" data-del="${i}" aria-label="Удалить строку ${i+1}">✕</button></td>
+    </tr>`;
+  }).join('');
+
+  const total = D.lines.reduce((a,l) => a + l.qty * (l.price || 0), 0);
+  const cost  = D.lines.reduce((a,l) => a + l.qty * ((good(l.good) || {}).cost || 0), 0);
+  const owe   = Math.max(0, total - D.paid);
+  const free  = Math.max(0, b.limit - debtOf(b.id));
+  const overLimit = owe > free;
+  const anyOver = D.lines.some(l => { const g = good(l.good); return g && l.qty > freeFor(g); });
+
+  document.getElementById('m-b').innerHTML = `
+    ${anyOver ? `<div class="hint" style="background:var(--rd-l);color:var(--rd-d)">
+      Красным отмечены строки, где продаётся больше, чем свободно. Остаток есть, но он зарезервирован под заказы клиентов — продав его оптом, сорвёте производство.</div>` : ''}
+    ${overLimit ? `<div class="hint" style="background:var(--am-l);color:var(--am-d)">
+      Без оплаты остаётся ${K.money(owe)}, а у покупателя свободно по лимиту только ${K.money(free)}. Возьмите больше предоплаты или поднимите лимит.</div>` : ''}
+    <div class="grid3">
+      <div class="fld"><label for="s-party">Контрагент</label>
+        <select class="inp" id="s-party">${S.buyers.map(x => `<option value="${x.id}" ${D.party===x.id?'selected':''}>${K.esc(x.name)}</option>`).join('')}</select></div>
+      <div class="fld"><label for="s-from">Со склада</label>
+        <select class="inp" id="s-from">${K.LOC.map(l => `<option value="${l.id}" ${D.from===l.id?'selected':''}>${l.name}</option>`).join('')}</select></div>
+      <div class="fld"><label for="s-disc">Скидка от прайса, %</label>
+        <input class="inp" id="s-disc" type="number" min="0" max="60" value="${D.disc}"></div>
+      <div class="fld"><label for="s-date">Дата</label>
+        <input class="inp" id="s-date" type="date" value="${D.date}"></div>
+      <div class="fld"><label for="s-time">Время</label>
+        <input class="inp" id="s-time" type="time" value="${D.time}"></div>
+      <div class="fld"><label for="s-who">Оформил</label>
+        <select class="inp" id="s-who">${K.USERS.map(u => `<option ${D.who===u?'selected':''}>${u}</option>`).join('')}</select></div>
+    </div>
+    <div class="rows"><table class="tbl">
+      <thead><tr><th>Товар</th><th class="hide-s" style="text-align:center">Ед.</th>
+        <th class="hide-s" style="text-align:right">Свободно</th>
+        <th style="text-align:right">Кол-во</th>
+        <th class="hide-m" style="text-align:right">Прайс</th>
+        <th style="text-align:right">Цена</th>
+        <th class="hide-m" style="text-align:right">Себест.</th>
+        <th style="text-align:right">Сумма</th><th></th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <button class="btn sm" id="add-row">+ Добавить строку</button>
+
+    <div class="sec">Оплата и комментарий</div>
+    <div class="grid3">
+      <div class="fld"><label for="s-paid">Оплачено сейчас, сом</label>
+        <input class="inp" id="s-paid" type="number" min="0" value="${D.paid}"></div>
+      <div class="fld" style="grid-column:span 2"><label for="s-note">Комментарий</label>
+        <input class="inp" id="s-note" value="${K.esc(D.note)}" placeholder="Например: оплата по факту доставки"></div>
+    </div>
+    <div class="kv"><span>Не оплачено по документу</span>
+      <b id="s-owe" class="${owe>0?'neg':'pos'}">${K.money(owe)}</b></div>`;
+
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button>
+    <div class="tot" style="margin-right:18px"><div class="tot-l">Прибыль</div>
+      <div class="tot-v pos" id="s-profit">${K.money(total-cost)}</div></div>
+    <div class="tot"><div class="tot-l">Сумма</div>
+      <div class="tot-v" id="s-total">${K.money(total)}</div></div>
+    <button class="btn green" id="s-save">Провести продажу</button>`;
+
+  const b2 = document.getElementById('m-b');
+  b2.querySelectorAll('[data-good]').forEach(el => el.onchange = () => {
+    const i = +el.dataset.good; D.lines[i].good = el.value;
+    const g = good(el.value); if(g) D.lines[i].price = priceWithDisc(g);
+    drawSale();
+  });
+  b2.querySelectorAll('[data-qty]').forEach(el => el.oninput = () => {
+    D.lines[+el.dataset.qty].qty = +el.value || 0; refreshSale();
+  });
+  b2.querySelectorAll('[data-price]').forEach(el => el.oninput = () => {
+    D.lines[+el.dataset.price].price = +el.value || 0; refreshSale();
+  });
+  b2.querySelectorAll('[data-del]').forEach(el => el.onclick = () => {
+    D.lines.splice(+el.dataset.del, 1);
+    if(!D.lines.length) D.lines.push({ good:'', qty:1, price:0 });
+    drawSale();
+  });
+  document.getElementById('add-row').onclick = () => { D.lines.push({ good:'', qty:1, price:0 }); drawSale(); };
+
+  document.getElementById('s-party').onchange = e => {
+    D.party = e.target.value; D.disc = buyer(D.party).discount;
+    D.lines.forEach(l => { const g = good(l.good); if(g) l.price = priceWithDisc(g); });
+    drawSale();
+  };
+  document.getElementById('s-disc').onchange = e => {
+    D.disc = +e.target.value || 0;
+    D.lines.forEach(l => { const g = good(l.good); if(g) l.price = priceWithDisc(g); });
+    drawSale();
+  };
+  document.getElementById('s-from').onchange = e => { D.from = e.target.value; drawSale(); };
+  document.getElementById('s-paid').oninput  = e => { D.paid = +e.target.value || 0; refreshSale(); };
+  document.getElementById('s-note').oninput  = e => D.note = e.target.value;
+  document.getElementById('s-time').onchange = e => D.time = e.target.value;
+  document.getElementById('s-who').onchange  = e => D.who = e.target.value;
+  document.getElementById('s-date').onchange = e => D.date = e.target.value;
+  document.getElementById('s-save').onclick = postSale;
+  bindClose();
+}
+
+function refreshSale(){
+  let total = 0, cost = 0;
+  D.lines.forEach((l,i) => {
+    const g = good(l.good);
+    const s = l.qty * (l.price || 0);
+    total += s; cost += l.qty * (g ? g.cost : 0);
+    const c = document.querySelector(`[data-sum="${i}"]`);
+    if(c) c.textContent = m2(s);
+    const inp = document.querySelector(`[data-qty="${i}"]`);
+    if(inp && g) inp.classList.toggle('err', l.qty > freeFor(g));
+  });
+  document.getElementById('s-total').textContent = K.money(total);
+  document.getElementById('s-profit').textContent = K.money(total - cost);
+  const owe = Math.max(0, total - D.paid);
+  const oe = document.getElementById('s-owe');
+  oe.textContent = K.money(owe);
+  oe.className = owe > 0 ? 'neg' : 'pos';
+}
+
+/* ── возврат ── */
+function openReturn(){
+  D = { type:'optret', date:K.todayISO(), time:'12:00', who:K.USERS[0], to:'tunguch',
+        party:S.buyers[0].id, reason:'Брак / претензия', lines:[{ good:'', qty:1, price:0 }] };
+  drawReturn();
+}
+
+function drawReturn(){
+  showModal(`Возврат от покупателя от ${K.dmy(D.date)}`, 'xwide');
+  const opts = sel => `<option value="">— выберите товар —</option>` +
+    S.goods.map(g => `<option value="${g.id}" ${sel===g.id?'selected':''}>${K.esc(g.name)}</option>`).join('');
+
+  const rows = D.lines.map((l,i) => {
+    const g = good(l.good);
+    return `<tr>
+      <td><select class="ri" data-good="${i}" aria-label="Товар ${i+1}">${opts(l.good)}</select></td>
+      <td class="dim hide-s" style="width:54px;text-align:center">${g?g.unit:'—'}</td>
+      <td style="width:92px"><input class="ri r" type="number" min="0" step="0.01" value="${l.qty}" data-qty="${i}" aria-label="Количество ${i+1}"></td>
+      <td style="width:100px"><input class="ri r" type="number" min="0" step="0.01" value="${l.price||0}" data-price="${i}" aria-label="Цена ${i+1}"></td>
+      <td style="width:104px;text-align:right"><span class="num" data-sum="${i}">${m2(l.qty*(l.price||0))}</span></td>
+      <td style="width:32px"><button class="del" data-del="${i}" aria-label="Удалить строку ${i+1}">✕</button></td>
+    </tr>`;
+  }).join('');
+  const total = D.lines.reduce((a,l) => a + l.qty * (l.price || 0), 0);
+
+  document.getElementById('m-b').innerHTML = `
+    <div class="hint">Товар вернётся на выбранный склад, а долг покупателя уменьшится на сумму возврата.</div>
+    <div class="grid3">
+      <div class="fld"><label for="r-party">Контрагент</label>
+        <select class="inp" id="r-party">${S.buyers.map(x => `<option value="${x.id}" ${D.party===x.id?'selected':''}>${K.esc(x.name)}</option>`).join('')}</select></div>
+      <div class="fld"><label for="r-to">Вернуть на склад</label>
+        <select class="inp" id="r-to">${K.LOC.map(l => `<option value="${l.id}" ${D.to===l.id?'selected':''}>${l.name}</option>`).join('')}</select></div>
+      <div class="fld"><label for="r-reason">Причина</label>
+        <select class="inp" id="r-reason">${['Брак / претензия','Не подошёл цвет','Излишек по накладной','Отказ покупателя']
+          .map(r => `<option ${D.reason===r?'selected':''}>${r}</option>`).join('')}</select></div>
+      <div class="fld"><label for="r-date">Дата</label><input class="inp" id="r-date" type="date" value="${D.date}"></div>
+      <div class="fld"><label for="r-time">Время</label><input class="inp" id="r-time" type="time" value="${D.time}"></div>
+      <div class="fld"><label for="r-who">Оформил</label>
+        <select class="inp" id="r-who">${K.USERS.map(u => `<option ${D.who===u?'selected':''}>${u}</option>`).join('')}</select></div>
+    </div>
+    <div class="rows"><table class="tbl">
+      <thead><tr><th>Товар</th><th class="hide-s" style="text-align:center">Ед.</th>
+        <th style="text-align:right">Кол-во</th><th style="text-align:right">Цена</th>
+        <th style="text-align:right">Сумма</th><th></th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <button class="btn sm" id="add-row">+ Добавить строку</button>`;
+
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button>
+    <div class="tot"><div class="tot-l">Сумма возврата</div>
+      <div class="tot-v neg" id="r-total">${K.money(total)}</div></div>
+    <button class="btn green" id="r-save">Провести возврат</button>`;
+
+  const b = document.getElementById('m-b');
+  b.querySelectorAll('[data-good]').forEach(el => el.onchange = () => {
+    const i = +el.dataset.good; D.lines[i].good = el.value;
+    const g = good(el.value); if(g) D.lines[i].price = g.opt;
+    drawReturn();
+  });
+  b.querySelectorAll('[data-qty]').forEach(el => el.oninput = () => {
+    D.lines[+el.dataset.qty].qty = +el.value || 0; refreshRet();
+  });
+  b.querySelectorAll('[data-price]').forEach(el => el.oninput = () => {
+    D.lines[+el.dataset.price].price = +el.value || 0; refreshRet();
+  });
+  b.querySelectorAll('[data-del]').forEach(el => el.onclick = () => {
+    D.lines.splice(+el.dataset.del, 1);
+    if(!D.lines.length) D.lines.push({ good:'', qty:1, price:0 });
+    drawReturn();
+  });
+  document.getElementById('add-row').onclick = () => { D.lines.push({ good:'', qty:1, price:0 }); drawReturn(); };
+  const set = (id, fn) => { const el = document.getElementById(id); if(el) el.onchange = () => fn(el.value); };
+  set('r-party', v => D.party = v); set('r-to', v => D.to = v); set('r-reason', v => D.reason = v);
+  set('r-who', v => D.who = v); set('r-date', v => D.date = v); set('r-time', v => D.time = v);
+  document.getElementById('r-save').onclick = postReturn;
+  bindClose();
+}
+
+function refreshRet(){
+  let total = 0;
+  D.lines.forEach((l,i) => {
+    const s = l.qty * (l.price || 0); total += s;
+    const c = document.querySelector(`[data-sum="${i}"]`);
+    if(c) c.textContent = m2(s);
+  });
+  document.getElementById('r-total').textContent = K.money(total);
+}
+
+/* ── оплата: гасим документы от старых к новым ── */
+function openPay(bid, docId){
+  const owing = S.buyers.filter(b => debtOf(b.id) > 0);
+  const b = bid ? buyer(bid) : (owing[0] || S.buyers[0]);
+  D = { type:'pay', date:K.todayISO(), who:K.USERS[0], party:b.id,
+        amount: docId ? oweOf(S.docs.find(d => d.id === docId)) : debtOf(b.id), docId };
+  drawPay();
+}
+
+/* какие документы закроет эта сумма */
+function allocation(bid, amount){
+  const open = sales().filter(d => d.party === bid && oweOf(d) > 0)
+                 .sort((a,b) => (a.date + (a.time||'')).localeCompare(b.date + (b.time||'')));
+  let left = amount;
+  return open.map(d => {
+    const take = Math.min(left, oweOf(d));
+    left = +(left - take).toFixed(2);
+    return { d, take };
+  }).filter(x => x.take > 0);
+}
+
+function drawPay(){
+  const b = buyer(D.party);
+  const debt = debtOf(D.party);
+  const plan = allocation(D.party, D.amount);
+
+  showModal('Оплата от покупателя', 'wide');
+  document.getElementById('m-b').innerHTML = `
+    <div class="grid2">
+      <div class="fld"><label for="p-party">Контрагент</label>
+        <select class="inp" id="p-party">${S.buyers.map(x =>
+          `<option value="${x.id}" ${D.party===x.id?'selected':''}>${K.esc(x.name)} — не оплачено ${K.fmt(debtOf(x.id))}</option>`).join('')}</select></div>
+      <div class="fld"><label for="p-amount">Сумма оплаты, сом</label>
+        <input class="inp" id="p-amount" type="number" min="0" value="${D.amount}"></div>
+      <div class="fld"><label for="p-date">Дата</label><input class="inp" id="p-date" type="date" value="${D.date}"></div>
+      <div class="fld"><label for="p-who">Принял</label>
+        <select class="inp" id="p-who">${K.USERS.map(u => `<option ${D.who===u?'selected':''}>${u}</option>`).join('')}</select></div>
+    </div>
+    <div class="kv"><span>Не оплачено сейчас</span><b class="${debt?'neg':''}">${K.money(debt)}</b></div>
+    <div class="kv"><span>Останется после оплаты</span>
+      <b id="p-rest" class="${debt-D.amount>0?'neg':'pos'}">${K.money(Math.max(0, debt - D.amount))}</b></div>
+
+    <div class="sec">Какие документы закроет</div>
+    <div id="p-plan">${planHtml(plan)}</div>`;
+
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button><span style="margin-left:auto"></span>
+    <button class="btn green" id="p-save">Принять оплату</button>`;
+
+  document.getElementById('p-party').onchange = e => {
+    D.party = e.target.value; D.amount = debtOf(D.party); D.docId = null; drawPay();
+  };
+  document.getElementById('p-amount').oninput = e => {
+    D.amount = +e.target.value || 0;
+    const rest = Math.max(0, debt - D.amount);
+    const el = document.getElementById('p-rest');
+    el.textContent = K.money(rest); el.className = rest > 0 ? 'neg' : 'pos';
+    document.getElementById('p-plan').innerHTML = planHtml(allocation(D.party, D.amount));
+  };
+  document.getElementById('p-who').onchange = e => D.who = e.target.value;
+  document.getElementById('p-date').onchange = e => D.date = e.target.value;
+  document.getElementById('p-save').onclick = postPay;
+  bindClose();
+}
+
+function planHtml(plan){
+  if(!plan.length) return '<div class="dim" style="font-size:12px">Нечего закрывать — все документы оплачены</div>';
+  return `<div class="rows"><table class="tbl">
+    <thead><tr><th style="width:80px">Номер</th><th style="width:140px">Дата</th>
+      <th style="text-align:right">Не оплачено</th><th style="text-align:right">Пойдёт в счёт</th>
+      <th style="text-align:right">Останется</th></tr></thead>
+    <tbody>${plan.map(x => `<tr>
+      <td><span class="docnum">${x.d.num}</span></td>
+      <td class="dt">${K.dmy(x.d.date)}</td>
+      <td class="money">${m2(oweOf(x.d))}</td>
+      <td class="money ${oweOf(x.d)-x.take<=0?'paid-on':''}">${m2(x.take)}</td>
+      <td class="money ${oweOf(x.d)-x.take>0?'owe':''}">${m2(oweOf(x.d) - x.take)}</td></tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+/* ── новый товар ── */
+function openNewGood(){
+  showModal('Новый товар', 'wide');
+  document.getElementById('m-b').innerHTML = `
+    <div class="hint">Товар появится с нулевым остатком. Чтобы он встал на склад — оформите оприходование в разделе «Склад».</div>
+    <div class="grid2">
+      <div class="fld"><label for="n-name">Наименование</label><input class="inp" id="n-name" placeholder="Например: Профиль серый"></div>
+      <div class="fld"><label for="n-sku">Артикул</label><input class="inp" id="n-sku" placeholder="PR-103"></div>
+    </div>
+    <div class="grid3">
+      <div class="fld"><label for="n-cat">Категория</label>
+        <select class="inp" id="n-cat">${K.CATS.map(c => `<option>${c}</option>`).join('')}</select></div>
+      <div class="fld"><label for="n-unit">Единица</label>
+        <select class="inp" id="n-unit">${K.UNITS.map(u => `<option>${u}</option>`).join('')}</select></div>
+      <div class="fld"><label for="n-min">Точка заказа</label><input class="inp" id="n-min" type="number" min="0" value="100"></div>
+      <div class="fld"><label for="n-cost">Себестоимость, сом</label><input class="inp" id="n-cost" type="number" min="0" value="0"></div>
+      <div class="fld"><label for="n-opt">Оптовая цена, сом</label><input class="inp" id="n-opt" type="number" min="0" value="0"></div>
+      <div class="fld"><label for="n-tone">Цвет плашки</label>
+        <input class="inp" id="n-tone" type="color" value="#dfe4ec" style="padding:3px;height:34px"></div>
+    </div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button><span style="margin-left:auto"></span>
+    <button class="btn green" id="n-save">Сохранить товар</button>`;
+  document.getElementById('n-save').onclick = () => {
+    const name = document.getElementById('n-name').value.trim();
+    if(!name){ K.toast('Укажите наименование', 'bad'); document.getElementById('n-name').focus(); return; }
+    if(S.goods.some(g => g.name.toLowerCase() === name.toLowerCase())){ K.toast('Такой товар уже есть', 'bad'); return; }
+    S.goods.push({ id:uid(), sku:document.getElementById('n-sku').value.trim().toUpperCase() || 'NEW-' + (S.goods.length+1),
+      name, cat:document.getElementById('n-cat').value, unit:document.getElementById('n-unit').value,
+      q:{tunguch:0, kokjar:0, ceh:0},
+      min:+document.getElementById('n-min').value || 0,
+      cost:+document.getElementById('n-cost').value || 0,
+      opt:+document.getElementById('n-opt').value || 0,
+      tone:document.getElementById('n-tone').value });
+    tab = 'price'; closeModal(); save(); K.toast(`Товар «${name}» добавлен`);
+  };
+  bindClose();
+}
+
+/* ═══════════ ПРОВЕДЕНИЕ ═══════════ */
+const uid = () => 'w' + Date.now().toString(36) + Math.random().toString(36).slice(2,5);
+function nextNum(type){
+  const nums = S.docs.filter(d => d.type === type).map(d => parseInt(d.num, 10) || 0);
+  return String((nums.length ? Math.max(...nums) : 0) + 1).padStart(5, '0');
+}
+
+function postSale(){
+  const lines = D.lines.filter(l => l.good && l.qty > 0);
+  if(!lines.length){ K.toast('Добавьте хотя бы одну позицию', 'bad'); return; }
+
+  const bad = lines.find(l => l.qty > (good(l.good).q[D.from] || 0));
+  if(bad){ K.toast(`На складе «${locName(D.from)}» нет столько: ${good(bad.good).name}`, 'bad'); return; }
+  const rsv = lines.find(l => l.qty > freeFor(good(l.good)));
+  if(rsv){ K.toast(`${good(rsv.good).name}: столько зарезервировано под заказы клиентов`, 'bad'); return; }
+
+  const total = lines.reduce((a,l) => a + l.qty * l.price, 0);
+  if(D.paid > total){ K.toast('Оплачено больше суммы документа', 'bad'); return; }
+
+  const b = buyer(D.party);
+  const owe = total - D.paid;
+  if(debtOf(b.id) + owe > b.limit){
+    K.toast(`Лимит ${K.fmt(b.limit)} будет превышен. Свободно ${K.fmt(Math.max(0, b.limit - debtOf(b.id)))}`, 'bad');
+    return;
+  }
+
+  lines.forEach(l => { const g = good(l.good); g.q[D.from] = +(g.q[D.from] - l.qty).toFixed(2); });
+
+  S.docs.push({ id:uid(), type:'opt', num:nextNum('opt'), date:D.date, time:D.time, who:D.who,
+                from:D.from, party:D.party, disc:D.disc, paid:D.paid, note:D.note, status:'posted',
+                lines:lines.map(l => ({ good:l.good, qty:l.qty, price:l.price })) });
+
+  const prof = total - lines.reduce((a,l) => a + l.qty * good(l.good).cost, 0);
+  tab = 'sales'; closeModal(); save();
+  K.toast(`Продажа проведена · ${K.money(total)} · прибыль ${K.money(prof)}${owe>0?` · не оплачено ${K.money(owe)}`:''}`);
+}
+
+function postReturn(){
+  const lines = D.lines.filter(l => l.good && l.qty > 0);
+  if(!lines.length){ K.toast('Добавьте хотя бы одну позицию', 'bad'); return; }
+  const total = lines.reduce((a,l) => a + l.qty * l.price, 0);
+
+  lines.forEach(l => { const g = good(l.good); g.q[D.to] = +((g.q[D.to] || 0) + l.qty).toFixed(2); });
+
+  /* возврат гасит неоплаченные документы этого покупателя */
+  let left = total;
+  allocation(D.party, total).forEach(x => { x.d.paid = +(x.d.paid + x.take).toFixed(2); left -= x.take; });
+
+  S.docs.push({ id:uid(), type:'optret', num:nextNum('optret'), date:D.date, time:D.time, who:D.who,
+                to:D.to, party:D.party, reason:D.reason, status:'posted',
+                lines:lines.map(l => ({ good:l.good, qty:l.qty, price:l.price })) });
+  tab = 'returns'; closeModal(); save();
+  K.toast(`Возврат на ${K.money(total)} проведён${left>0?` · ${K.money(left)} остались переплатой`:''}`);
+}
+
+function postPay(){
+  if(D.amount <= 0){ K.toast('Укажите сумму оплаты', 'bad'); return; }
+  const debt = debtOf(D.party);
+  if(D.amount > debt){ K.toast(`Оплата больше долга. Не оплачено ${K.fmt(debt)}`, 'bad'); return; }
+
+  const plan = allocation(D.party, D.amount);
+  plan.forEach(x => { x.d.paid = +(x.d.paid + x.take).toFixed(2); });
+
+  tab = 'buyers'; closeModal(); save();
+  K.toast(`Оплата ${K.money(D.amount)} принята · закрыто документов: ${plan.length} · остаток ${K.money(debtOf(D.party))}`);
+}
+
+/* ═══════════ ОБЩЕЕ ═══════════ */
+function save(){ dropCache(); syncBalances(); K.commit(S); render(); }
+
+document.getElementById('ovl').addEventListener('mousedown', e => { if(e.target.id === 'ovl') closeModal(); });
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && !document.getElementById('ovl').hidden) closeModal();
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'){
+    e.preventDefault(); const el = document.getElementById('q'); el.focus(); el.select();
+  }
+});
+document.getElementById('q').addEventListener('input', render);
+</script>
+</body>
+</html>

@@ -1,0 +1,609 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kasymov ERP — Админ / Справочники</title>
+<style>
+  :root{
+    --bg:#0d1523; --panel:#111c2e; --panel2:#16233a; --bd:rgba(255,255,255,.09);
+    --tx:#eef3fb; --mu:rgba(238,243,251,.55); --bl:#378add; --bl-d:#0c447c;
+    --gn:#4a9d4a; --rd:#e24b4a; --am:#c98a1a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px}
+  header{display:flex;align-items:center;gap:14px;padding:14px 22px;border-bottom:1px solid var(--bd);
+    background:var(--panel);position:sticky;top:0;z-index:5}
+  .logo{width:38px;height:38px;border-radius:10px;background:var(--bl);display:flex;align-items:center;
+    justify-content:center;font-weight:800;font-size:20px}
+  header h1{font-size:16px;margin:0;font-weight:700}
+  header .sub{font-size:12px;color:var(--mu)}
+  #conn{margin-left:auto;font-size:12px;color:var(--mu)}
+  #conn b{color:var(--gn)}
+  .tabs{display:flex;gap:6px;padding:14px 22px 0;flex-wrap:wrap}
+  .tab{padding:9px 16px;border-radius:9px 9px 0 0;background:var(--panel);color:var(--mu);
+    cursor:pointer;border:1px solid transparent;border-bottom:none;font-weight:600}
+  .tab.active{background:var(--panel2);color:var(--tx);border-color:var(--bd)}
+  main{padding:0 22px 40px}
+  .card{background:var(--panel2);border:1px solid var(--bd);border-radius:0 12px 12px 12px;padding:18px}
+  .bar{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+  .bar h2{margin:0;font-size:17px}
+  .bar .count{color:var(--mu);font-size:13px}
+  .spacer{flex:1}
+  input,select{background:var(--panel);border:1px solid var(--bd);color:var(--tx);border-radius:8px;
+    padding:9px 11px;font-size:14px;width:100%;font-family:inherit}
+  input:focus,select:focus{outline:2px solid var(--bl);outline-offset:1px}
+  button{font-family:inherit;font-size:14px;border:none;border-radius:8px;padding:9px 15px;cursor:pointer;font-weight:600}
+  .btn{background:var(--bl);color:#fff}
+  .btn:hover{background:#2f78c2}
+  .btn.ghost{background:transparent;color:var(--tx);border:1px solid var(--bd)}
+  .btn.sm{padding:6px 11px;font-size:13px}
+  .btn.danger{background:transparent;color:var(--rd);border:1px solid rgba(226,75,74,.4)}
+  .btn.danger:hover{background:rgba(226,75,74,.12)}
+  table{width:100%;border-collapse:collapse;margin-top:4px}
+  th,td{text-align:left;padding:10px 10px;border-bottom:1px solid var(--bd);vertical-align:middle}
+  th{color:var(--mu);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+  tr:hover td{background:rgba(255,255,255,.02)}
+  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:600}
+  .badge.fr{background:rgba(55,138,221,.18);color:#8ec3f2}
+  .badge.b2b{background:rgba(74,157,74,.18);color:#8ed08e}
+  .empty{color:var(--mu);padding:26px 0;text-align:center}
+  /* modal */
+  .ov{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-start;
+    justify-content:center;padding:40px 16px;z-index:20;overflow:auto}
+  .ov.show{display:flex}
+  .modal{background:var(--panel2);border:1px solid var(--bd);border-radius:14px;width:100%;max-width:520px;
+    padding:22px}
+  .modal h3{margin:0 0 16px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .grid .full{grid-column:1/-1}
+  .fld label{display:block;font-size:12px;color:var(--mu);margin-bottom:5px}
+  .modal .actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+  .note{position:fixed;right:16px;bottom:16px;background:#1f4d17;color:#fff;padding:11px 15px;border-radius:10px;
+    max-width:360px;box-shadow:0 6px 24px rgba(0,0,0,.3);opacity:0;transition:opacity .3s;z-index:40}
+  .note.bad{background:#7d211c}
+  .note.show{opacity:1}
+  .hint{font-size:12px;color:var(--am);margin-top:8px}
+  /* gate */
+  .gate{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100}
+  .gate.hidden{display:none}
+  .gatebox{background:var(--panel2);border:1px solid var(--bd);border-radius:14px;padding:28px;width:320px;text-align:center}
+  .gatebox .logo{margin:0 auto 12px}
+  .gatebox h2{margin:0 0 4px;font-size:18px}
+  .gatebox p{color:var(--mu);margin:0 0 16px;font-size:13px}
+  .gatebox input{margin-bottom:12px;text-align:center}
+  .gatebox button{width:100%}
+  .gerr{color:var(--rd);font-size:13px;margin-top:10px;min-height:16px}
+</style>
+</head>
+<body>
+<div id="gate" class="gate">
+  <div class="gatebox">
+    <div class="logo">K</div>
+    <h2>Админ-панель</h2>
+    <p>Введите пароль для доступа</p>
+    <input id="gatepass" type="password" placeholder="Пароль" autofocus>
+    <button class="btn" id="gatebtn">Войти</button>
+    <div id="gateerr" class="gerr"></div>
+  </div>
+</div>
+
+<header>
+  <div class="logo">K</div>
+  <div>
+    <h1>Kasymov ERP — Справочники</h1>
+    <div class="sub">Админ-панель · сотрудники, партнёры, оптовики, поставщики</div>
+  </div>
+  <div id="conn">подключение…</div>
+</header>
+
+<div class="tabs" id="tabs"></div>
+<main><div class="card" id="view"></div></main>
+
+<div class="ov" id="ov"><div class="modal" id="modal"></div></div>
+<div class="note" id="note"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+'use strict';
+
+/* ── Подключение к вашей базе Supabase (тот же ключ, что и на сайте) ── */
+const SB_URL = 'https://cuaanednzeznzwigzqpd.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1YWFuZWRuemV6bnp3aWd6cXBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2MjgzMTEsImV4cCI6MjEwMjIwNDMxMX0.hImRy-9_8Nlp_7N5rKsf_yca39ETWesMiX1dxGajXi0';
+const db = supabase.createClient(SB_URL, SB_KEY);
+
+/* ── Справочные значения ── */
+const ROLES = {manager:'Менеджер',measurer:'Замерщик',shop:'Цех',installer:'Установщик',
+  packer:'Упаковщик',senior:'Ст. установщик',accountant:'Бухгалтер',director:'Директор'};
+const BRANCHES = {bishkek:'Бишкек',osh:'Ош',manas:'Манас',karakol:'Каракол'};
+const PTYPE = {franchise:'Франчайзи',b2b:'B2B-клиент'};
+
+/* ── Описание сущностей ──
+   fields: [{key,label,type,options,req,width}]  type: text|number|select|date
+   toRow(v,existing) -> объект строки для upsert (колонки + data)
+   columns: что показывать в таблице (функции от строки-как-объекта) */
+const ENT = {
+  accounts:{
+    tab:'Счета / кассы', table:'accounts', prefix:'acc', order:'id',
+    hint:'Счета и их начальные остатки. Отражаются в разделе «Финансы» на сайте.',
+    fields:[
+      {key:'name',label:'Название',type:'text',req:true,full:true},
+      {key:'short',label:'Короткое имя',type:'text'},
+      {key:'start_balance',label:'Начальный остаток',type:'number'},
+    ],
+    toRow(v){return {id:v.id, name:v.name, short:v.short||'', start_balance:num(v.start_balance)};},
+    unpack(r){return {id:r.id, name:r.name, short:r.short||'', start_balance:r.start_balance||0};},
+    cols:[
+      {h:'Название',f:r=>esc(r.name)},
+      {h:'Короткое',f:r=>esc(r.short)||'—'},
+      {h:'Начальный остаток',f:r=>fmt(r.start_balance)},
+    ],
+  },
+  goods:{
+    tab:'Товары', table:'goods', prefix:'g', order:'name',
+    hint:'Товары склада: категория, себестоимость, продажная (оптовая) цена, мин. остаток. Остатки склада здесь не меняются.',
+    fields:[
+      {key:'name',label:'Название',type:'text',req:true,full:true},
+      {key:'sku',label:'Артикул',type:'text'},
+      {key:'cat',label:'Категория',type:'select',optionsFrom:{table:'categories',value:'name',label:'name',order:'sort'}},
+      {key:'unit',label:'Ед. изм.',type:'select',options:{'м²':'м²','п.м':'п.м','шт':'шт','компл':'компл','м':'м'}},
+      {key:'cost',label:'Себестоимость',type:'number'},
+      {key:'opt',label:'Продажная (опт) цена',type:'number'},
+      {key:'min',label:'Мин. остаток',type:'number'},
+    ],
+    toRow(v,ex){
+      const d = (ex&&ex._data)? Object.assign({},ex._data) : {};
+      const good = Object.assign(d, {id:v.id,name:v.name,sku:v.sku||'',cat:v.cat||'',unit:v.unit||'',cost:num(v.cost),opt:num(v.opt),min:num(v.min)});
+      if(!good.q) good.q={};
+      if(!good.tone) good.tone='#eef2f8';
+      return {id:v.id,name:v.name,sku:v.sku||'',cat:v.cat||'',unit:v.unit||'',cost:num(v.cost),opt:num(v.opt),min_qty:num(v.min),data:good};
+    },
+    unpack(r){const d=r.data||{};return {id:r.id,name:r.name,sku:r.sku||d.sku||'',cat:r.cat||d.cat||'',unit:r.unit||d.unit||'',
+      cost:(r.cost!=null?r.cost:d.cost)||0,opt:(r.opt!=null?r.opt:d.opt)||0,min:(r.min_qty!=null?r.min_qty:d.min)||0,_data:d};},
+    cols:[
+      {h:'Название',f:r=>esc(r.name)},
+      {h:'Артикул',f:r=>esc(r.sku)||'—'},
+      {h:'Категория',f:r=>esc(r.cat)||'—'},
+      {h:'Ед.',f:r=>esc(r.unit)||'—'},
+      {h:'Себест.',f:r=>fmt(r.cost)},
+      {h:'Цена (опт)',f:r=>fmt(r.opt)},
+      {h:'Мин.',f:r=>fmt(r.min)},
+    ],
+  },
+  categories:{
+    tab:'Категории', table:'categories', prefix:'cat', order:'sort',
+    hint:'Категории товаров склада. Используются в разделе «Склад» и при заведении товара.',
+    fields:[
+      {key:'name',label:'Название',type:'text',req:true,full:true},
+      {key:'sort',label:'Порядок',type:'number'},
+    ],
+    toRow(v){return {id:v.id, name:v.name, sort:num(v.sort)};},
+    unpack(r){return {id:r.id, name:r.name, sort:r.sort||0};},
+    cols:[
+      {h:'Название',f:r=>esc(r.name)},
+      {h:'Порядок',f:r=>r.sort||0},
+    ],
+  },
+  staff:{
+    tab:'Сотрудники', table:'staff', prefix:'u', order:'name', groupBy:'branch', groupLabels:BRANCHES,
+    hint:'Сотрудники сгруппированы по филиалам. Логин и пароль — для входа сотрудника на сайт. Пароль скрыт: нажмите «глаз», чтобы показать.',
+    fields:[
+      {key:'name',label:'Имя',type:'text',req:true,full:true},
+      {key:'role',label:'Роль',type:'select',optionsFrom:{table:'roles',value:'id',label:'name',order:'sort'},req:true},
+      {key:'branch',label:'Филиал',type:'select',options:BRANCHES,req:true},
+      {key:'login',label:'Логин (для входа)',type:'text'},
+      {key:'pass',label:'Пароль (для входа)',type:'text'},
+      {key:'salary',label:'Оклад',type:'number'},
+    ],
+    toRow(v,ex){const d=Object.assign({}, (ex&&ex._data)||{}); d.pass=v.pass||'';
+      return {id:v.id, name:v.name, role:v.role, branch:v.branch,
+      login:v.login||null, salary:num(v.salary), active: ex?ex.active!==false:true, data:d};},
+    unpack(r){const d=r.data||{};return {id:r.id,name:r.name,role:r.role,branch:r.branch,
+      login:r.login||'',pass:d.pass||'',salary:r.salary||0,active:r.active,_data:d};},
+    cols:[
+      {h:'Имя',f:r=>esc(r.name)},
+      {h:'Роль',f:r=>ROLES[r.role]||r.role||'—'},
+      {h:'Логин',f:r=>r.login?esc(r.login):'<span style="color:var(--mu)">нет</span>'},
+      {h:'Пароль',f:r=>pwCell(r)},
+      {h:'Оклад',f:r=>fmt(r.salary)},
+    ],
+  },
+  access:{
+    tab:'Права доступа', special:'access',
+    hint:'Отметьте, какие разделы видит каждая роль. Сотрудник входит и видит только отмеченные разделы.',
+  },
+  roles:{
+    tab:'Роли', table:'roles', prefix:'role', order:'sort',
+    hint:'Роли сотрудников. Создавайте роли и назначайте их в разделе «Сотрудники». Права доступа для ролей — во вкладке «Права доступа».',
+    fields:[
+      {key:'name',label:'Название роли',type:'text',req:true,full:true},
+      {key:'sort',label:'Порядок',type:'number'},
+    ],
+    toRow(v){return {id:v.id, name:v.name, sort:num(v.sort), cls:'bl'};},
+    unpack(r){return {id:r.id, name:r.name, sort:r.sort||0};},
+    cols:[
+      {h:'Роль',f:r=>esc(r.name)},
+      {h:'Порядок',f:r=>r.sort||0},
+    ],
+  },
+  partners:{
+    tab:'Партнёры (франчайзи / B2B)', table:'partners', prefix:'p', order:'name',
+    hint:'Тип «B2B-клиент» — это ваши B2B-партнёры. Изменения сразу видны в разделе «Партнёры» на сайте.',
+    fields:[
+      {key:'name',label:'Название',type:'text',req:true,full:true},
+      {key:'type',label:'Тип',type:'select',options:PTYPE,req:true},
+      {key:'person',label:'Контактное лицо',type:'text'},
+      {key:'phone',label:'Телефон',type:'text'},
+      {key:'city',label:'Город',type:'text'},
+      {key:'disc',label:'Скидка, %',type:'number'},
+      {key:'since',label:'С нами с (дата)',type:'date'},
+    ],
+    toRow(v){const d={id:v.id,name:v.name,type:v.type,city:v.city||'',phone:v.phone||'',
+      disc:num(v.disc),since:v.since||'',person:v.person||''};
+      return {id:v.id,name:v.name,type:v.type,city:v.city||'',phone:v.phone||'',disc:num(v.disc),data:d};},
+    unpack(r){const d=r.data||{};return {id:r.id,name:r.name,type:r.type||'b2b',city:d.city||r.city||'',
+      phone:d.phone||r.phone||'',disc:(r.disc!=null?r.disc:d.disc)||0,since:d.since||'',person:d.person||''};},
+    cols:[
+      {h:'Название',f:r=>esc(r.name)},
+      {h:'Тип',f:r=>r.type==='franchise'?'<span class="badge fr">Франчайзи</span>':'<span class="badge b2b">B2B</span>'},
+      {h:'Контакт',f:r=>esc(r.person)||'—'},
+      {h:'Телефон',f:r=>esc(r.phone)||'—'},
+      {h:'Город',f:r=>esc(r.city)||'—'},
+      {h:'Скидка',f:r=>(r.disc||0)+'%'},
+    ],
+  },
+  buyers:{
+    tab:'Оптовики', table:'buyers', prefix:'b', order:'name',
+    hint:'Оптовые клиенты (покупают готовую продукцию по оптовой цене).',
+    fields:[
+      {key:'name',label:'Название',type:'text',req:true,full:true},
+      {key:'phone',label:'Телефон',type:'text'},
+      {key:'city',label:'Город',type:'text'},
+      {key:'discount',label:'Скидка, %',type:'number'},
+      {key:'limit',label:'Лимит долга',type:'number'},
+    ],
+    toRow(v,ex){const bal=ex?num(ex._balance):0;
+      const d={id:v.id,name:v.name,city:v.city||'',phone:v.phone||'',limit:num(v.limit),
+        balance:bal,discount:num(v.discount)};
+      return {id:v.id,name:v.name,balance:bal,limit_sum:num(v.limit),data:d};},
+    unpack(r){const d=r.data||{};return {id:r.id,name:r.name,city:d.city||'',phone:d.phone||'',
+      discount:d.discount||0,limit:(r.limit_sum!=null?r.limit_sum:d.limit)||0,_balance:(r.balance!=null?r.balance:d.balance)||0};},
+    cols:[
+      {h:'Название',f:r=>esc(r.name)},
+      {h:'Телефон',f:r=>esc(r.phone)||'—'},
+      {h:'Город',f:r=>esc(r.city)||'—'},
+      {h:'Скидка',f:r=>(r.discount||0)+'%'},
+      {h:'Лимит',f:r=>fmt(r.limit)},
+      {h:'Баланс',f:r=>fmt(r._balance)},
+    ],
+  },
+  suppliers:{
+    tab:'Поставщики', table:'suppliers', prefix:'sup', order:'name',
+    hint:'Поставщики материалов (ткань, профиль, комплектующие).',
+    fields:[
+      {key:'name',label:'Название',type:'text',req:true,full:true},
+      {key:'phone',label:'Телефон',type:'text'},
+      {key:'cats',label:'Категории (что поставляет)',type:'text',full:true},
+      {key:'cur',label:'Валюта',type:'select',options:{KGS:'сом (KGS)',USD:'доллар (USD)'}},
+      {key:'debt',label:'Долг ему',type:'number'},
+    ],
+    toRow(v){const d={id:v.id,name:v.name,phone:v.phone||'',cats:v.cats||'',cur:v.cur||'KGS',debt:num(v.debt)};
+      return {id:v.id,name:v.name,debt:num(v.debt),data:d};},
+    unpack(r){const d=r.data||{};return {id:r.id,name:r.name,phone:d.phone||'',cats:d.cats||'',
+      cur:d.cur||'KGS',debt:(r.debt!=null?r.debt:d.debt)||0};},
+    cols:[
+      {h:'Название',f:r=>esc(r.name)},
+      {h:'Телефон',f:r=>esc(r.phone)||'—'},
+      {h:'Категории',f:r=>esc(r.cats)||'—'},
+      {h:'Валюта',f:r=>r.cur||'KGS'},
+      {h:'Долг',f:r=>fmt(r.debt)},
+    ],
+  },
+  techcards:{
+    tab:'Тех-карты', table:'techcards', prefix:'tc', order:'name', custom:true,
+    hint:'Тех-карта изделия: перечислите материалы и правило расхода для каждого (фикс / по ширине / по высоте / по площади / периметр). Ширина и высота берутся из заказа, система сама посчитает расход. Заполняется один раз.',
+    unpack(r){const d=r.data||{};return {id:r.id,name:r.name,category:d.category||r.product||'',rows:d.rows||[]};},
+    cols:[
+      {h:'Изделие',f:r=>esc(r.name)},
+      {h:'Категория',f:r=>esc(r.category)||'—'},
+      {h:'Материалов',f:r=>(r.rows||[]).length},
+    ],
+  },
+};
+
+/* ── утилиты ── */
+function num(v){const n=parseFloat(v);return Number.isFinite(n)?n:0;}
+function fmt(n){n=num(n);return n?n.toLocaleString('ru-RU'):'0';}
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function note(text,bad){const el=document.getElementById('note');el.textContent=text;
+  el.className='note show'+(bad?' bad':'');clearTimeout(el._t);
+  el._t=setTimeout(()=>el.className='note'+(bad?' bad':''),bad?5000:2500);}
+
+let current='staff';
+let cache={}; // ключ -> массив распакованных записей
+
+/* ── вкладки ── */
+function renderTabs(){
+  const t=document.getElementById('tabs');t.innerHTML='';
+  Object.keys(ENT).forEach(k=>{
+    const b=document.createElement('div');
+    b.className='tab'+(k===current?' active':'');
+    b.textContent=ENT[k].tab;
+    b.onclick=()=>{current=k;renderTabs();load();};
+    t.appendChild(b);
+  });
+}
+
+/* ── загрузка и таблица ── */
+async function load(){
+  const e=ENT[current];
+  if(e.special==='access'){ return renderAccess(); }
+  document.getElementById('view').innerHTML='<div class="empty">Загрузка…</div>';
+  const {data,error}=await db.from(e.table).select('*').order(e.order,{ascending:true});
+  if(error){document.getElementById('view').innerHTML='<div class="empty">Ошибка: '+esc(error.message)+'</div>';
+    note('Не удалось загрузить: '+error.message,true);return;}
+  const rows=(data||[]).map(r=>e.unpack(r));
+  cache[current]=rows;
+  renderTable(rows);
+}
+
+function tableFor(pairs){
+  const e=ENT[current];
+  let h='<table><thead><tr>';
+  e.cols.forEach(c=>h+='<th>'+c.h+'</th>');
+  h+='<th style="width:120px"></th></tr></thead><tbody>';
+  pairs.forEach(p=>{
+    h+='<tr>';
+    e.cols.forEach(c=>h+='<td>'+c.f(p.r)+'</td>');
+    h+='<td style="text-align:right;white-space:nowrap">'
+      +'<button class="btn ghost sm" onclick="openForm('+p.idx+')">✎</button> '
+      +'<button class="btn danger sm" onclick="del('+p.idx+')">🗑</button></td>';
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  return h;
+}
+function renderTable(rows){
+  const e=ENT[current];
+  let h='<div class="bar"><h2>'+esc(e.tab)+'</h2><span class="count">'+rows.length+' зап.</span>'
+    +'<span class="spacer"></span>'
+    +'<button class="btn ghost sm" onclick="load()">Обновить</button>'
+    +'<button class="btn" onclick="openForm()">+ Добавить</button></div>';
+  if(e.hint) h+='<div class="hint">'+esc(e.hint)+'</div>';
+  if(!rows.length){ h+='<div class="empty">Пока пусто. Нажмите «+ Добавить».</div>'; document.getElementById('view').innerHTML=h; return; }
+  if(e.groupBy){
+    const labels=e.groupLabels||{};
+    const groups={};
+    rows.forEach((r,i)=>{ const g=r[e.groupBy]||'—'; (groups[g]=groups[g]||[]).push({r:r,idx:i}); });
+    let gkeys=Object.keys(groups);
+    if(e.groupLabels){ const ord=Object.keys(e.groupLabels).filter(k=>groups[k]); gkeys.forEach(g=>{ if(ord.indexOf(g)<0) ord.push(g); }); gkeys=ord; }
+    gkeys.forEach(g=>{
+      h+='<div style="margin:18px 0 6px;font-weight:700;font-size:15px">'+esc(labels[g]||g)
+        +' <span style="color:var(--mu);font-weight:400;font-size:13px">('+groups[g].length+')</span></div>';
+      h+=tableFor(groups[g]);
+    });
+  }else{
+    h+=tableFor(rows.map((r,i)=>({r:r,idx:i})));
+  }
+  document.getElementById('view').innerHTML=h;
+}
+/* пароль в списке — скрыт, показывается по «глазу» */
+function pwCell(r){
+  if(!r.pass) return '<span style="color:var(--mu)">—</span>';
+  const id='pw'+Math.random().toString(36).slice(2,8);
+  return '<span class="pwv" id="'+id+'" data-v="'+esc(r.pass)+'">••••••</span> '
+    +'<button class="btn ghost sm" style="padding:2px 7px" onclick="togglePw(\''+id+'\')">👁</button>';
+}
+function togglePw(id){ const el=document.getElementById(id); if(!el)return;
+  el.textContent = (el.textContent==='••••••') ? el.getAttribute('data-v') : '••••••'; }
+
+/* ── ПРАВА ДОСТУПА (роли × разделы) ── */
+const SECTIONS=[['dashboard','Дашборд'],['orders','Заказы'],['production','Производство'],['warehouse','Склад'],['wholesale','Опт'],['invoices','Накладные'],['finance','Финансы'],['reports','Отчёты'],['partners','Партнёры']];
+let accRoles=[], accMap={};
+async function renderAccess(){
+  const view=document.getElementById('view');
+  view.innerHTML='<div class="empty">Загрузка…</div>';
+  try{
+    const r=await db.from('roles').select('*').order('sort',{ascending:true}); accRoles=r.data||[];
+    const ra=await db.from('role_access').select('*'); accMap={}; (ra.data||[]).forEach(x=>{ accMap[x.role]=Array.isArray(x.sections)?x.sections:[]; });
+  }catch(err){ view.innerHTML='<div class="empty">Ошибка: '+esc(err.message||err)+'</div>'; return; }
+  let h='<div class="bar"><h2>Права доступа</h2><span class="spacer"></span>'
+    +'<button class="btn ghost sm" onclick="load()">Обновить</button>'
+    +'<button class="btn" onclick="saveAccess()">Сохранить</button></div>';
+  h+='<div class="hint">Отметьте разделы для каждой роли. Пусто = роль видит только вход. Не забудьте «Сохранить».</div>';
+  h+='<div style="overflow:auto"><table><thead><tr><th>Роль</th>';
+  SECTIONS.forEach(s=>h+='<th style="text-align:center;font-size:11px">'+esc(s[1])+'</th>');
+  h+='</tr></thead><tbody>';
+  accRoles.forEach(role=>{
+    const sel=accMap[role.id]||[];
+    h+='<tr><td style="font-weight:600">'+esc(role.name)+'</td>';
+    SECTIONS.forEach(s=>{ const on=sel.indexOf(s[0])>=0;
+      h+='<td style="text-align:center"><input type="checkbox" data-role="'+esc(role.id)+'" data-sec="'+s[0]+'"'+(on?' checked':'')+' style="width:auto"></td>'; });
+    h+='</tr>';
+  });
+  h+='</tbody></table></div>';
+  view.innerHTML=h;
+}
+async function saveAccess(){
+  const rows=accRoles.map(role=>{
+    const secs=[];
+    SECTIONS.forEach(s=>{ const el=document.querySelector('input[data-role="'+CSS.escape(role.id)+'"][data-sec="'+s[0]+'"]'); if(el&&el.checked) secs.push(s[0]); });
+    return {role:role.id, sections:secs};
+  });
+  const {error}=await db.from('role_access').upsert(rows);
+  if(error){ note('Не сохранилось: '+error.message,true); return; }
+  note('Права сохранены');
+}
+
+/* ── форма (добавить / изменить) ── */
+async function openForm(idx){
+  const e=ENT[current];
+  if(e.custom){ return openTechForm(idx); }
+  const editing = idx!=null;
+  const rec = editing ? cache[current][idx] : {};
+  document.getElementById('modal').style.maxWidth='';
+  /* подгружаем динамические списки (категории, роли и т.п.) */
+  for(const f of e.fields){
+    if(f.optionsFrom){
+      try{
+        let q=db.from(f.optionsFrom.table).select('*');
+        if(f.optionsFrom.order) q=q.order(f.optionsFrom.order,{ascending:true});
+        const {data}=await q;
+        const opts={};
+        (data||[]).forEach(row=>{ opts[row[f.optionsFrom.value]]=row[f.optionsFrom.label]; });
+        f.options=opts;
+      }catch(_){ f.options=f.options||{}; }
+    }
+  }
+  let h='<h3>'+(editing?'Изменить':'Добавить')+' — '+esc(e.tab)+'</h3><div class="grid">';
+  e.fields.forEach(f=>{
+    const val = rec[f.key]!=null ? rec[f.key] : '';
+    h+='<div class="fld'+(f.full?' full':'')+'"><label>'+esc(f.label)+(f.req?' *':'')+'</label>';
+    if(f.type==='select'){
+      h+='<select id="f_'+f.key+'">';
+      for(const k in f.options) h+='<option value="'+k+'"'+(String(val)===k?' selected':'')+'>'+esc(f.options[k])+'</option>';
+      h+='</select>';
+    }else{
+      const t=f.type==='number'?'number':(f.type==='date'?'date':'text');
+      h+='<input id="f_'+f.key+'" type="'+t+'" value="'+esc(val)+'">';
+    }
+    h+='</div>';
+  });
+  h+='</div><div class="actions">'
+    +'<button class="btn ghost" onclick="closeForm()">Отмена</button>'
+    +'<button class="btn" onclick="save('+(editing?idx:'null')+')">Сохранить</button></div>';
+  document.getElementById('modal').innerHTML=h;
+  document.getElementById('ov').classList.add('show');
+}
+function closeForm(){document.getElementById('ov').classList.remove('show');
+  const m=document.getElementById('modal'); if(m) m.style.maxWidth='';}
+
+async function save(idx){
+  const e=ENT[current];
+  const editing = idx!==null && idx!==undefined;
+  const v={};
+  for(const f of e.fields){
+    const el=document.getElementById('f_'+f.key);
+    v[f.key]=el?el.value.trim():'';
+    if(f.req && !v[f.key]){note('Заполните: '+f.label,true);return;}
+  }
+  const existing = editing ? cache[current][idx] : null;
+  v.id = editing ? existing.id : nextId(e);
+  const row = e.toRow(v, existing);
+  const {error}=await db.from(e.table).upsert(row);
+  if(error){note('Не сохранилось: '+error.message,true);return;}
+  closeForm();
+  note(editing?'Изменено':'Добавлено');
+  load();
+}
+
+async function del(idx){
+  const e=ENT[current];const rec=cache[current][idx];
+  if(!confirm('Удалить «'+(rec.name||rec.id)+'»? Это действие необратимо.'))return;
+  const {error}=await db.from(e.table).delete().eq('id',rec.id);
+  if(error){note('Не удалось удалить: '+error.message,true);return;}
+  note('Удалено');load();
+}
+
+/* новый id: префикс + (макс. номер + 1) */
+function nextId(e){
+  const rows=cache[current]||[];
+  let max=0;
+  rows.forEach(r=>{const m=String(r.id).match(/(\d+)\s*$/);if(m){max=Math.max(max,parseInt(m[1],10));}});
+  return e.prefix+(max+1);
+}
+
+/* ── КАСТОМНЫЙ РЕДАКТОР ТЕХ-КАРТ ──
+   Каждый материал изделия + правило расхода. Ш и В берутся из заказа (в метрах).
+   Формулы расхода на 1 шт изделия:
+     fix   -> коэфф                     (заглушки, кнопки, комплектующие — фикс. кол-во)
+     w     -> Ширина × коэфф            (профиль, лента)
+     h     -> Высота × коэфф
+     area  -> Ширина × Высота × коэфф   (ткань, м²)
+     perim -> 2×(Ширина+Высота) × коэфф
+     sum   -> (Ширина+Высота) × коэфф   (нитка — зависит от Ш и В)               */
+const TC_CALC={
+  fix:'Фиксировано (кол-во)',
+  w:'По ширине (Ш × коэфф)',
+  h:'По высоте (В × коэфф)',
+  area:'Площадь (Ш × В × коэфф)',
+  perim:'Периметр (2·(Ш+В) × коэфф)',
+  sum:'Ш + В (× коэфф)'
+};
+let tcRows=[], tcGoods=[], tcCats=[];
+function tcUnit(id){ const g=tcGoods.find(x=>x.id===id); if(!g)return ''; return g.unit||(g.data&&g.data.unit)||''; }
+async function openTechForm(idx){
+  const editing = idx!=null;
+  const rec = editing ? cache['techcards'][idx] : {name:'',category:'',rows:[]};
+  try{ const r=await db.from('categories').select('*').order('sort',{ascending:true}); tcCats=r.data||[]; }catch(_){ tcCats=[]; }
+  try{ const r=await db.from('goods').select('*').order('name',{ascending:true}); tcGoods=r.data||[]; }catch(_){ tcGoods=[]; }
+  tcRows = (rec.rows||[]).map(x=>({good:x.good||'',calc:x.calc||'fix',coeff:(x.coeff!=null?x.coeff:1)}));
+  if(!tcRows.length) tcRows=[{good:'',calc:'fix',coeff:1}];
+  const catOpts='<option value="">—</option>'+tcCats.map(c=>'<option value="'+esc(c.name)+'"'+(rec.category===c.name?' selected':'')+'>'+esc(c.name)+'</option>').join('');
+  let h='<h3>'+(editing?'Изменить':'Новая')+' тех-карта</h3><div class="grid">'
+    +'<div class="fld"><label>Название изделия *</label><input id="tc_name" type="text" value="'+esc(rec.name||'')+'" placeholder="напр. Плиссе"></div>'
+    +'<div class="fld"><label>Категория</label><select id="tc_cat">'+catOpts+'</select></div>'
+    +'</div><label style="display:block;margin:14px 0 6px;color:var(--mu);font-size:12px">СОСТАВ на 1 шт — материал · правило расхода · коэффициент</label>'
+    +'<div id="tc_rows"></div>'
+    +'<button class="btn ghost sm" onclick="tcAddRow()">+ материал</button>'
+    +'<div class="hint">Ш и В — из заказа (в метрах). Коэфф — множитель или кол-во. Пример для плиссе: ткань «Площадь» ×1; профиль «По ширине» ×2; заглушки «Фиксировано» ×4; лента «По ширине» ×1.</div>'
+    +'<div class="actions"><button class="btn ghost" onclick="closeForm()">Отмена</button>'
+    +'<button class="btn" onclick="saveTech('+(editing?idx:'null')+')">Сохранить</button></div>';
+  const modal=document.getElementById('modal'); modal.style.maxWidth='700px'; modal.innerHTML=h;
+  document.getElementById('ov').classList.add('show');
+  tcRenderRows();
+}
+function tcRenderRows(){
+  const el=document.getElementById('tc_rows'); if(!el)return;
+  let h='';
+  tcRows.forEach((row,i)=>{
+    const unit=tcUnit(row.good);
+    h+='<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">'
+      +'<span style="width:16px;color:var(--mu);font-size:12px">'+(i+1)+'</span>'
+      +'<select data-i="'+i+'" data-k="good" style="flex:1.5"><option value="">— материал —</option>'+tcGoods.map(g=>'<option value="'+esc(g.id)+'"'+(row.good===g.id?' selected':'')+'>'+esc(g.name)+'</option>').join('')+'</select>'
+      +'<select data-i="'+i+'" data-k="calc" style="flex:1.4">'+Object.keys(TC_CALC).map(k=>'<option value="'+k+'"'+(row.calc===k?' selected':'')+'>'+esc(TC_CALC[k])+'</option>').join('')+'</select>'
+      +'<input data-i="'+i+'" data-k="coeff" type="number" step="any" value="'+esc(row.coeff)+'" style="flex:0 0 76px" placeholder="коэфф">'
+      +'<span style="flex:0 0 32px;color:var(--mu);font-size:12px;text-align:center">'+esc(unit||'')+'</span>'
+      +'<button class="btn danger sm" onclick="tcRemoveRow('+i+')">–</button></div>';
+  });
+  el.innerHTML=h;
+  el.querySelectorAll('select,input').forEach(s=>{ s.onchange=function(){ const i=+this.dataset.i,k=this.dataset.k; tcRows[i][k]=this.value; if(k==='good') tcRenderRows(); }; });
+}
+function tcAddRow(){ tcRows.push({good:'',calc:'fix',coeff:1}); tcRenderRows(); }
+function tcRemoveRow(i){ tcRows.splice(i,1); if(!tcRows.length)tcRows=[{good:'',calc:'fix',coeff:1}]; tcRenderRows(); }
+async function saveTech(idx){
+  const editing = idx!==null && idx!==undefined;
+  const name=(document.getElementById('tc_name').value||'').trim();
+  const cat=document.getElementById('tc_cat').value;
+  if(!name){ note('Введите название изделия',true); return; }
+  const rows=tcRows.filter(r=>r.good).map(r=>{ const g=tcGoods.find(x=>x.id===r.good)||{};
+    return {good:r.good, good_name:g.name||r.good, unit:(g.unit||(g.data&&g.data.unit)||''), calc:r.calc||'fix', coeff:num(r.coeff)}; });
+  if(!rows.length){ note('Добавьте хотя бы один материал',true); return; }
+  const existing = editing ? cache['techcards'][idx] : null;
+  const id = editing ? existing.id : nextId(ENT['techcards']);
+  const data={category:cat,rows:rows};
+  const {error}=await db.from('techcards').upsert({id:id,name:name,product:cat,data:data});
+  if(error){ note('Не сохранилось: '+error.message,true); return; }
+  closeForm(); note(editing?'Изменено':'Добавлено'); load();
+}
+
+/* ── вход по паролю ──
+   СМЕНИТЕ пароль ниже на свой (эта строка — единственное место). */
+/* вход без пароля — открываем сразу */
+(function(){ const g=document.getElementById('gate'); if(g) g.classList.add('hidden'); })();
+
+/* ── старт (после ввода пароля) ── */
+async function startApp(){
+  renderTabs();
+  const {error}=await db.from('staff').select('id').limit(1);
+  const c=document.getElementById('conn');
+  if(error){c.innerHTML='<span style="color:var(--rd)">нет связи с базой</span>';
+    note('Нет связи с базой: '+error.message,true);}
+  else{c.innerHTML='база: <b>подключено</b>';}
+  load();
+}
+startApp();
+</script>
+</body>
+</html>

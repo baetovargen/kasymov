@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Партнёры — Kasymov ERP</title>
+<link rel="stylesheet" href="kasymov-ui.css">
+<style>
+:root{--h1:#1d5f52;--h2:#2b7d63;--h3:#4aa06a}
+.phead{position:relative;overflow:hidden;align-items:center;padding:15px 20px;margin-bottom:14px;
+  border-radius:13px;color:#fff;background:linear-gradient(112deg,var(--h1),var(--h2) 54%,var(--h3));
+  box-shadow:0 3px 10px rgba(21,29,41,.12),0 14px 34px rgba(29,95,82,.22)}
+.phead::after{content:'';position:absolute;right:-40px;top:-30%;width:290px;height:180%;
+  background:repeating-linear-gradient(180deg,rgba(255,255,255,.2) 0 3px,transparent 3px 11px);
+  transform:skewX(-14deg);pointer-events:none}
+.ptitle{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.02em}
+.psub{font-size:12px;color:rgba(255,255,255,.86);margin-top:3px}
+.pright{position:relative;z-index:1}
+.phead .btn{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35);color:#fff}
+.phead .btn:hover{background:rgba(255,255,255,.3)}
+.phead .inp{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.34);color:#fff}
+.phead .inp::placeholder{color:rgba(255,255,255,.7)}
+.phead .search svg{color:rgba(255,255,255,.78)}
+
+.subtabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--bd);margin-bottom:14px}
+.subtab{padding:9px 16px;font-size:13px;font-weight:700;color:var(--t2);white-space:nowrap;
+        border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:7px 7px 0 0}
+.subtab:hover{background:#eef2f9;color:var(--t1)}
+.subtab.on{color:var(--h1);border-bottom-color:var(--h2);background:#eef7f3}
+.subtab .n{font-size:11px;font-weight:800;color:var(--t3);margin-left:6px}
+
+.num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.q0{color:var(--t3);font-weight:400}
+.pos{color:var(--gn-d)} .neg{color:var(--rd-d)}
+.money{font-variant-numeric:tabular-nums;font-weight:700;text-align:right;white-space:nowrap}
+.tbl tfoot td{background:#f7f9fd;border-top:2px solid var(--bd);font-weight:800}
+tr.lnk{cursor:pointer} tr.lnk:hover td{background:#f4faf7}
+.chipbtn{border:1px solid var(--bd);background:#fff;border-radius:20px;padding:6px 14px;
+         font-size:12.5px;font-weight:600;color:var(--t2);cursor:pointer}
+.chipbtn.on{background:var(--h1);border-color:var(--h1);color:#fff}
+
+/* карточки партнёров */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:13px}
+.pc{background:#fff;border:1px solid var(--bd);border-radius:13px;overflow:hidden;
+    box-shadow:0 1px 2px rgba(21,29,41,.05);display:flex;flex-direction:column}
+.pc.debt{border-color:#f0c0bc;box-shadow:0 0 0 2px var(--rd-l)}
+.pc-h{padding:13px 15px;background:linear-gradient(150deg,#f2f9f5,#f6f9fd 70%);border-bottom:1px solid var(--bd)}
+.pc-n{font-size:15px;font-weight:800;line-height:1.25}
+.pc-m{font-size:11.5px;color:var(--t3);margin-top:3px;line-height:1.5}
+.pc-b{padding:12px 15px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pc-i{min-width:0}
+.pc-l{font-size:10px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.05em}
+.pc-v{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}
+.pc-f{padding:10px 15px;border-top:1px solid var(--bd);background:#fbfcfe;display:flex;align-items:center;gap:9px}
+.bar{--h:7px}
+.trk{height:7px;background:#eef1f7;border-radius:5px;overflow:hidden;flex:1;min-width:60px}
+.trk i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#5f9a1e,#8cc23f)}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #f5f7fc;font-size:12.5px}
+.kv:last-child{border-bottom:none}
+.sec{font-size:10px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 6px}
+.rows{border:1px solid var(--bd);border-radius:10px;overflow:hidden;margin-bottom:10px}
+@media (max-width:900px){ .hide-m{display:none} }
+@media (max-width:640px){ .hide-s{display:none} }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="phead">
+    <div>
+      <div class="ptitle">Партнёры</div>
+      <div class="psub" id="sub">—</div>
+    </div>
+    <div class="pright">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input class="inp" id="q" placeholder="Партнёр, номер, адрес" style="width:210px">
+      </div>
+      <button class="btn green" id="btn-primary">+ Заказ партнёра</button>
+    </div>
+  </div>
+
+  <div id="dates"></div>
+  <div class="stats" id="stats"></div>
+  <div class="subtabs" id="subtabs"></div>
+  <div id="view"></div>
+</div>
+
+<div class="ovl" id="ovl" hidden>
+  <div class="modal" id="mdl">
+    <div class="modal-h"><div class="modal-t" id="m-t"></div><button class="modal-x" data-close aria-label="Закрыть">✕</button></div>
+    <div class="modal-b" id="m-b"></div>
+    <div class="modal-f" id="m-f"></div>
+  </div>
+</div>
+
+<script>
+/* сообщаем оболочке о сбое, чтобы он не превратился в пустой экран */
+window.__errHook = true;
+window.addEventListener('error', e => {
+  try{ window.parent.postMessage({ ns:'kasymov', type:'moduleError',
+       msg:(e.message||'') + ' · ' + (e.lineno||'') }, '*'); }catch(_){}
+  const b = document.body;
+  if(b) b.insertAdjacentHTML('afterbegin',
+    '<div style="background:#7d211c;color:#fff;padding:12px 16px;font:13px/1.5 -apple-system,sans-serif">'
+    + '<b>Сбой в разделе.</b> ' + (e.message||'') + '</div>');
+});
+</script>
+<script src="kasymov-data.js"></script>
+<script>
+const K = window.KASYMOV;
+let S = null, tab = 'orders', P = { preset:'all', from:'', to:'' }, payFlt = 'all', who = 'p1';
+const TODAY = '2026-08-03';
+const TABS = [
+  { id:'orders',    name:'Заказы партнёров' },
+  { id:'franchise', name:'Франчайзи' },
+  { id:'b2b',       name:'B2B-клиенты' },
+  { id:'debts',     name:'Долги' },
+];
+const PST = { new:['Принят','bl'], toShop:['В цеху','am'], ready:['Готов','vl'],
+              done:['Сдан','gn'], cancel:['Отменён','gy'] };
+
+K.connect(state => {
+  S = state;
+  if(!S.porders) S.porders = [];
+  render();
+}, name => { if(name === 'primary') newOrder(); });
+
+/* ═════════ РАСЧЁТЫ ═════════ */
+const P_ = id => S.partners.find(x => x.id === id) || {};
+const pName = id => P_(id).name || '—';
+const R = () => K.rangeOf(P.preset, P.from, P.to);
+const inR = d => { const [f,t] = R(); const x = (d||'').slice(0,10); return x >= f && x <= t; };
+const f0 = n => K.fmt(n);
+const owe = o => Math.max(0, o.sum - (o.paid || 0));
+
+function list(){
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  return S.porders.filter(o => {
+    if(!inR(o.date)) return false;
+    if(payFlt === 'debt' && owe(o) <= 0) return false;
+    if(payFlt === 'paid' && owe(o) > 0) return false;
+    if(payFlt === 'work' && ['done','cancel'].includes(o.status)) return false;
+    if(q && !(String(o.num).toLowerCase().includes(q) || pName(o.partner).toLowerCase().includes(q) ||
+              (o.addr||'').toLowerCase().includes(q) || (o.client||'').toLowerCase().includes(q))) return false;
+    return true;
+  }).sort((a,b) => b.date.localeCompare(a.date));
+}
+
+/* ═════════ РЕНДЕР ═════════ */
+function render(){
+  if(!S) return;
+  document.getElementById('dates').innerHTML = K.dateBar(P.preset, P.from, P.to);
+  K.bindDateBar(v => { P = v; render(); }, P);
+
+  const [f,t] = R();
+  const all = S.porders.filter(o => inR(o.date));
+  const sum = all.reduce((a,o) => a + o.sum, 0);
+  const paid = all.reduce((a,o) => a + (o.paid || 0), 0);
+  const cost = all.reduce((a,o) => a + K.poCost(o, S.goods), 0);
+  const retail = all.filter(o => P_(o.partner).type === 'franchise')
+    .reduce((a,o) => a + (o.retail || 0), 0);
+  const debtors = S.partners.filter(p => K.partnerStats(S, p.id, f, t).owe > 0);
+
+  document.getElementById('sub').textContent =
+    `${K.rangeName(P.preset,P.from,P.to)} · ${all.length} заказов · нам должны ${K.money(sum - paid)}`;
+
+  document.getElementById('stats').innerHTML = `
+    <div class="stat bl"><div class="stat-l">Наша выручка от партнёров</div>
+      <div class="stat-v">${f0(sum)}</div>
+      <div class="stat-s">${all.length} заказов от ${new Set(all.map(o=>o.partner)).size} партнёров</div></div>
+    <div class="stat gn"><div class="stat-l">Оплачено</div>
+      <div class="stat-v pos">${f0(paid)}</div>
+      <div class="stat-s">${sum?Math.round(paid/sum*100):0}% от суммы</div></div>
+    <button class="stat rd" data-go="debts"><div class="stat-l">Не оплачено</div>
+      <div class="stat-v ${sum-paid?'neg':''}">${f0(sum - paid)}</div>
+      <div class="stat-s">${debtors.length} партнёров должны</div></button>
+    <div class="stat am"><div class="stat-l">Наша прибыль</div>
+      <div class="stat-v">${f0(sum - cost)}</div>
+      <div class="stat-s">маржа ${sum?Math.round((sum-cost)/sum*100):0}% · материалы ${f0(cost)}</div></div>
+    <div class="stat vl"><div class="stat-l">Оборот франчайзи</div>
+      <div class="stat-v">${f0(retail)}</div>
+      <div class="stat-s">их розница, справочно</div></div>`;
+  document.querySelectorAll('[data-go]').forEach(b =>
+    b.addEventListener('click', () => { tab = b.dataset.go; render(); }));
+
+  const n = { orders:S.porders.filter(o => inR(o.date)).length,
+              franchise:S.partners.filter(p => p.type === 'franchise').length,
+              b2b:S.partners.filter(p => p.type === 'b2b').length,
+              debts:debtors.length };
+  document.getElementById('subtabs').innerHTML = TABS.map(x =>
+    `<button class="subtab ${tab===x.id?'on':''}" data-t="${x.id}">${x.name}<span class="n">${n[x.id]}</span></button>`).join('');
+  document.querySelectorAll('.subtab').forEach(b =>
+    b.addEventListener('click', () => { tab = b.dataset.t; render(); }));
+
+  ({ orders:vOrders, franchise:() => vPartners('franchise'),
+     b2b:() => vPartners('b2b'), debts:vDebts })[tab]();
+}
+document.getElementById('q').addEventListener('input', render);
+
+/* ── 1. ЗАКАЗЫ ПАРТНЁРОВ ── */
+function vOrders(){
+  const L = list();
+  const sum = L.reduce((a,o) => a + o.sum, 0);
+  const paid = L.reduce((a,o) => a + (o.paid || 0), 0);
+
+  document.getElementById('view').innerHTML = `
+    <div class="bar" style="margin-bottom:12px">
+      ${[['all','Все'],['work','В работе'],['debt','С долгом'],['paid','Оплаченные']].map(([k,n]) =>
+        `<button class="chipbtn ${payFlt===k?'on':''}" data-f="${k}">${n}</button>`).join('')}
+      <span style="margin-left:auto"></span>
+      <button class="btn sm" id="xls">↓ Excel</button>
+    </div>
+    <div class="card"><div class="tbl-wrap"><table class="tbl" id="t-po">
+      <thead><tr>
+        <th style="width:92px">Номер</th><th style="width:110px">Дата</th>
+        <th>Партнёр</th>
+        <th class="hide-s">Заказ и адрес</th>
+        <th class="hide-m" style="width:80px">Изделий</th>
+        <th style="width:120px">Статус</th>
+        <th style="text-align:right;width:120px">Сумма нам</th>
+        <th style="text-align:right;width:120px">Оплачено</th>
+        <th style="text-align:right;width:120px">Остаток</th>
+      </tr></thead>
+      <tbody>${L.length ? L.map(o => {
+        const st = PST[o.status] || PST.new, ow = owe(o);
+        return `<tr class="lnk" data-o="${o.id}" tabindex="0">
+          <td class="strong">${o.num}</td>
+          <td class="dim">${K.dmy(o.date)}</td>
+          <td><div class="strong">${K.esc(pName(o.partner))}</div>
+            <div class="q0" style="font-size:11.5px">${P_(o.partner).type==='franchise'?'франчайзи':'B2B'} · скидка ${o.disc}%</div></td>
+          <td class="hide-s">${K.esc(o.client)}<div class="q0" style="font-size:11.5px">${K.esc(o.addr)}</div></td>
+          <td class="hide-m num" style="text-align:center">${o.items.reduce((a,i)=>a+i.qty,0)}</td>
+          <td><span class="chip ${st[1]}">${st[0]}</span></td>
+          <td class="money">${f0(o.sum)}</td>
+          <td class="money ${o.paid?'pos':'q0'}">${o.paid?f0(o.paid):'—'}</td>
+          <td class="money ${ow?'neg':'pos'}">${ow?f0(ow):'закрыт'}</td>
+        </tr>`;
+      }).join('') : `<tr><td colspan="9"><div class="empty">
+        <div class="empty-t">Заказов нет</div>
+        <div class="empty-s">Смените период или фильтр</div></div></td></tr>`}</tbody>
+      ${L.length ? `<tfoot><tr><td colspan="6">Итого по ${L.length} заказам</td>
+        <td class="money">${f0(sum)}</td><td class="money pos">${f0(paid)}</td>
+        <td class="money neg">${f0(sum - paid)}</td></tr></tfoot>` : ''}
+    </table></div></div>`;
+
+  document.querySelectorAll('[data-f]').forEach(b =>
+    b.addEventListener('click', () => { payFlt = b.dataset.f; render(); }));
+  document.getElementById('xls').onclick = () =>
+    K.tableToExcel(document.getElementById('t-po'), 'Заказы партнёров ' + K.rangeName(P.preset,P.from,P.to));
+  document.querySelectorAll('tr[data-o]').forEach(tr => {
+    tr.addEventListener('click', () => openOrder(tr.dataset.o));
+    tr.addEventListener('keydown', e => { if(e.key === 'Enter') openOrder(tr.dataset.o); });
+  });
+}
+
+/* ── 2 и 3. КАРТОЧКИ ПАРТНЁРОВ ── */
+function vPartners(type){
+  const [f,t] = R();
+  const rows = S.partners.filter(p => p.type === type)
+    .map(p => ({ p, s:K.partnerStats(S, p.id, f, t) }))
+    .sort((a,b) => b.s.sum - a.s.sum);
+
+  document.getElementById('view').innerHTML = `
+    <div class="bar" style="margin-bottom:12px">
+      <span class="dim" style="font-size:12.5px;max-width:860px">${type === 'franchise'
+        ? 'Франчайзи работают под нашим брендом и платят нам оптовую цену за готовые заказы. Их розничный оборот показан справочно — эти деньги не наши.'
+        : 'B2B-клиенты заказывают готовую продукцию под себя. Платят оптовую цену со своей скидкой.'}</span>
+    </div>
+    <div class="pgrid">${rows.map(({p,s}) => `
+      <div class="pc ${s.owe>0?'debt':''}">
+        <div class="pc-h">
+          <div class="pc-n">${K.esc(p.name)}</div>
+          <div class="pc-m">${p.city} · ${K.esc(p.person)} · ${p.phone}<br>
+            скидка ${p.disc}% · с нами с ${K.dmy(p.since)}</div>
+        </div>
+        <div class="pc-b">
+          <div class="pc-i"><div class="pc-l">Заказал у нас</div>
+            <div class="pc-v">${f0(s.sum)}</div>
+            <div class="q0" style="font-size:11.5px">${s.list.length} заказов · ${s.pcs} изделий</div></div>
+          <div class="pc-i"><div class="pc-l">Не оплачено</div>
+            <div class="pc-v ${s.owe?'neg':'pos'}">${s.owe?f0(s.owe):'0'}</div>
+            <div class="q0" style="font-size:11.5px">оплатил ${f0(s.paid)}</div></div>
+          ${type === 'franchise' ? `
+          <div class="pc-i"><div class="pc-l">Их розничный оборот</div>
+            <div class="pc-v" style="color:var(--vl-d)">${f0(s.retail)}</div>
+            <div class="q0" style="font-size:11.5px">справочно, не наши деньги</div></div>` : `
+          <div class="pc-i"><div class="pc-l">Наша прибыль</div>
+            <div class="pc-v pos">${f0(s.profit)}</div>
+            <div class="q0" style="font-size:11.5px">маржа ${s.sum?Math.round(s.profit/s.sum*100):0}%</div></div>`}
+          <div class="pc-i"><div class="pc-l">${type==='franchise'?'Наша прибыль':'Средний заказ'}</div>
+            <div class="pc-v">${type==='franchise' ? f0(s.profit) : (s.list.length?f0(s.sum/s.list.length):0)}</div>
+            <div class="q0" style="font-size:11.5px">${type==='franchise'
+              ? 'маржа ' + (s.sum?Math.round(s.profit/s.sum*100):0) + '%' : 'за один заказ'}</div></div>
+        </div>
+        <div class="pc-f">
+          <span class="q0" style="font-size:11.5px;white-space:nowrap">оплачено ${s.sum?Math.round(s.paid/s.sum*100):0}%</span>
+          <span class="trk"><i style="width:${s.sum?Math.min(100,s.paid/s.sum*100):0}%"></i></span>
+          <button class="btn sm" data-card="${p.id}">Открыть</button>
+        </div>
+      </div>`).join('') || `<div class="card" style="grid-column:1/-1"><div class="empty">
+        <div class="empty-t">Партнёров этого типа нет</div></div></div>`}</div>`;
+
+  document.querySelectorAll('[data-card]').forEach(b =>
+    b.addEventListener('click', () => openPartner(b.dataset.card)));
+}
+
+/* ── 4. ДОЛГИ ── */
+function vDebts(){
+  const [f,t] = R();
+  const rows = S.partners.map(p => ({ p, s:K.partnerStats(S, p.id, f, t) }))
+    .filter(x => x.s.owe > 0).sort((a,b) => b.s.owe - a.s.owe);
+  const total = rows.reduce((a,x) => a + x.s.owe, 0);
+  const overdue = S.porders.filter(o => owe(o) > 0 && o.deadline < TODAY);
+
+  document.getElementById('view').innerHTML = `
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-h"><div class="card-t">Кто и сколько нам должен</div>
+        <span class="chip ${total?'rd':'gn'}">${K.money(total)}</span></div>
+      <div class="tbl-wrap"><table class="tbl" id="t-debt">
+        <thead><tr><th>Партнёр</th><th style="width:120px">Тип</th>
+          <th class="hide-s" style="width:130px">Город</th>
+          <th style="text-align:center;width:100px">Заказов</th>
+          <th style="text-align:right;width:130px">Заказал</th>
+          <th style="text-align:right;width:130px">Оплатил</th>
+          <th style="text-align:right;width:130px">Должен</th>
+          <th style="width:150px"></th></tr></thead>
+        <tbody>${rows.length ? rows.map(({p,s}) => `<tr class="lnk" data-card="${p.id}">
+          <td class="strong">${K.esc(p.name)}
+            <div class="q0" style="font-size:11.5px">${K.esc(p.person)} · ${p.phone}</div></td>
+          <td><span class="chip ${p.type==='franchise'?'vl':'bl'}">${p.type==='franchise'?'франчайзи':'B2B'}</span></td>
+          <td class="dim hide-s">${p.city}</td>
+          <td style="text-align:center" class="num">${s.list.length}</td>
+          <td class="money">${f0(s.sum)}</td>
+          <td class="money pos">${f0(s.paid)}</td>
+          <td class="money neg">${f0(s.owe)}</td>
+          <td><button class="btn green sm" data-pay="${p.id}">Принять оплату</button></td>
+        </tr>`).join('') : `<tr><td colspan="8"><div class="empty">
+          <div class="empty-t">Все партнёры рассчитались</div></div></td></tr>`}</tbody>
+        ${rows.length ? `<tfoot><tr><td colspan="6">Итого долг партнёров</td>
+          <td class="money neg">${f0(total)}</td><td></td></tr></tfoot>` : ''}
+      </table></div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><div class="card-t">Просрочено по сроку сдачи</div>
+        <span class="chip ${overdue.length?'rd':'gn'}">${overdue.length}</span></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th style="width:92px">Номер</th><th>Партнёр</th>
+          <th class="hide-s">Заказ</th><th style="width:120px">Срок был</th>
+          <th style="text-align:right;width:130px">Не оплачено</th></tr></thead>
+        <tbody>${overdue.length ? overdue.map(o => `<tr class="lnk" data-o="${o.id}">
+          <td class="strong">${o.num}</td><td>${K.esc(pName(o.partner))}</td>
+          <td class="hide-s">${K.esc(o.client)} · ${K.esc(o.addr)}</td>
+          <td class="neg">${K.dmy(o.deadline)}</td>
+          <td class="money neg">${f0(owe(o))}</td></tr>`).join('')
+          : '<tr><td colspan="5"><div class="empty"><div class="empty-t">Просрочек нет</div></div></td></tr>'}</tbody>
+      </table></div>
+    </div>`;
+
+  document.querySelectorAll('[data-card]').forEach(b =>
+    b.addEventListener('click', e => { if(!e.target.closest('[data-pay]')) openPartner(b.dataset.card); }));
+  document.querySelectorAll('[data-pay]').forEach(b =>
+    b.addEventListener('click', e => { e.stopPropagation(); payForm(b.dataset.pay); }));
+  document.querySelectorAll('[data-o]').forEach(b =>
+    b.addEventListener('click', () => openOrder(b.dataset.o)));
+}
+
+/* ═════════ КАРТОЧКИ ═════════ */
+function showModal(t, size){
+  document.getElementById('m-t').textContent = t;
+  document.getElementById('mdl').className = 'modal' + (size ? ' ' + size : '');
+  document.getElementById('ovl').hidden = false;
+}
+function closeModal(){ document.getElementById('ovl').hidden = true; }
+function bindClose(){ document.querySelectorAll('#ovl [data-close]').forEach(b => b.onclick = closeModal); }
+const uid = () => 'po' + Date.now().toString(36);
+
+function openPartner(id){
+  const p = P_(id), [f,t] = R();
+  const s = K.partnerStats(S, id, f, t);
+  showModal(p.name, 'wide');
+  document.getElementById('m-b').innerHTML = `
+    <div class="grid2">
+      <div><div class="sec">Партнёр</div>
+        <div class="kv"><span>Тип</span><b>${p.type==='franchise'?'Франчайзи — работает под нашим брендом':'B2B-клиент'}</b></div>
+        <div class="kv"><span>Контактное лицо</span><b>${K.esc(p.person)}</b></div>
+        <div class="kv"><span>Город</span><b>${p.city}</b></div>
+        <div class="kv"><span>Телефон</span><b>${p.phone}</b></div>
+        <div class="kv"><span>Скидка от розницы</span><b>${p.disc}%</b></div>
+        <div class="kv"><span>Работаем с</span><b>${K.dmy(p.since)}</b></div>
+      </div>
+      <div><div class="sec">Деньги за период</div>
+        <div class="kv"><span>Заказал у нас</span><b>${K.money(s.sum)}</b></div>
+        <div class="kv"><span>Оплатил</span><b class="pos">${K.money(s.paid)}</b></div>
+        <div class="kv"><span>Должен</span><b class="${s.owe?'neg':'pos'}">${K.money(s.owe)}</b></div>
+        <div class="kv"><span>Себестоимость материалов</span><b>${K.money(s.cost)}</b></div>
+        <div class="kv"><span>Наша прибыль</span><b class="pos">${K.money(s.profit)}</b></div>
+        ${p.type==='franchise' ? `<div class="kv"><span>Их розничный оборот</span>
+          <b style="color:var(--vl-d)">${K.money(s.retail)}</b></div>` : ''}
+      </div>
+    </div>
+    <div class="sec">Заказы</div>
+    <div class="rows"><table class="tbl">
+      <thead><tr><th style="width:92px">Номер</th><th style="width:100px">Дата</th>
+        <th>Заказ</th><th style="width:110px">Статус</th>
+        <th style="text-align:right;width:110px">Сумма</th>
+        <th style="text-align:right;width:110px">Остаток</th></tr></thead>
+      <tbody>${s.list.length ? s.list.map(o => {
+        const st = PST[o.status] || PST.new;
+        return `<tr><td class="strong">${o.num}</td><td class="dim">${K.dmy(o.date)}</td>
+          <td>${K.esc(o.client)}<div class="q0" style="font-size:11px">${K.esc(o.addr)}</div></td>
+          <td><span class="chip ${st[1]}">${st[0]}</span></td>
+          <td class="money">${f0(o.sum)}</td>
+          <td class="money ${owe(o)?'neg':'pos'}">${owe(o)?f0(owe(o)):'закрыт'}</td></tr>`;
+      }).join('') : '<tr><td colspan="6"><div class="empty"><div class="empty-t">За период заказов нет</div></div></td></tr>'}</tbody>
+    </table></div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Закрыть</button><span style="margin-left:auto"></span>
+    ${s.owe > 0 ? `<button class="btn green" id="p-pay">Принять оплату ${K.money(s.owe)}</button>` : ''}`;
+  const b = document.getElementById('p-pay');
+  if(b) b.onclick = () => payForm(id);
+  bindClose();
+}
+
+function openOrder(id){
+  const o = S.porders.find(x => x.id === id); if(!o) return;
+  const p = P_(o.partner), st = PST[o.status] || PST.new;
+  const cost = K.poCost(o, S.goods);
+  showModal(`Заказ ${o.num} · ${p.name}`, 'wide');
+  document.getElementById('m-b').innerHTML = `
+    <div class="grid2">
+      <div><div class="sec">Заказ</div>
+        <div class="kv"><span>Партнёр</span><b>${K.esc(p.name)}</b></div>
+        <div class="kv"><span>Клиент партнёра</span><b>${K.esc(o.client)}</b></div>
+        <div class="kv"><span>Адрес</span><b>${K.esc(o.addr)}</b></div>
+        <div class="kv"><span>Принят</span><b>${K.dmy(o.date)}</b></div>
+        <div class="kv"><span>Срок сдачи</span><b>${K.dmy(o.deadline)}</b></div>
+        <div class="kv"><span>Статус</span><b><span class="chip ${st[1]}">${st[0]}</span></b></div>
+      </div>
+      <div><div class="sec">Деньги</div>
+        ${o.retail ? `<div class="kv"><span>Партнёр взял со своего клиента</span>
+          <b style="color:var(--vl-d)">${K.money(o.retail)}</b></div>` : ''}
+        <div class="kv"><span>Скидка партнёра</span><b>${o.disc}%</b></div>
+        <div class="kv"><span>Партнёр платит нам</span><b>${K.money(o.sum)}</b></div>
+        <div class="kv"><span>Оплачено</span><b class="pos">${K.money(o.paid||0)}</b></div>
+        <div class="kv"><span>Остаток</span><b class="${owe(o)?'neg':'pos'}">${K.money(owe(o))}</b></div>
+        <div class="kv"><span>Материалы</span><b>${K.money(cost)}</b></div>
+        <div class="kv"><span>Наша прибыль</span><b class="pos">${K.money(o.sum - cost)}</b></div>
+      </div>
+    </div>
+    <div class="sec">Изделия</div>
+    <div class="rows"><table class="tbl">
+      <thead><tr><th style="width:90px">Ширина</th><th style="width:90px">Высота</th>
+        <th>Ткань</th><th style="width:150px">Профиль</th><th style="width:110px">Тип</th>
+        <th style="text-align:center;width:70px">Шт</th>
+        <th style="text-align:right;width:80px">м²</th></tr></thead>
+      <tbody>${o.items.map(i => `<tr><td class="num">${K.qfmt(i.w)}</td><td class="num">${K.qfmt(i.h)}</td>
+        <td>${K.esc(i.fabric)}</td><td class="dim">${K.esc(i.profile)}</td><td>${K.esc(i.type)}</td>
+        <td style="text-align:center" class="num">${i.qty}</td>
+        <td class="money">${K.qfmt(i.w*i.h*i.qty)}</td></tr>`).join('')}</tbody>
+    </table></div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Закрыть</button><span style="margin-left:auto"></span>
+    ${o.status !== 'done' ? `<button class="btn" id="o-next">${
+      o.status==='new'?'В цех':o.status==='toShop'?'Готов':'Сдан партнёру'}</button>` : ''}
+    ${owe(o) > 0 ? `<button class="btn green" id="o-pay">Принять оплату</button>` : ''}`;
+  const nx = document.getElementById('o-next');
+  if(nx) nx.onclick = () => {
+    o.status = { new:'toShop', toShop:'ready', ready:'done' }[o.status] || 'done';
+    o.history.push({ at:TODAY + ' 12:00', who:'u14', what:'Статус: ' + PST[o.status][0] });
+    save(); openOrder(id); K.toast(`${o.num}: ${PST[o.status][0]}`);
+  };
+  const pb = document.getElementById('o-pay');
+  if(pb) pb.onclick = () => payForm(o.partner, id);
+  bindClose();
+}
+
+/* ── приём оплаты ── */
+function payForm(pid, orderId){
+  const p = P_(pid);
+  const open = S.porders.filter(o => o.partner === pid && owe(o) > 0)
+    .sort((a,b) => a.date.localeCompare(b.date));
+  const total = orderId ? owe(S.porders.find(o => o.id === orderId))
+                        : open.reduce((a,o) => a + owe(o), 0);
+  showModal(`Оплата от ${p.name}`, 'wide');
+  document.getElementById('m-b').innerHTML = `
+    <div class="hint">Оплата закрывает заказы по очереди, начиная с самого старого.</div>
+    <div class="grid2">
+      <div class="fld"><label for="y-sum">Сумма, сом</label>
+        <input class="inp" id="y-sum" type="number" min="0" value="${total}"></div>
+      <div class="fld"><label for="y-date">Дата</label>
+        <input class="inp" id="y-date" type="date" value="${TODAY}"></div>
+    </div>
+    <div class="sec">Что закроется</div>
+    <div class="rows"><table class="tbl">
+      <thead><tr><th style="width:92px">Номер</th><th style="width:100px">Дата</th>
+        <th>Заказ</th><th style="text-align:right;width:110px">Остаток</th>
+        <th style="text-align:right;width:120px">Спишется</th></tr></thead>
+      <tbody id="y-plan"></tbody>
+    </table></div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button><span style="margin-left:auto"></span>
+    <button class="btn green" id="y-ok">Принять оплату</button>`;
+
+  const plan = () => {
+    let left = +document.getElementById('y-sum').value || 0;
+    const src = orderId ? open.filter(o => o.id === orderId) : open;
+    return src.map(o => { const take = Math.min(left, owe(o)); left -= take; return { o, take }; })
+              .filter(x => x.take > 0);
+  };
+  const draw = () => {
+    document.getElementById('y-plan').innerHTML = plan().map(({o,take}) => `<tr>
+      <td class="strong">${o.num}</td><td class="dim">${K.dmy(o.date)}</td>
+      <td>${K.esc(o.client)}</td><td class="money">${f0(owe(o))}</td>
+      <td class="money pos">${f0(take)}</td></tr>`).join('') ||
+      '<tr><td colspan="5" style="text-align:center;padding:20px" class="q0">Укажите сумму</td></tr>';
+  };
+  document.getElementById('y-sum').oninput = draw; draw();
+  document.getElementById('y-ok').onclick = () => {
+    const pl = plan();
+    if(!pl.length){ K.toast('Укажите сумму', 'bad'); return; }
+    const d = document.getElementById('y-date').value;
+    pl.forEach(({o,take}) => {
+      o.paid = (o.paid || 0) + take;
+      o.history.push({ at:d + ' 12:00', who:'u14', what:`Оплата ${K.fmt(take)} сом` });
+    });
+    const s = pl.reduce((a,x) => a + x.take, 0);
+    closeModal(); save();
+    K.toast(`Принято ${K.money(s)} от ${p.name} · закрыто заказов: ${pl.filter(x => owe(x.o) === 0).length}`);
+  };
+  bindClose();
+}
+
+/* ── новый заказ от партнёра ── */
+function newOrder(){
+  showModal('Заказ от партнёра', 'wide');
+  const g = c => S.goods.filter(x => x.cat === c);
+  document.getElementById('m-b').innerHTML = `
+    <div class="hint">Так заказ попадает к нам, когда партнёр присылает его со своей стороны.
+      Сумма считается по нашему прайсу минус скидка партнёра.</div>
+    <div class="grid3">
+      <div class="fld"><label for="n-p">Партнёр</label>
+        <select class="inp" id="n-p">${S.partners.map(p =>
+          `<option value="${p.id}">${K.esc(p.name)} — скидка ${p.disc}%</option>`).join('')}</select></div>
+      <div class="fld"><label for="n-date">Дата</label><input class="inp" id="n-date" type="date" value="${TODAY}"></div>
+      <div class="fld"><label for="n-dl">Срок сдачи</label><input class="inp" id="n-dl" type="date" value="2026-08-17"></div>
+    </div>
+    <div class="grid2">
+      <div class="fld"><label for="n-cl">Клиент партнёра</label><input class="inp" id="n-cl" placeholder="Кому ставим"></div>
+      <div class="fld"><label for="n-ad">Адрес</label><input class="inp" id="n-ad" placeholder="Улица, дом"></div>
+    </div>
+    <div class="sec">Изделие</div>
+    <div class="grid3">
+      <div class="fld"><label for="n-w">Ширина, м</label><input class="inp" id="n-w" type="number" step="0.001" value="1.5"></div>
+      <div class="fld"><label for="n-h">Высота, м</label><input class="inp" id="n-h" type="number" step="0.001" value="2"></div>
+      <div class="fld"><label for="n-q">Количество</label><input class="inp" id="n-q" type="number" min="1" value="2"></div>
+      <div class="fld"><label for="n-t">Тип</label>
+        <select class="inp" id="n-t">${Object.keys(K.PRICE.perM2).map(t => `<option>${t}</option>`).join('')}</select></div>
+      <div class="fld"><label for="n-f">Ткань</label>
+        <select class="inp" id="n-f">${g('Ткань').map(x => `<option>${K.esc(x.name)}</option>`).join('')}</select></div>
+      <div class="fld"><label for="n-pr">Профиль</label>
+        <select class="inp" id="n-pr">${g('Профиль').map(x => `<option>${K.esc(x.name)}</option>`).join('')}</select></div>
+    </div>
+    <div class="kv"><span>По нашему прайсу</span><b id="n-r">—</b></div>
+    <div class="kv"><span>Партнёр платит нам после скидки</span><b id="n-s">—</b></div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button><span style="margin-left:auto"></span>
+    <button class="btn green" id="n-ok">Принять заказ</button>`;
+
+  const calc = () => {
+    const it = { w:+document.getElementById('n-w').value || 0,
+                 h:+document.getElementById('n-h').value || 0,
+                 qty:+document.getElementById('n-q').value || 1,
+                 type:document.getElementById('n-t').value };
+    const retail = K.priceItem(it);
+    const disc = P_(document.getElementById('n-p').value).disc || 0;
+    const sum = Math.round(retail * (1 - disc/100));
+    document.getElementById('n-r').textContent = K.money(retail);
+    document.getElementById('n-s').textContent = K.money(sum);
+    return { it, retail, sum, disc };
+  };
+  ['n-w','n-h','n-q','n-t','n-p'].forEach(id => {
+    const el = document.getElementById(id);
+    el.oninput = calc; el.onchange = calc;
+  });
+  calc();
+
+  document.getElementById('n-ok').onclick = () => {
+    const v = id => document.getElementById(id).value.trim();
+    if(!v('n-cl') || !v('n-ad')){ K.toast('Заполните клиента и адрес', 'bad'); return; }
+    const c = calc(), pid = document.getElementById('n-p').value;
+    const n = (() => {
+      const ns = S.porders.map(o => +String(o.num).replace(/\D/g,'')).filter(Number.isFinite);
+      return (ns.length ? Math.max(...ns) : 0) + 1;
+    })();
+    S.porders.push({ id:uid(), num:`P-${String(n).padStart(4,'0')}`, partner:pid,
+      date:v('n-date'), deadline:v('n-dl'), client:v('n-cl'), addr:v('n-ad'),
+      status:'new', disc:c.disc,
+      items:[{ ...c.it, fabric:document.getElementById('n-f').value,
+               profile:document.getElementById('n-pr').value }],
+      retail:P_(pid).type === 'franchise' ? c.retail : 0, sum:c.sum, paid:0, comment:'',
+      history:[{ at:v('n-date') + ' 09:00', who:pid, what:'Заказ принят от партнёра' }] });
+    tab = 'orders'; closeModal(); save();
+    K.toast(`Заказ принят · партнёр заплатит ${K.money(c.sum)}`);
+  };
+  bindClose();
+}
+
+function save(){ K.commit(S); render(); }
+document.getElementById('ovl').addEventListener('mousedown', e => { if(e.target.id === 'ovl') closeModal(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
+</script>
+</body>
+</html>

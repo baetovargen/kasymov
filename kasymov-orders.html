@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Заказы — Kasymov ERP</title>
+<link rel="stylesheet" href="kasymov-ui.css">
+<style>
+/* ══════════════════════════════════════════════════════
+   Оформление ТОЛЬКО раздела «Заказы».
+   Остальные разделы остаются в общем стиле kasymov-ui.css.
+   Мотив взят из продукта: рольштора — тёмный профиль сверху
+   и горизонтальные ламели ткани под ним.
+   ══════════════════════════════════════════════════════ */
+:root{
+  --h1:#2b75ce; --h2:#4a5fd0; --h3:#7b52d6;
+  --ink:#151d29; --ink-3:#2b3b52;
+  --sh:0 1px 2px rgba(21,29,41,.05), 0 4px 14px rgba(21,29,41,.05);
+}
+body{
+  background:
+    repeating-linear-gradient(180deg, rgba(21,29,41,.018) 0 1px, transparent 1px 7px),
+    linear-gradient(168deg,#f2f6fc 0%,#eaeff7 46%,#e3eaf5 100%);
+  background-attachment:fixed;
+}
+/* шапка-«карниз» */
+.phead{
+  position:relative;overflow:hidden;align-items:center;
+  padding:15px 20px;margin-bottom:16px;border-radius:13px;color:#fff;
+  background:linear-gradient(112deg,var(--h1) 0%,var(--h2) 54%,var(--h3) 100%);
+  box-shadow:0 3px 10px rgba(21,29,41,.10), 0 14px 34px rgba(43,117,206,.22);
+}
+.phead::before{content:'';position:absolute;left:-10%;top:-140%;width:60%;height:280%;
+  background:radial-gradient(closest-side, rgba(255,255,255,.30), transparent 72%);pointer-events:none}
+.phead::after{content:'';position:absolute;right:-40px;top:-30%;width:290px;height:180%;
+  background:repeating-linear-gradient(180deg, rgba(255,255,255,.26) 0 3px, transparent 3px 11px);
+  transform:skewX(-14deg);pointer-events:none}
+.ptitle{font-size:20px;font-weight:800;letter-spacing:-.02em;color:#fff}
+.psub{font-size:12px;color:rgba(255,255,255,.86);font-weight:500}
+.pright{position:relative;z-index:1}
+.phead .inp{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.34);color:#fff}
+.phead .inp::placeholder{color:rgba(255,255,255,.68)}
+.phead .inp:focus{background:rgba(255,255,255,.26);border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.25)}
+.phead .search svg{color:rgba(255,255,255,.75)}
+.phead .btn{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.36);color:#fff;box-shadow:none}
+.phead .btn:hover{background:rgba(255,255,255,.3);border-color:rgba(255,255,255,.5)}
+.phead .btn.green{background:linear-gradient(180deg,#6ba823,#4d8215);border-color:#4d8215}
+
+/* кнопки с объёмом */
+.btn{border-radius:9px;background:linear-gradient(#fff,#f7f9fd);box-shadow:0 1px 2px rgba(21,29,41,.05);
+     transition:transform .1s, box-shadow .14s, background .14s, border-color .14s}
+.btn:hover{background:linear-gradient(#fff,#eef3fa);border-color:#aeb9d1;box-shadow:0 3px 8px rgba(21,29,41,.09)}
+.btn:active{transform:translateY(1px);box-shadow:none}
+.btn.primary{background:linear-gradient(180deg,#3b8ade,#1c62b4);border-color:#1c62b4;
+             box-shadow:0 2px 8px rgba(43,127,212,.35)}
+.btn.primary:hover{background:linear-gradient(180deg,#4a95e4,#1a5aa8)}
+.btn.green{background:linear-gradient(180deg,#6ba823,#4d8215);border-color:#4d8215;
+           box-shadow:0 2px 8px rgba(95,154,30,.34)}
+.btn.green:hover{background:linear-gradient(180deg,#78b52a,#456f12)}
+
+/* счётчики с заливкой */
+.stats{gap:11px}
+.stat{padding:13px 15px 14px;border-radius:13px;box-shadow:var(--sh);overflow:hidden}
+.stat::before{left:0;right:0;top:0;bottom:auto;width:auto;height:3px}
+.stat.bl{background:linear-gradient(160deg,#f2f7fe,#fff 62%);border-color:#d5e4f7}
+.stat.bl::before{background:linear-gradient(90deg,#2b7fd4,#5aa4ea)}
+.stat.gn{background:linear-gradient(160deg,#f2f9e9,#fff 62%);border-color:#d9e9c4}
+.stat.gn::before{background:linear-gradient(90deg,#5f9a1e,#8cc23f)}
+.stat.rd{background:linear-gradient(160deg,#fef3f1,#fff 62%);border-color:#f6d3ce}
+.stat.rd::before{background:linear-gradient(90deg,#e0483f,#f0837a)}
+.stat.am{background:linear-gradient(160deg,#fef6e8,#fff 62%);border-color:#f3ddb6}
+.stat.am::before{background:linear-gradient(90deg,#c07a12,#e0a63f)}
+.stat.vl{background:linear-gradient(160deg,#f3f2fe,#fff 62%);border-color:#dcd9f6}
+.stat.vl::before{background:linear-gradient(90deg,#4b3f9e,#7d70d2)}
+.stat-v{font-size:22px;letter-spacing:-.025em;font-variant-numeric:tabular-nums}
+.stat-l{letter-spacing:.06em}
+
+/* карточки и таблицы */
+.card{border-radius:13px;box-shadow:var(--sh)}
+.card-h{background:linear-gradient(180deg,#fbfcfe,#f6f8fc);border-radius:13px 13px 0 0}
+.tbl th{background:linear-gradient(180deg,#f4f7fc,#eef2f9);color:var(--t2);
+        letter-spacing:.07em;border-bottom-color:var(--line)}
+.tbl tbody tr:hover{background:#f5f9ff}
+.chip{padding:2px 9px;font-weight:800;border:1px solid transparent}
+.chip.bl{border-color:#c7dcf5} .chip.gn{border-color:#cee3b4} .chip.rd{border-color:#f7cbc6}
+.chip.am{border-color:#f0d3a4} .chip.vl{border-color:#d6d2f6} .chip.gy{border-color:#dfe4ee}
+
+/* модалка */
+.modal{border-radius:16px;overflow:hidden;box-shadow:0 28px 70px rgba(13,19,30,.4)}
+.modal-h{background:linear-gradient(112deg,var(--h1),var(--h3));color:#fff;border-bottom:none}
+.modal-x{background:rgba(255,255,255,.12);color:rgba(255,255,255,.85)}
+.modal-x:hover{background:rgba(255,255,255,.24);color:#fff}
+.modal-f{background:linear-gradient(180deg,#f9fbfe,#f4f7fc)}
+.toast{background:linear-gradient(115deg,var(--ink),var(--ink-3));border-left:3px solid #e9dfc9;border-radius:11px}
+.toast.bad{background:linear-gradient(115deg,#7d211c,#a83229);border-left-color:#ffb3ac}
+.hint{background:var(--bl-l);border:1px solid rgba(21,29,41,.07);border-radius:10px;padding:9px 12px;color:var(--t2)}
+/* строка цены: расчёт, ввод и скидка в один ряд */
+/* крупные кнопки действий в подвале карточки */
+.acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.btn.big{padding:11px 18px;font-size:13.5px;font-weight:700;border-radius:10px}
+.btn.big .arr{opacity:.7;margin-right:2px}
+.statusnow{display:flex;align-items:center;gap:7px;margin-left:10px;padding-left:12px;border-left:1px solid var(--bd)}
+.statusnow > span:first-child{font-size:10px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.05em}
+.pricebar{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;background:linear-gradient(150deg,#f4f8fd,#eef3fa);
+          border:1px solid #dde6f2;border-radius:12px;padding:12px 15px;margin-top:10px}
+.pb-i{display:flex;flex-direction:column;gap:4px;min-width:120px}
+.pb-i > span{font-size:10px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.05em}
+.pb-i > b{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
+.pb-in{width:130px;padding:7px 10px;border:1px solid var(--bd2,#cdd4e8);border-radius:8px;
+       font-family:inherit;font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;background:#fff}
+.pb-in.strong{border-color:var(--gn);box-shadow:0 0 0 3px var(--gn-l)}
+.pb-in:focus{outline:none;border-color:var(--bl);box-shadow:0 0 0 3px var(--bl-l)}
+.pricebar .btn{margin-left:auto}
+.invfiles{display:flex;gap:9px;flex-wrap:wrap;margin-top:8px}
+.invfile{display:flex;align-items:center;gap:9px;border:1px solid var(--bd);border-radius:9px;
+         padding:8px 11px;background:#fff;min-width:250px;cursor:pointer;font-family:inherit;text-align:left;
+         transition:border-color .12s, box-shadow .12s}
+.invfile:hover{border-color:var(--bl);box-shadow:0 3px 10px rgba(43,117,206,.14)}
+.invfile .ic{width:30px;height:30px;border-radius:7px;background:var(--rd-l);color:var(--rd-d);
+             display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.invfile .ic.akt{background:var(--gn-l);color:var(--gn-d);font-size:14px}
+.invfile .nm{display:block;font-size:12px;font-weight:600;line-height:1.3;word-break:break-all}
+.invfile .mt{display:block;font-size:10.5px;color:var(--t3);margin-top:1px}
+/* цвет раздела (заказы — синий → индиго → фиолет) */
+:root{--h1:#2b75ce;--h2:#4a5fd0;--h3:#7b52d6}
+.modal.xwide{max-width:1000px}
+.toast.bad{background:var(--rd-d)}
+button.stat{text-align:left;font-family:inherit;cursor:pointer;width:100%;transition:border-color .12s,box-shadow .12s}
+button.stat:hover{border-color:var(--line);box-shadow:0 3px 10px rgba(0,0,0,.06)}
+
+.subtabs{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--bd);margin-bottom:14px}
+.subtab{padding:8px 13px;font-size:12.5px;font-weight:600;color:var(--t2);white-space:nowrap;
+        border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:7px 7px 0 0}
+.subtab:hover{background:#eef2f9;color:var(--t1)}
+.subtab.on{color:var(--bl-d);border-bottom-color:var(--bl);
+            background:linear-gradient(180deg,#fff,var(--bl-l))}
+
+.role{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid rgba(255,255,255,.25);
+      border-radius:9px;padding:4px 6px 4px 11px;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.role-l{font-size:10px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.05em}
+.role select{border:none;background:none;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--t1);cursor:pointer;padding:3px 4px}
+.role select:focus{outline:none}
+
+/* ── панель фильтров ── */
+.filters{background:linear-gradient(180deg,#fff,#fbfcfe);border:1px solid var(--bd);border-radius:var(--r);
+         padding:12px 14px;margin-bottom:16px;box-shadow:var(--sh);
+         display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.f{display:flex;flex-direction:column;gap:4px}
+.f label{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.04em}
+.f select,.f input{padding:6px 9px;border:1px solid var(--bd2,#cdd4e8);border-radius:7px;background:#fff;
+                   font-family:inherit;font-size:12.5px;color:var(--t1);min-width:130px}
+.f select:focus,.f input:focus{outline:none;border-color:var(--bl);box-shadow:0 0 0 3px var(--bl-l)}
+.f-on select,.f-on input{border-color:var(--bl);background:var(--bl-l);font-weight:600}
+
+/* ── канбан ── */
+.board{display:flex;gap:11px;overflow-x:auto;padding-bottom:12px;align-items:flex-start}
+.col{background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,.4));
+     border:1px solid rgba(255,255,255,.9);border-radius:var(--r);padding:9px;width:270px;flex-shrink:0;
+     max-height:calc(100vh - 330px);display:flex;flex-direction:column;
+     box-shadow:inset 0 1px 0 #fff, 0 2px 10px rgba(21,29,41,.05)}
+.col-h{display:flex;align-items:center;gap:8px;padding:2px 4px 9px;flex-shrink:0}
+.col-n{margin-left:auto;font-size:11px;font-weight:800;color:var(--t2);background:#fff;border-radius:20px;padding:1px 8px}
+.col-b{overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:1px}
+
+.oc{background:#fff;border:1px solid var(--bd);border-radius:11px;padding:0;cursor:pointer;
+    text-align:left;width:100%;font-family:inherit;overflow:hidden;position:relative;
+    box-shadow:0 1px 2px rgba(21,29,41,.06);
+    transition:transform .12s, box-shadow .16s, border-color .16s}
+.oc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+    background:linear-gradient(180deg,var(--bl),#5aa4ea);opacity:.85}
+.oc:hover{transform:translateY(-2px);border-color:#bcd3ee;box-shadow:0 8px 22px rgba(21,29,41,.13)}
+.oc-top{padding-left:15px!important}
+.oc-top{padding:10px 12px 9px}
+.oc-h{display:flex;align-items:baseline;gap:8px;margin-bottom:6px}
+.oc-num{font-size:13px;font-weight:800;color:var(--bl-d)}
+.oc-sum{margin-left:auto;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
+.oc-addr{font-size:13px;font-weight:600;line-height:1.35;margin-bottom:5px}
+.oc-meta{font-size:11.5px;color:var(--t3);line-height:1.5}
+.oc-meta b{color:var(--t2);font-weight:600}
+.oc-foot{padding:7px 12px;border-top:1px solid #f2f5fa;font-size:11px;font-weight:700;
+         display:flex;align-items:center;gap:6px}
+.oc-foot.wait{background:var(--am-l);color:var(--am-d)}
+.oc-foot.late{background:var(--rd-l);color:var(--rd-d)}
+.oc-foot.ok{background:var(--gn-l);color:var(--gn-d)}
+.oc-foot.owe{background:#fbfcfe;color:var(--rd-d)}
+/* перетаскивание */
+.oc[draggable]{cursor:grab}
+.oc.dragging{opacity:.45;cursor:grabbing;transform:rotate(-1.5deg)}
+.col.can{outline:2px dashed rgba(95,154,30,.5);outline-offset:-4px}
+.col.cant{opacity:.45}
+.col.over{outline:2px solid var(--gn);outline-offset:-4px;background:linear-gradient(180deg,#eef7e4,#f6faf0)}
+
+/* ── календарь ── */
+.cal{background:#fff;border:1px solid var(--bd);border-radius:12px;overflow:auto}
+.cal table{border-collapse:collapse;width:100%;min-width:720px}
+.cal th{position:sticky;top:0;background:#f7f9fd;z-index:2;padding:10px 8px;font-size:11.5px;
+        font-weight:700;border-bottom:1px solid var(--bd);text-align:center}
+.cal th.tcol{width:64px;text-align:right;font-size:10px;color:var(--t3)}
+.cal td{border-bottom:1px solid #f2f5fa;border-left:1px solid #f2f5fa;padding:3px;vertical-align:top;height:46px}
+.cal td.tcol{border-left:none;text-align:right;padding:5px 8px;font-size:11px;color:var(--t3);
+             font-variant-numeric:tabular-nums;background:#fbfcfe}
+.slot{border-radius:7px;padding:5px 7px;font-size:11px;line-height:1.3;cursor:pointer;height:100%;
+      border:1px solid transparent;width:100%;text-align:left;font-family:inherit}
+.slot.busy{background:var(--bl-l);border-color:rgba(55,138,221,.3);color:var(--bl-d)}
+.slot.wait{background:var(--am-l);border-color:rgba(186,117,23,.3);color:var(--am-d)}
+.slot-n{font-weight:800}
+.slot-a{opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.free{color:#d2d9e6;font-size:11px;text-align:center;line-height:40px}
+.cal-free{background:#fafcff}
+
+/* ── карточка заказа ── */
+.ohead{display:flex;gap:16px;align-items:flex-start;padding:14px 16px;margin-bottom:14px;
+       border-radius:var(--r);background:linear-gradient(150deg,#f4f8fd,#eef3fa);
+       border:1px solid #dde6f2}
+.ohead-main{min-width:0;flex:1}
+.ohead-addr{font-size:19px;font-weight:800;line-height:1.25;letter-spacing:-.01em}
+.ohead-sub b{color:var(--t1);font-weight:700}
+.ohead-sub{font-size:12.5px;color:var(--t2);margin-top:4px;line-height:1.5}
+.ohead-money{display:flex;gap:18px;flex-shrink:0;text-align:right}
+.ohead-money>div{background:#fff;border:1px solid var(--bd);border-radius:10px;padding:8px 13px;min-width:104px;
+                 box-shadow:0 1px 2px rgba(21,29,41,.05)}
+.mm-l{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.04em}
+.mm-v{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:2px}
+.iconbtn{width:32px;height:32px;border-radius:8px;border:1px solid var(--bd);background:#fff;
+         cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.iconbtn:hover{border-color:var(--bl);background:var(--bl-l)}
+.iconbtn svg{width:15px;height:15px;stroke:var(--t2);fill:none;stroke-width:2}
+.iconbtn:hover svg{stroke:var(--bl-d)}
+
+.kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #f5f7fc;font-size:12.5px}
+.kv:last-child{border-bottom:none}
+.kv span:first-child{color:var(--t2)}
+.sec{font-size:10px;font-weight:800;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin:18px 0 4px}
+.sec:first-child{margin-top:0}
+
+/* история — вертикальная линия */
+.tl{position:relative;padding-left:22px}
+.tl::before{content:'';position:absolute;left:5px;top:6px;bottom:6px;width:2px;background:#e7ecf6}
+.tl-i{position:relative;padding:9px 0}
+.tl-i::before{content:'';position:absolute;left:-21px;top:14px;width:10px;height:10px;border-radius:50%;
+              background:#fff;border:2px solid var(--bl)}
+.tl-i:first-child::before{border-color:var(--gn);background:var(--gn)}
+.tl-w{font-size:12.5px;font-weight:600;line-height:1.4}
+.tl-m{font-size:11px;color:var(--t3);margin-top:2px}
+
+/* файлы */
+.files{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.file{width:64px;border-radius:8px;overflow:hidden;border:1px solid var(--bd);background:#fff;cursor:pointer}
+.file img{width:100%;height:48px;object-fit:cover;display:block}
+.file span{display:block;font-size:9.5px;color:var(--t3);padding:3px 4px;overflow:hidden;
+           text-overflow:ellipsis;white-space:nowrap}
+.file-doc{height:48px;display:flex;align-items:center;justify-content:center;background:#f2f5fa;font-size:18px}
+.attach{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border:1px dashed var(--bd2,#cdd4e8);
+        border-radius:7px;font-size:11.5px;font-weight:600;color:var(--t2);cursor:pointer;background:#fff}
+.attach:hover{border-color:var(--bl);color:var(--bl-d)}
+.attach input{display:none}
+
+.num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.q0{color:var(--t3);font-weight:400}
+.pos{color:var(--gn-d)} .neg{color:var(--rd-d)}
+.money{font-variant-numeric:tabular-nums;font-weight:600;text-align:right;white-space:nowrap}
+tr.lnk{cursor:pointer} tr.lnk:hover td{background:#f4f7fd}
+.tbl tfoot td{background:#f7f9fd;border-top:2px solid var(--bd);font-weight:800;padding:11px 12px}
+.rows{border:1px solid var(--bd);border-radius:10px;overflow:hidden;margin-bottom:10px}
+.rows .tbl td{padding:6px 8px}
+.ri{width:100%;padding:5px 8px;border:1px solid transparent;border-radius:6px;background:transparent;
+    font-family:inherit;font-size:12.5px;color:inherit}
+.ri:hover{border-color:var(--bd)}
+.ri:focus{outline:none;border-color:var(--bl);background:#fff;box-shadow:0 0 0 3px var(--bl-l)}
+.ri.r{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.del{width:24px;height:24px;border-radius:6px;border:none;background:none;color:var(--t3);cursor:pointer;font-size:14px}
+.del:hover{background:var(--rd-l);color:var(--rd-d)}
+@media (max-width:900px){ .hide-m{display:none} .ohead{flex-direction:column} }
+@media (max-width:640px){ .hide-s{display:none} }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="phead">
+    <div>
+      <div class="ptitle">Заказы</div>
+      <div class="psub" id="sub">—</div>
+    </div>
+    <div class="pright">
+      <div class="role" id="role-box"><span class="role-l">Роль</span><select id="role"></select></div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input class="inp" id="q" placeholder="Номер, адрес, телефон" style="width:200px">
+      </div>
+      <button class="btn green" id="btn-primary">+ Заказ</button>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+  <div class="filters" id="filters"></div>
+  <div class="subtabs" id="subtabs"></div>
+  <div id="view"></div>
+</div>
+
+<div class="ovl" id="ovl" hidden>
+  <div class="modal" id="mdl">
+    <div class="modal-h"><div class="modal-t" id="m-t"></div><button class="modal-x" data-close aria-label="Закрыть">✕</button></div>
+    <div class="modal-b" id="m-b"></div>
+    <div class="modal-f" id="m-f"></div>
+  </div>
+</div>
+
+<script>
+/* сообщаем оболочке о сбое, чтобы он не превратился в пустой экран */
+window.__errHook = true;
+window.addEventListener('error', e => {
+  try{ window.parent.postMessage({ ns:'kasymov', type:'moduleError',
+       msg:(e.message||'') + ' · ' + (e.lineno||'') }, '*'); }catch(_){}
+  const b = document.body;
+  if(b) b.insertAdjacentHTML('afterbegin',
+    '<div style="background:#7d211c;color:#fff;padding:12px 16px;font:13px/1.5 -apple-system,sans-serif">'
+    + '<b>Сбой в разделе.</b> ' + (e.message||'') + '</div>');
+});
+</script>
+<script src="kasymov-data.js"></script>
+<script>
+const K = window.KASYMOV;
+let S = null, tab = 'board', role = 'manager', openId = null, cardTab = 'info', calDate = '2026-08-03';
+let MEID = null;   /* кто вошёл в систему */
+const F = { from:'', to:'', branch:'', status:'', manager:'', measurer:'', installer:'' };
+
+const COLS = {
+  manager:   ['new','assigned','measured','ordered','thinking','rejected','toShop'],
+  measurer:  ['assigned','measured','ordered','thinking','rejected','toShop'],
+  shop:      ['toShop','ready'],
+  senior:    ['ready','toInstall','installed'],
+  installer: ['toInstall','installed','paid'],
+  accountant:['toShop','ready','toInstall','installed','paid','done'],
+  director:  ['new','assigned','measured','ordered','thinking','rejected','toShop','ready','toInstall','installed','paid','done'],
+};
+const TABS = [
+  { id:'board', name:'Канбан' }, { id:'list', name:'Список' },
+  { id:'cal', name:'Календарь замеров' }, { id:'cash', name:'Деньги у сотрудников' },
+];
+const SOURCES = ['WhatsApp','Instagram','2ГИС','Рекомендация','Звонок','Партнёр'];
+const METHODS = ['Наличные','Мбанк','О!Деньги','Банковский перевод'];
+const KINDS   = ['Предоплата','Доплата при установке','Полная оплата'];
+const TYPES   = ['Рулонная','Плиссе','День-ночь','Вертикальная'];
+const NOW = () => '2026-08-03 ' + new Date().toTimeString().slice(0,5);
+
+K.connect(state => {
+  S = state;
+  S.orders.forEach(o => { if(!o.files) o.files = []; });
+  if(S.me){ MEID = S.me.id; role = S.me.role; }
+  render();
+}, name => { if(name === 'primary') openNew(); });
+
+/* ═══════════ ХЕЛПЕРЫ ═══════════ */
+const staff  = id => K.staffName(id);
+const brName = id => (K.BRANCHES.find(b => b.id === id) || {}).name || '—';
+const order  = id => S.orders.find(o => o.id === id);
+const me = () => MEID || (K.byRole(role)[0] || {}).id;
+const canMove = (o, st) => (K.NEXT[o.status] || []).includes(st) && K.STATUS[st].can.includes(role);
+const waitingAccept = o => o.status === 'assigned' && o.measurer && !o.accepted;
+const hoursSince = ts => Math.round((new Date('2026-08-03T14:00:00') - new Date(ts.replace(' ','T'))) / 36e5);
+
+function filtered(){
+  const t = document.getElementById('q').value.trim().toLowerCase();
+  return S.orders.filter(o => {
+    if(role === 'installer' && o.installer !== me()) return false;
+    if(F.branch    && o.branch    !== F.branch)    return false;
+    if(F.status    && o.status    !== F.status)    return false;
+    if(F.manager   && o.manager   !== F.manager)   return false;
+    if(F.measurer  && o.measurer  !== F.measurer)  return false;
+    if(F.installer && o.installer !== F.installer) return false;
+    if(F.from && o.measureAt < F.from) return false;
+    if(F.to   && o.measureAt > F.to)   return false;
+    if(t && !(String(o.num).includes(t) || o.addr.toLowerCase().includes(t) ||
+              (o.phone||'').includes(t) || o.client.toLowerCase().includes(t))) return false;
+    return true;
+  });
+}
+
+/* ═══════════ РЕНДЕР ═══════════ */
+function render(){
+  if(!S) return;
+  /* вошли по логину — роль фиксирована, переключатель не нужен */
+  document.getElementById('role-box').style.display = S.me ? 'none' : '';
+  document.getElementById('role').innerHTML = Object.entries(K.ROLES)
+    .map(([k,v]) => `<option value="${k}" ${role===k?'selected':''}>${v.label}</option>`).join('');
+
+  renderFilters();
+  const list = filtered();
+
+  const toMeasure = list.filter(o => ['new','assigned'].includes(o.status));
+  const wait   = list.filter(waitingAccept);
+  const inShop = list.filter(o => ['toShop','ready'].includes(o.status));
+  const toInst = list.filter(o => ['toInstall','installed'].includes(o.status));
+  const dayM   = list.filter(o => o.measureAt === calDate && ['new','assigned'].includes(o.status));
+  const owe    = list.filter(o => !['rejected','done'].includes(o.status))
+                     .reduce((a,o) => a + K.orderOwe(o), 0);
+  const hands  = K.cashOnHand(S);
+  const cash   = hands.reduce((a,c) => a + c.sum, 0);
+
+  document.getElementById('sub').textContent =
+    `${K.ROLES[role].label} · показано ${list.length} из ${S.orders.length} заказов`;
+
+  document.getElementById('stats').innerHTML = `
+    <button class="stat bl" data-st="new,assigned"><div class="stat-l">Ждут замера</div>
+      <div class="stat-v">${toMeasure.length}</div>
+      <div class="stat-s">замер ещё не сделан</div></button>
+    <button class="stat ${wait.length?'am':'gn'}" data-st="assigned"><div class="stat-l">Замерщик не ответил</div>
+      <div class="stat-v ${wait.length?'neg':''}">${wait.length}</div>
+      <div class="stat-s">${wait.length ? 'назначен, но не принял' : 'все приняли'}</div></button>
+    <button class="stat vl" data-go="cal"><div class="stat-l">Замеров на ${K.dmy(calDate)}</div>
+      <div class="stat-v">${dayM.length}</div>
+      <div class="stat-s">по календарю</div></button>
+    <button class="stat am" data-st="toShop,ready"><div class="stat-l">В цеху</div>
+      <div class="stat-v">${inShop.length}</div>
+      <div class="stat-s">${toInst.length} ждут установки</div></button>
+    <div class="stat rd"><div class="stat-l">Должны клиенты</div>
+      <div class="stat-v ${owe?'neg':''}">${K.fmt(owe)}<span style="font-size:12px"> сом</span></div>
+      <div class="stat-s">по всем открытым заказам</div></div>
+    <button class="stat ${cash?'rd':'gy'}" data-go="cash"><div class="stat-l">Наличные у сотрудников</div>
+      <div class="stat-v ${cash?'neg':''}">${K.fmt(cash)}<span style="font-size:12px"> сом</span></div>
+      <div class="stat-s">${cash ? hands.length + ' чел. не сдали' : 'всё сдано в кассу'}</div></button>`;
+
+  document.querySelectorAll('[data-go]').forEach(b =>
+    b.addEventListener('click', () => { tab = b.dataset.go; render(); }));
+  document.querySelectorAll('[data-st]').forEach(b => b.addEventListener('click', () => {
+    const sts = b.dataset.st.split(',');
+    F.status = F.status === sts[0] ? '' : sts[0];
+    tab = 'list'; render();
+  }));
+
+  document.getElementById('subtabs').innerHTML = TABS.map(t =>
+    `<button class="subtab ${tab===t.id?'on':''}" data-t="${t.id}">${t.name}</button>`).join('');
+  document.querySelectorAll('.subtab').forEach(b =>
+    b.addEventListener('click', () => { tab = b.dataset.t; render(); }));
+
+  const pb = document.getElementById('btn-primary');
+  pb.style.display = ['manager','director'].includes(role) ? '' : 'none';
+  pb.onclick = openNew;
+
+  ({ board:renderBoard, list:renderList, cal:renderCal, cash:renderCash })[tab]();
+}
+
+/* ── ФИЛЬТРЫ ── */
+function renderFilters(){
+  const opts = (arr, val, blank) =>
+    `<option value="">${blank}</option>` + arr.map(x =>
+      `<option value="${x.id}" ${val===x.id?'selected':''}>${K.esc(x.name || x.label)}</option>`).join('');
+  const active = Object.values(F).filter(Boolean).length;
+
+  document.getElementById('filters').innerHTML = `
+    <div class="f ${F.from||F.to?'f-on':''}"><label>Дата замера с</label>
+      <input type="date" id="f-from" value="${F.from}"></div>
+    <div class="f ${F.from||F.to?'f-on':''}"><label>по</label>
+      <input type="date" id="f-to" value="${F.to}"></div>
+    <div class="f ${F.branch?'f-on':''}"><label>Филиал</label>
+      <select id="f-branch">${opts(K.BRANCHES, F.branch, 'Все филиалы')}</select></div>
+    <div class="f ${F.status?'f-on':''}"><label>Статус</label>
+      <select id="f-status"><option value="">Любой статус</option>${K.FLOW.map(s =>
+        `<option value="${s}" ${F.status===s?'selected':''}>${K.STATUS[s].label}</option>`).join('')}</select></div>
+    <div class="f ${F.manager?'f-on':''}"><label>Менеджер</label>
+      <select id="f-manager">${opts(K.byRole('manager'), F.manager, 'Все менеджеры')}</select></div>
+    <div class="f ${F.measurer?'f-on':''}"><label>Замерщик</label>
+      <select id="f-measurer">${opts(K.byRole('measurer'), F.measurer, 'Все замерщики')}</select></div>
+    <div class="f ${F.installer?'f-on':''}"><label>Установщик</label>
+      <select id="f-installer">${opts(K.byRole('installer'), F.installer, 'Все установщики')}</select></div>
+    <button class="btn sm" id="f-clear" ${active?'':'disabled'}>Сбросить${active?` (${active})`:''}</button>`;
+
+  ['from','to','branch','status','manager','measurer','installer'].forEach(k => {
+    document.getElementById('f-' + k).onchange = e => { F[k] = e.target.value; render(); };
+  });
+  document.getElementById('f-clear').onclick = () => {
+    Object.keys(F).forEach(k => F[k] = ''); render();
+  };
+}
+
+document.getElementById('role').addEventListener('change', e => { role = e.target.value; render(); });
+document.getElementById('q').addEventListener('input', render);
+
+/* ── КАНБАН ── */
+function card(o){
+  const total = K.orderTotal(o), owe = K.orderOwe(o);
+  const late = new Date(o.deadline) < new Date('2026-08-03') && !['done','paid','rejected'].includes(o.status);
+  let foot = '';
+  if(waitingAccept(o)){
+    const h = hoursSince(o.created);
+    foot = `<div class="oc-foot ${h>=6?'late':'wait'}">Замерщик не принял${h>0?` · ${h} ч`:''}</div>`;
+  } else if(o.status === 'assigned' && o.accepted){
+    foot = `<div class="oc-foot ok">Принял в ${o.accepted.slice(11,16)}</div>`;
+  } else if(late){
+    foot = `<div class="oc-foot late">Срок ${K.dmy(o.deadline)} прошёл</div>`;
+  } else if(owe > 0 && total){
+    foot = `<div class="oc-foot owe">Не оплачено ${K.fmt(owe)} сом</div>`;
+  }
+  const people = [o.measurer && staff(o.measurer), o.installer && staff(o.installer)].filter(Boolean);
+  return `<button class="oc" data-o="${o.id}" draggable="true">
+    <div class="oc-top">
+      <div class="oc-h"><span class="oc-num">#${o.num}</span>
+        <span class="oc-sum">${total ? K.fmt(total) : '—'}</span></div>
+      <div class="oc-addr">${K.esc(o.addr)}</div>
+      <div class="oc-meta">
+        ${K.dmy(o.measureAt)}${o.timeless ? ', в течение дня' : ', ' + o.measureTime}<br>
+        <b>${K.esc(staff(o.manager))}</b>${people.length ? ' · ' + people.map(K.esc).join(' · ') : ''}
+      </div>
+    </div>${foot}</button>`;
+}
+
+function renderBoard(){
+  const list = filtered();
+  document.getElementById('view').innerHTML = `<div class="board">${COLS[role].map(st => {
+    const items = list.filter(o => o.status === st);
+    const show = items.slice(0, 20);
+    return `<div class="col" data-st="${st}">
+      <div class="col-h"><span class="chip ${K.STATUS[st].cls}">${K.STATUS[st].label}</span>
+        <span class="col-n">${items.length}</span></div>
+      <div class="col-b">${show.map(card).join('') ||
+        '<div style="padding:14px 6px;color:var(--t3);font-size:12px">Пусто</div>'}
+        ${items.length > show.length ? `<div style="padding:8px;color:var(--t3);font-size:11.5px">
+          и ещё ${items.length - show.length} — смотрите в списке</div>` : ''}</div></div>`;
+  }).join('')}</div>`;
+  document.querySelectorAll('[data-o]').forEach(b =>
+    b.addEventListener('click', () => openOrder(+b.dataset.o)));
+  enableDrag();
+}
+
+/* ── перетаскивание между статусами, как в Trello ── */
+let DRAG = null;
+function enableDrag(){
+  document.querySelectorAll('.oc[draggable]').forEach(card => {
+    card.addEventListener('dragstart', e => {
+      DRAG = +card.dataset.o;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      try{ e.dataTransfer.setData('text/plain', String(DRAG)); }catch(_){}
+      /* подсвечиваем колонки, куда этот заказ можно бросить */
+      const o = order(DRAG);
+      document.querySelectorAll('.col').forEach(c => {
+        const st = c.dataset.st;
+        if(st && st !== o.status) c.classList.add(canMove(o, st) ? 'can' : 'cant');
+      });
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      document.querySelectorAll('.col').forEach(c => c.classList.remove('can','cant','over'));
+      DRAG = null;
+    });
+  });
+
+  document.querySelectorAll('.col').forEach(col => {
+    const st = col.dataset.st;
+    col.addEventListener('dragover', e => {
+      if(DRAG === null) return;
+      const o = order(DRAG);
+      if(!o || o.status === st || !canMove(o, st)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      col.classList.add('over');
+    });
+    col.addEventListener('dragleave', () => col.classList.remove('over'));
+    col.addEventListener('drop', e => {
+      e.preventDefault();
+      col.classList.remove('over');
+      const id = DRAG !== null ? DRAG : +e.dataTransfer.getData('text/plain');
+      const o = order(id);
+      DRAG = null;
+      if(!o || o.status === st) return;
+      if(!canMove(o, st)){
+        K.toast(`Из «${K.STATUS[o.status].label}» нельзя сразу в «${K.STATUS[st].label}»`, 'bad');
+        return;
+      }
+      moveTo(o, st);
+    });
+  });
+}
+
+/* ── СПИСОК ── */
+function renderList(){
+  const list = filtered().slice().sort((a,b) => b.id - a.id);
+  window._xlsList = list;
+  const TS = list.reduce((a,o) => a + K.orderTotal(o), 0);
+  const TO = list.reduce((a,o) => a + K.orderOwe(o), 0);
+
+  document.getElementById('view').innerHTML = `
+    <div class="bar" style="margin-bottom:12px">
+      <span class="dim" style="font-size:12px">Показано ${list.length} заказов</span>
+      <span style="margin-left:auto"></span>
+      <button class="btn sm" id="xls">↓ Выгрузить в Excel</button>
+    </div>
+    <div class="card"><div class="tbl-wrap"><table class="tbl" id="t-list">
+      <thead><tr>
+        <th style="width:74px">Номер</th>
+        <th style="width:150px">Замер</th>
+        <th>Адрес</th>
+        <th class="hide-s" style="width:160px">Менеджер</th>
+        <th class="hide-s" style="width:170px">Замерщик</th>
+        <th class="hide-m" style="width:170px">Установщик</th>
+        <th style="width:180px">Статус</th>
+        <th style="text-align:right;width:115px">Сумма</th>
+        <th style="text-align:right;width:130px">Не оплачено</th>
+      </tr></thead>
+      <tbody>${list.length ? list.map(o => {
+        const total = K.orderTotal(o), owe = K.orderOwe(o);
+        return `<tr class="lnk" data-o="${o.id}" tabindex="0" role="button">
+          <td class="strong">#${o.num}</td>
+          <td class="dim">${K.dmy(o.measureAt)}<br>
+            <span style="font-size:11px">${o.timeless ? 'в течение дня' : o.measureTime}</span></td>
+          <td class="strong">${K.esc(o.addr)}</td>
+          <td class="dim hide-s">${K.esc(staff(o.manager))}</td>
+          <td class="hide-s">${o.measurer
+            ? K.esc(staff(o.measurer)) + (waitingAccept(o)
+              ? ' <span class="chip am">не принял</span>' : ' <span class="chip gn">принял</span>')
+            : '<span class="q0">не назначен</span>'}</td>
+          <td class="hide-m">${o.installer ? K.esc(staff(o.installer)) : '<span class="q0">—</span>'}</td>
+          <td><span class="chip ${K.STATUS[o.status].cls}">${K.STATUS[o.status].label}</span></td>
+          <td class="money">${total ? K.fmt(total) : '—'}</td>
+          <td class="money ${owe?'neg':'q0'}">${owe ? K.fmt(owe) : '—'}</td>
+        </tr>`;
+      }).join('') : `<tr><td colspan="9"><div class="empty">
+        <div class="empty-t">Заказов не найдено</div>
+        <div class="empty-s">Снимите фильтры или измените поиск</div></div></td></tr>`}</tbody>
+      ${list.length ? `<tfoot><tr>
+        <td colspan="7">Итого по ${list.length} заказам</td>
+        <td class="money">${K.fmt(TS)}</td>
+        <td class="money ${TO?'neg':''}">${K.fmt(TO)}</td></tr></tfoot>` : ''}
+    </table></div></div>`;
+
+  document.getElementById('xls').onclick = () =>
+    K.tableToExcel(document.getElementById('t-list'), 'Заказы ' + K.dmy(K.todayISO()));
+  document.querySelectorAll('tr[data-o]').forEach(tr => {
+    tr.addEventListener('click', () => openOrder(+tr.dataset.o));
+    tr.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); openOrder(+tr.dataset.o); } });
+  });
+}
+
+/* ── КАЛЕНДАРЬ ── */
+function renderCal(){
+  const br = F.branch || null;
+  const ms = K.byRole('measurer', br);
+  const day = filtered().filter(o => o.measureAt === calDate && ['new','assigned','measured'].includes(o.status));
+  const hours = []; for(let h = 9; h <= 20; h++) hours.push(String(h).padStart(2,'0') + ':00');
+  const at = (mid, hh) => day.find(o => o.measurer === mid && !o.timeless && o.measureTime === hh);
+  const loose = day.filter(o => o.timeless || !o.measurer);
+  const busy = day.filter(o => o.measurer && !o.timeless).length;
+  const cap = ms.length * hours.length;
+
+  document.getElementById('view').innerHTML = `
+    <div class="bar" style="margin-bottom:12px">
+      <input class="inp" id="cal-date" type="date" value="${calDate}" style="width:170px">
+      <span class="chip bl">${day.length} замеров</span>
+      <span class="chip gy">свободно ${cap - busy} слотов из ${cap}</span>
+      <span style="margin-left:auto"></span>
+      <span class="dim" style="font-size:12px">Жёлтым — замерщик ещё не подтвердил выезд</span>
+    </div>
+    ${loose.length ? `<div class="card" style="margin-bottom:12px">
+      <div class="card-h"><div class="card-t">Без времени или без замерщика</div>
+        <span class="chip am">${loose.length}</span></div>
+      <div style="padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap">
+        ${loose.map(o => `<button class="oc" data-o="${o.id}" style="width:244px">
+          <div class="oc-top"><div class="oc-h"><span class="oc-num">#${o.num}</span>
+            <span class="chip ${o.measurer?'bl':'am'}">${o.measurer ? K.esc(staff(o.measurer)) : 'не назначен'}</span></div>
+            <div class="oc-addr">${K.esc(o.addr)}</div></div></button>`).join('')}
+      </div></div>` : ''}
+    <div class="cal"><table>
+      <thead><tr><th class="tcol">Время</th>
+        ${ms.map(m => `<th>${K.esc(m.name)}<div class="q0" style="font-weight:600;font-size:10.5px">
+          ${day.filter(o => o.measurer === m.id).length} замеров</div></th>`).join('')}
+      </tr></thead>
+      <tbody>${hours.map(hh => `<tr><td class="tcol">${hh}</td>
+        ${ms.map(m => {
+          const o = at(m.id, hh);
+          if(!o) return '<td class="cal-free"><div class="free">—</div></td>';
+          const w = waitingAccept(o);
+          return `<td><button class="slot ${w?'wait':'busy'}" data-o="${o.id}">
+            <span class="slot-n">#${o.num}${w?' ·  ждёт':''}</span>
+            <span class="slot-a">${K.esc(o.addr)}</span></button></td>`;
+        }).join('')}</tr>`).join('')}</tbody>
+    </table></div>`;
+  document.getElementById('cal-date').onchange = e => { calDate = e.target.value; render(); };
+  document.querySelectorAll('[data-o]').forEach(b =>
+    b.addEventListener('click', () => openOrder(+b.dataset.o)));
+}
+
+/* ── ДЕНЬГИ У СОТРУДНИКОВ ── */
+function renderCash(){
+  const hands = K.cashOnHand(S);
+  const total = hands.reduce((a,c) => a + c.sum, 0);
+  const canTake = ['senior','director'].includes(role);
+  const handed = [];
+  S.orders.forEach(o => (o.payments || []).forEach(p => {
+    if(p.cash && p.handedAt) handed.push({ o, p });
+  }));
+  handed.sort((a,b) => b.p.handedAt.localeCompare(a.p.handedAt));
+
+  document.getElementById('view').innerHTML = `
+    <div class="bar" style="margin-bottom:12px">
+      <span class="dim" style="font-size:12px;max-width:840px">
+        Наличные, принятые у клиента, числятся на том, кто их взял — менеджер, замерщик, установщик, кто угодно.
+        В кассу они попадают только после подтверждения приёма. Безналичные платежи сюда не попадают.</span>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-h"><div class="card-t">На руках сейчас</div>
+        <span class="chip ${total?'rd':'gn'}">${K.money(total)}</span></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Сотрудник</th><th style="width:170px">Роль</th>
+          <th class="hide-s">Заказы</th><th style="text-align:right;width:130px">Сумма</th>
+          <th style="text-align:center;width:140px">Дней на руках</th><th style="width:150px"></th></tr></thead>
+        <tbody>${hands.length ? hands.map(c => {
+          const days = Math.max(0, Math.round((new Date('2026-08-03') -
+            new Date(c.items[0].pay.at.slice(0,10))) / 864e5));
+          return `<tr>
+            <td class="strong">${K.esc(staff(c.who))}</td>
+            <td class="dim">${K.ROLES[K.staffRole(c.who)].label}</td>
+            <td class="dim hide-s">${c.items.map(i => '#' + i.order.num).join(', ')}</td>
+            <td class="money neg">${K.fmt(c.sum)}</td>
+            <td style="text-align:center">${days
+              ? `<span class="chip ${days>=2?'rd':'am'}">${days} дн.</span>`
+              : '<span class="chip gn">сегодня</span>'}</td>
+            <td>${canTake ? `<button class="btn green sm" data-take="${c.who}">Принять деньги</button>`
+              : '<span class="q0" style="font-size:11.5px">принимает старший</span>'}</td></tr>`;
+        }).join('') : `<tr><td colspan="6"><div class="empty">
+          <div class="empty-t">Все деньги сданы</div>
+          <div class="empty-s">Ни на ком ничего не числится</div></div></td></tr>`}</tbody>
+      </table></div></div>
+    <div class="card">
+      <div class="card-h"><div class="card-t">Сдано в кассу</div></div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th style="width:160px">Когда сдал</th><th>Сотрудник</th>
+          <th class="hide-s">Заказ</th><th style="width:160px">Принял у клиента</th>
+          <th style="text-align:right;width:130px">Сумма</th></tr></thead>
+        <tbody>${handed.length ? handed.map(x => `<tr>
+          <td class="dim">${x.p.handedAt}</td><td class="strong">${K.esc(staff(x.p.who))}</td>
+          <td class="hide-s">#${x.o.num} · ${K.esc(x.o.addr)}</td>
+          <td class="dim">${x.p.at}</td><td class="money pos">${K.fmt(x.p.sum)}</td></tr>`).join('')
+          : '<tr><td colspan="5"><div class="empty"><div class="empty-t">Пока ничего не сдавали</div></div></td></tr>'}</tbody>
+      </table></div></div>`;
+
+  document.querySelectorAll('[data-take]').forEach(b =>
+    b.addEventListener('click', () => takeCash(b.dataset.take)));
+}
+
+function takeCash(who){
+  const c = K.cashOnHand(S).find(x => x.who === who);
+  if(!c) return;
+  showModal(`Приём денег от ${staff(who)}`);
+  document.getElementById('m-b').innerHTML = `
+    <div class="hint">Подтвердите, что деньги действительно получены. После подтверждения они уйдут в кассу,
+      а с сотрудника снимется задолженность.</div>
+    <div class="rows"><table class="tbl">
+      <thead><tr><th>Заказ</th><th>Адрес</th><th style="width:160px">Принял у клиента</th>
+        <th style="text-align:right;width:120px">Сумма</th></tr></thead>
+      <tbody>${c.items.map(i => `<tr><td class="strong">#${i.order.num}</td>
+        <td>${K.esc(i.order.addr)}</td><td class="dim">${i.pay.at}</td>
+        <td class="money">${K.fmt(i.pay.sum)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td colspan="3">Итого к сдаче</td><td class="money">${K.fmt(c.sum)}</td></tr></tfoot>
+    </table></div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button><span style="margin-left:auto"></span>
+    <button class="btn green" id="take-ok">Принять ${K.money(c.sum)}</button>`;
+  document.getElementById('take-ok').onclick = () => {
+    const stamp = NOW();
+    c.items.forEach(i => {
+      i.pay.handedAt = stamp;
+      order(i.order.id).history.push({ at:stamp, who:me(), what:`Деньги ${K.fmt(i.pay.sum)} сданы в кассу` });
+    });
+    closeModal(); save(); K.toast(`Принято ${K.money(c.sum)} от ${staff(who)}`);
+  };
+  bindClose();
+}
+
+/* ═══════════ КАРТОЧКА ЗАКАЗА ═══════════ */
+function showModal(t, size){
+  document.getElementById('m-t').textContent = t;
+  document.getElementById('mdl').className = 'modal' + (size ? ' ' + size : '');
+  document.getElementById('ovl').hidden = false;
+}
+function closeModal(){ document.getElementById('ovl').hidden = true; openId = null; }
+function bindClose(){ document.querySelectorAll('#ovl [data-close]').forEach(b => b.onclick = closeModal); }
+function openOrder(id, t){ openId = id; cardTab = t || 'info'; drawOrder(); }
+function log(o, what){ o.history.push({ at:NOW(), who:me(), what }); }
+
+const PENCIL = '<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg>';
+
+function drawOrder(){
+  const o = order(openId); if(!o) return;
+  const total = K.orderTotal(o), paid = K.orderPaid(o), owe = K.orderOwe(o), disc = K.orderDisc(o);
+  const CT = [['info','Заказ'],['items','Изделия'],['mat','Материалы'],
+              ['pay','Оплата'],['files','Файлы'],['hist','История']];
+  showModal(`Заказ #${o.num}`, 'xwide');
+
+  const head = `<div class="ohead">
+    <div class="ohead-main">
+      <div class="ohead-addr">${K.esc(o.addr)}</div>
+      <div class="ohead-sub"><b>${K.esc(o.client)}</b> · ${K.esc(o.phone)}<br>
+        ${brName(o.branch)} · замер ${K.dmy(o.measureAt)}${o.timeless?', в течение дня':', '+o.measureTime}</div>
+    </div>
+    <div class="ohead-money">
+      <div><div class="mm-l">Сумма</div><div class="mm-v">${K.fmt(total)}</div></div>
+      <div><div class="mm-l">Оплачено</div><div class="mm-v pos">${K.fmt(paid)}</div></div>
+      <div><div class="mm-l">Остаток</div><div class="mm-v ${owe?'neg':'pos'}">${K.fmt(owe)}</div></div>
+    </div>
+    <button class="iconbtn" id="a-edit" title="Редактировать заказ" aria-label="Редактировать">${PENCIL}</button>
+  </div>
+  <div class="subtabs" style="margin-bottom:14px">${CT.map(([k,n]) =>
+    `<button class="subtab ${cardTab===k?'on':''}" data-ct="${k}">${n}</button>`).join('')}</div>`;
+
+  let body = '';
+
+  if(cardTab === 'info'){
+    body = `<div class="grid2">
+      <div><div class="sec">Клиент</div>
+        <div class="kv"><span>Имя</span><b>${K.esc(o.client)}</b></div>
+        <div class="kv"><span>Телефон</span><b>${K.esc(o.phone)}</b></div>
+        <div class="kv"><span>Адрес</span><b>${K.esc(o.addr)}</b></div>
+        <div class="kv"><span>Источник</span><b>${K.esc(o.source)}</b></div>
+        <div class="kv"><span>Филиал</span><b>${brName(o.branch)}</b></div>
+      </div>
+      <div><div class="sec">Кто ведёт заказ</div>
+        <div class="kv"><span>Менеджер</span><b>${K.esc(staff(o.manager))}</b></div>
+        <div class="kv"><span>Замерщик</span><b>${o.measurer ? K.esc(staff(o.measurer)) : '—'}</b></div>
+        <div class="kv"><span>Подтвердил выезд</span>
+          <b class="${o.accepted?'pos':'neg'}">${o.accepted || (o.measurer ? 'ещё нет' : '—')}</b></div>
+        <div class="kv"><span>Установщик</span><b>${o.installer ? K.esc(staff(o.installer)) : '—'}</b></div>
+        <div class="kv"><span>Срок сдачи</span><b>${K.dmy(o.deadline)}</b></div>
+      </div></div>
+      ${o.comment ? `<div class="sec">Комментарий</div><div class="hint">${K.esc(o.comment)}</div>` : ''}
+      <div class="sec">Счёт-фактура</div>${invBlock(o)}`;
+  }
+
+  if(cardTab === 'items'){
+    const canEdit = !['ready','toInstall','installed','paid','done'].includes(o.status);
+    body = `<div class="bar" style="margin-bottom:10px">
+        <span class="dim" style="font-size:12px">Размеры в метрах, каждая строка — одно окно.</span>
+        <span style="margin-left:auto"></span>
+        ${canEdit ? '<button class="btn green sm" id="it-add">+ Добавить изделие</button>' : ''}</div>
+      <div class="rows"><table class="tbl">
+        <thead><tr><th style="width:92px">Ширина</th><th style="width:92px">Высота</th>
+          <th style="width:74px">Кол-во</th><th>Ткань</th><th style="width:175px">Профиль</th>
+          <th style="width:135px">Тип</th><th style="text-align:right;width:80px">м²</th>
+          ${canEdit?'<th style="width:32px"></th>':''}</tr></thead>
+        <tbody>${o.items.length ? o.items.map((it,i) => `<tr>
+          <td>${canEdit?`<input class="ri r" type="number" step="0.001" value="${it.w}" data-f="w" data-i="${i}">`:K.qfmt(it.w)}</td>
+          <td>${canEdit?`<input class="ri r" type="number" step="0.001" value="${it.h}" data-f="h" data-i="${i}">`:K.qfmt(it.h)}</td>
+          <td>${canEdit?`<input class="ri r" type="number" min="1" value="${it.qty}" data-f="qty" data-i="${i}">`:it.qty}</td>
+          <td>${canEdit?`<select class="ri ${it.fabric?'':'err'}" data-f="fabric" data-i="${i}">
+            <option value="">— ткань —</option>${S.goods.filter(g=>g.cat==='Ткань')
+            .map(g=>`<option ${it.fabric===g.name?'selected':''}>${K.esc(g.name)}</option>`).join('')}</select>`:K.esc(it.fabric)}</td>
+          <td>${canEdit?`<select class="ri ${it.profile?'':'err'}" data-f="profile" data-i="${i}">
+            <option value="">— профиль —</option>${S.goods.filter(g=>g.cat==='Профиль')
+            .map(g=>`<option ${it.profile===g.name?'selected':''}>${K.esc(g.name)}</option>`).join('')}</select>`:K.esc(it.profile)}</td>
+          <td>${canEdit?`<select class="ri ${it.type?'':'err'}" data-f="type" data-i="${i}">
+            <option value="">— тип —</option>${TYPES
+            .map(t=>`<option ${it.type===t?'selected':''}>${t}</option>`).join('')}</select>`:K.esc(it.type)}</td>
+          <td class="money">${K.qfmt(it.w*it.h*it.qty)}</td>
+          ${canEdit?`<td><button class="del" data-del="${i}" aria-label="Удалить">✕</button></td>`:''}</tr>`).join('')
+          : `<tr><td colspan="8"><div class="empty"><div class="empty-t">Размеры ещё не внесены</div>
+            <div class="empty-s">Их вносит замерщик после выезда</div></div></td></tr>`}</tbody>
+        ${o.items.length ? `<tfoot><tr><td colspan="6">Итого площадь</td>
+          <td class="money">${K.qfmt(o.items.reduce((a,i)=>a+i.w*i.h*i.qty,0))}</td>
+          ${canEdit?'<td></td>':''}</tr></tfoot>` : ''}
+      </table></div>
+      ${canEdit ? priceBlock(o, disc, total) : ''}`;
+  }
+
+  if(cardTab === 'mat'){
+    const need = K.checkStock(o, S.goods);
+    const cost = need.reduce((a,n) => {
+      const g = S.goods.find(x => x.name === n.name); return a + n.qty * (g ? g.cost : 0);
+    }, 0);
+    const short = need.filter(n => !n.ok);
+    body = `<div class="hint">Считается по нормам из размеров, ткань с запасом 5% на подгиб.
+        Это же спишется со склада при отправке в цех.</div>
+      ${short.length ? `<div class="hint" style="background:var(--rd-l);color:var(--rd-d)">
+        Не хватает ${short.length} позиций — в цех отправить нельзя.</div>` : ''}
+      <div class="rows"><table class="tbl">
+        <thead><tr><th>Материал</th><th style="text-align:right;width:115px">Нужно</th>
+          <th style="text-align:right;width:110px">На складе</th><th style="text-align:right;width:105px">Себест.</th>
+          <th style="text-align:right;width:115px">Сумма</th><th style="text-align:center;width:105px">Хватает</th></tr></thead>
+        <tbody>${need.map(n => {
+          const g = S.goods.find(x => x.name === n.name);
+          return `<tr><td class="strong">${K.esc(n.name)}</td>
+            <td class="money">${K.qfmt(n.qty)} ${n.unit}</td>
+            <td class="money ${n.ok?'q0':'neg'}">${K.qfmt(n.have)}</td>
+            <td class="money q0">${g?K.fmt(g.cost):'—'}</td>
+            <td class="money">${g?K.fmt(n.qty*g.cost):'—'}</td>
+            <td style="text-align:center">${n.ok?'<span class="chip gn">да</span>':'<span class="chip rd">нет</span>'}</td></tr>`;
+        }).join('')}</tbody>
+        <tfoot><tr><td colspan="4">Себестоимость материалов</td>
+          <td class="money">${K.fmt(cost)}</td><td></td></tr></tfoot>
+      </table></div>
+      <div class="grid3">
+        <div class="stat bl"><div class="stat-l">Сумма заказа</div><div class="stat-v">${K.fmt(total)}</div></div>
+        <div class="stat am"><div class="stat-l">Материалы</div><div class="stat-v">${K.fmt(cost)}</div></div>
+        <div class="stat ${total-cost>0?'gn':'rd'}"><div class="stat-l">Валовая прибыль</div>
+          <div class="stat-v ${total-cost>0?'pos':'neg'}">${K.fmt(total-cost)}</div>
+          <div class="stat-s">${total?Math.round((total-cost)/total*100):0}% от суммы</div></div>
+      </div>`;
+  }
+
+  if(cardTab === 'pay'){
+    body = `<div class="bar" style="margin-bottom:10px">
+        <span class="dim" style="font-size:12px">К каждой оплате можно приложить фото или скрин чека.</span>
+        <span style="margin-left:auto"></span>
+        ${owe > 0 ? '<button class="btn green sm" id="pay-add">+ Внести оплату</button>' : '<span class="chip gn">Оплачено полностью</span>'}</div>
+      <div class="rows"><table class="tbl">
+        <thead><tr><th style="width:150px">Дата</th><th style="width:110px">Сумма</th>
+          <th style="width:180px">Тип</th><th style="width:140px">Метод</th>
+          <th style="width:170px">Кто принял</th><th style="width:160px">В кассе</th><th>Чек</th></tr></thead>
+        <tbody>${o.payments.length ? o.payments.map((p,i) => `<tr>
+          <td class="dim">${p.at}</td><td class="money">${K.fmt(p.sum)}</td>
+          <td>${K.esc(p.kind)}</td><td>${K.esc(p.method)}</td>
+          <td>${K.esc(staff(p.who))}</td>
+          <td>${!p.cash ? '<span class="chip gn">да</span>'
+            : p.handedAt ? `<span class="chip gn">сдано ${p.handedAt.slice(5,10)}</span>`
+            : '<span class="chip rd">на руках</span>'}</td>
+          <td><div class="files">${(p.files||[]).map((f,fi) =>
+              fileTile(f, `p${i}-${fi}`)).join('')}
+            <label class="attach">+ чек<input type="file" accept="image/*,.pdf" data-pf="${i}"></label></div></td>
+        </tr>`).join('') : `<tr><td colspan="7"><div class="empty">
+          <div class="empty-t">Оплат ещё не было</div>
+          <div class="empty-s">Внести оплату может любой сотрудник</div></div></td></tr>`}</tbody>
+        ${o.payments.length ? `<tfoot><tr><td>Итого</td><td class="money">${K.fmt(paid)}</td>
+          <td colspan="4">Остаток по заказу</td><td class="money ${owe?'neg':''}">${K.fmt(owe)}</td></tr></tfoot>` : ''}
+      </table></div>`;
+  }
+
+  if(cardTab === 'files'){
+    const all = [...(o.files||[]).map(f => ({ f, from:'Заказ' })),
+      ...o.payments.flatMap((p,i) => (p.files||[]).map(f => ({ f, from:`Оплата ${K.fmt(p.sum)} от ${p.at.slice(0,10)}` })))];
+    body = `<div class="bar" style="margin-bottom:10px">
+        <span class="dim" style="font-size:12px">Замеры, эскизы, чеки, договоры — всё по заказу в одном месте.</span>
+        <span style="margin-left:auto"></span>
+        <label class="attach">+ Загрузить файл<input type="file" accept="image/*,.pdf" id="of"></label></div>
+      ${all.length ? `<div class="files" style="gap:12px">${all.map((x,i) => `
+        <div style="width:130px">${fileTile(x.f, 'o' + i, 130)}
+          <div class="q0" style="font-size:10.5px;margin-top:4px">${K.esc(x.from)}</div></div>`).join('')}</div>`
+      : `<div class="empty"><div class="empty-t">Файлов пока нет</div>
+         <div class="empty-s">Загрузите фото замера или скрин оплаты</div></div>`}`;
+  }
+
+  if(cardTab === 'hist'){
+    body = `<div class="sec">Что происходило с заказом</div>
+      <div class="tl">${o.history.slice().reverse().map(h => `<div class="tl-i">
+        <div class="tl-w">${K.esc(h.what)}</div>
+        <div class="tl-m">${h.at} · ${K.esc(staff(h.who))}</div></div>`).join('')}</div>`;
+  }
+
+  document.getElementById('m-b').innerHTML = head + body;
+
+  /* ── подвал ── */
+  const acts = [];
+  if(waitingAccept(o) && role === 'measurer' && o.measurer === me())
+    acts.push('<button class="btn big green" id="a-accept">Принять заказ</button>');
+  if(['new','assigned'].includes(o.status) && ['manager','director'].includes(role))
+    acts.push(`<button class="btn big primary" id="a-assign">${o.measurer?'Сменить':'Назначить'} замерщика</button>`);
+  if(o.status === 'ready' && ['senior','director'].includes(role))
+    acts.push('<button class="btn big primary" id="a-installer">Назначить установщика</button>');
+  if(o.status === 'toInstall' && ['installer','senior','director'].includes(role))
+    acts.push('<button class="btn big green" id="a-install">Установлено и оплачено</button>');
+  if(o.items.length && !invOf(o) && ['measurer','manager','director','accountant'].includes(role))
+    acts.push('<button class="btn" id="a-inv">Запросить счёт</button>');
+  (K.NEXT[o.status] || []).forEach(st => {
+    if(!canMove(o, st) || st === 'installed') return;
+    const cls = st === 'rejected' ? 'danger' : st === 'toShop' || st === 'ordered' ? 'green' : 'primary';
+    acts.push(`<button class="btn big ${cls}" data-mv="${st}">
+      <span class="arr">→</span>${K.STATUS[st].label}</button>`);
+  });
+
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Закрыть</button>
+    <div class="statusnow"><span>Сейчас</span>
+      <span class="chip ${K.STATUS[o.status].cls}">${K.STATUS[o.status].label}</span></div>
+    <span style="margin-left:auto"></span>
+    <div class="acts">${acts.join('') ||
+      `<span class="q0" style="font-size:11.5px">Роль «${K.ROLES[role].label}» на этом этапе статус не меняет</span>`}</div>`;
+
+  /* ── обработчики ── */
+  document.querySelectorAll('[data-ct]').forEach(b =>
+    b.addEventListener('click', () => { cardTab = b.dataset.ct; drawOrder(); }));
+  document.querySelectorAll('[data-mv]').forEach(b =>
+    b.addEventListener('click', () => moveTo(o, b.dataset.mv)));
+  const on = (id, fn) => { const el = document.getElementById(id); if(el) el.onclick = fn; };
+
+  on('a-edit', () => editOrder(o));
+  on('a-accept', () => {
+    o.accepted = NOW(); log(o, 'Замерщик принял заказ');
+    save(); drawOrder(); K.toast('Заказ принят — менеджер это увидит');
+  });
+  on('a-assign', () => pickStaff(o, 'measurer'));
+  on('a-installer', () => pickStaff(o, 'installer'));
+  on('a-install', () => installForm(o));
+  on('a-inv', () => askInvoice(o));
+  document.querySelectorAll('[data-invf]').forEach(b =>
+    b.onclick = () => openInvFile(o, +b.dataset.invf));
+  on('pay-add', () => payForm(o));
+  on('it-add', () => {
+    o.items.push({ w:0, h:0, qty:1, fabric:'', profile:'', type:'',
+                   urgent:false, marks:[{}] });
+    save(); drawOrder();
+    setTimeout(() => { const el = document.querySelector('[data-f="w"][data-i="' + (o.items.length-1) + '"]');
+      if(el){ el.focus(); el.select(); } }, 40);
+  });
+  document.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+    o.items.splice(+b.dataset.del, 1); save(); drawOrder();
+  });
+  document.querySelectorAll('[data-f]').forEach(el => el.onchange = () => {
+    const i = +el.dataset.i, f = el.dataset.f;
+    o.items[i][f] = ['w','h','qty'].includes(f) ? (+el.value || 0) : el.value;
+    save(); drawOrder();
+  });
+  const cEl = document.getElementById('o-calc');
+  if(cEl) cEl.onclick = () => {
+    const c = K.priceOrder(o);
+    o.sum = c.total;
+    if(!o.final || o.final > c.total) o.final = c.total;
+    log(o, `Цена пересчитана по прайсу: ${K.fmt(c.total)} сом`);
+    save(); drawOrder();
+    K.toast(`Подставлено ${K.money(c.total)} — теперь впишите сумму после скидки`);
+  };
+  const sEl = document.getElementById('o-sum'), fEl = document.getElementById('o-final');
+  if(sEl) sEl.onchange = () => { o.sum = +sEl.value || 0; if(o.final == null) o.final = o.sum; save(); drawOrder(); };
+  if(fEl) fEl.onchange = () => {
+    const v = +fEl.value || 0;
+    if(v > o.sum){ K.toast('Сумма после скидки больше исходной', 'bad'); return; }
+    o.final = v; save(); drawOrder();
+  };
+  document.querySelectorAll('[data-pf]').forEach(inp => inp.onchange = e =>
+    readFile(e.target.files[0], f => {
+      const p = o.payments[+inp.dataset.pf];
+      (p.files = p.files || []).push(f);
+      log(o, `Приложен чек к оплате ${K.fmt(p.sum)}`); save(); drawOrder();
+    }));
+  const of = document.getElementById('of');
+  if(of) of.onchange = e => readFile(e.target.files[0], f => {
+    (o.files = o.files || []).push(f); log(o, `Загружен файл «${f.name}»`); save(); drawOrder();
+  });
+  document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => {
+    const src = b.dataset.view;
+    if(src.startsWith('data:image')) window.open()?.document.write(`<img src="${src}" style="max-width:100%">`);
+  });
+  bindClose();
+}
+
+function fileTile(f, key, w){
+  const img = f.url && f.url.startsWith('data:image');
+  return `<button class="file" style="${w?`width:${w}px`:''}" data-view="${f.url||''}" title="${K.esc(f.name)}">
+    ${img ? `<img src="${f.url}" alt="${K.esc(f.name)}">` : '<div class="file-doc">📄</div>'}
+    <span>${K.esc(f.name)}</span></button>`;
+}
+function readFile(file, cb){
+  if(!file) return;
+  if(file.size > 3e6){ K.toast('Файл больше 3 МБ — сожмите фото', 'bad'); return; }
+  const r = new FileReader();
+  r.onload = () => cb({ name:file.name, at:NOW(), url:r.result });
+  r.readAsDataURL(file);
+}
+
+/* ── калькулятор цены ────────────────────────────
+   Считает по прайсу из размеров, замерщик потом вписывает
+   сумму после скидки — процент система считает сама. */
+function priceBlock(o, disc, total){
+  const c = K.priceOrder(o);
+  const diff = o.sum - c.total;
+  return `<div class="sec">Расчёт по прайсу</div>
+    <div class="rows"><table class="tbl">
+      <thead><tr><th>Изделие</th><th style="text-align:right;width:90px">Площадь</th>
+        <th style="text-align:right;width:70px">Кол-во</th>
+        <th style="text-align:right;width:110px">Цена за м²</th>
+        <th style="text-align:right;width:120px">Сумма</th></tr></thead>
+      <tbody>${c.items.map(x => `<tr>
+        <td>${K.qfmt(x.it.w)} × ${K.qfmt(x.it.h)} м · ${K.esc(x.it.type)}
+          <div class="q0" style="font-size:11px">${K.esc(x.it.fabric)}</div></td>
+        <td class="money">${K.qfmt(Math.max(K.PRICE.minArea, x.it.w * x.it.h))} м²</td>
+        <td class="money">${x.it.qty}</td>
+        <td class="money q0">${K.fmt(K.PRICE.perM2[x.it.type] || K.PRICE.perM2['Рулонная'])}</td>
+        <td class="money">${K.fmt(x.sum)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td colspan="4">Расчёт по прайсу</td>
+        <td class="money">${K.fmt(c.total)}</td></tr></tfoot>
+    </table></div>
+
+    <div class="pricebar">
+      <div class="pb-i"><span>По прайсу</span><b>${K.fmt(c.total)}</b></div>
+      <div class="pb-i"><span>Посчитали клиенту</span>
+        <input class="pb-in" id="o-sum" type="number" min="0" value="${o.sum}"></div>
+      <div class="pb-i"><span>После скидки</span>
+        <input class="pb-in strong" id="o-final" type="number" min="0" value="${o.final != null ? o.final : o.sum}"></div>
+      <div class="pb-i"><span>Скидка</span>
+        <b class="${disc?'pos':'q0'}">${disc ? disc + '% · ' + K.fmt(o.sum - total) : 'нет'}</b></div>
+      <button class="btn green" id="o-calc">Подставить ${K.fmt(c.total)}</button>
+    </div>
+    ${o.sum && Math.abs(diff) > 1 ? `<div class="q0" style="font-size:12px;margin-top:6px">
+      ${diff < 0 ? `Выставлено на ${K.fmt(-diff)} сом ниже прайса`
+                 : `Выставлено на ${K.fmt(diff)} сом выше прайса`} ·
+      прайс: ${Object.entries(K.PRICE.perM2).map(([k,v]) => k + ' ' + K.fmt(v)).join(' · ')} сом за м²,
+      меньше метра считается как метр</div>` : ''}`;
+}
+
+/* ── счёт-фактура: запрос от замерщика ── */
+const invOf = o => (S.invoices || []).find(i => i.order === o.id);
+
+function invBlock(o){
+  const i = invOf(o);
+  if(!i) return `<div class="hint">Клиенту нужен счёт-фактура? Нажмите «Запросить счёт» и внесите
+    реквизиты его компании — запрос уйдёт бухгалтеру.</div>`;
+  if(i.status === 'requested') return `<div class="hint" style="background:var(--am-l)">
+    Запрос отправлен ${i.requestedAt} для «${K.esc(i.company.name)}».
+    Бухгалтер ещё не выписал счёт в налоговой.</div>`;
+  const files = i.files || [];
+  return `<div class="hint" style="background:var(--gn-l)">
+      Счёт №${K.esc(i.num)} от ${K.dmy(i.date)} для «${K.esc(i.company.name)}» на ${K.money(K.invSum(i))}.
+    </div>
+    ${files.length ? `<div class="invfiles">${files.map((f,ix) => `
+      <button class="invfile" data-invf="${ix}">
+        <span class="ic ${f.kind==='akt'?'akt':''}">${f.kind==='akt'?'✓':'PDF'}</span>
+        <span style="min-width:0"><span class="nm">${K.esc(f.name)}</span>
+          <span class="mt">${f.kind==='akt'?'Акт выполненных работ':'Счёт-фактура'} · ${f.at}</span></span>
+      </button>`).join('')}</div>`
+    : '<div class="q0" style="font-size:11.5px;margin-top:6px">Файл счёта ещё не загружен бухгалтером.</div>'}`;
+}
+
+/* открыть файл счёта — доступно всем, кто видит заказ */
+function openInvFile(o, ix){
+  const i = invOf(o); if(!i) return;
+  const f = (i.files || [])[ix]; if(!f) return;
+  if(!f.url){ K.toast(`«${f.name}» загружен до переноса в систему — файла нет на диске`, 'bad'); return; }
+  const a = document.createElement('a'); a.href = f.url; a.download = f.name; a.click();
+  K.toast(`Скачивается ${f.name}`);
+}
+
+function askInvoice(o){
+  const i = invOf(o);
+  if(i){ K.toast(i.status === 'requested' ? 'Запрос уже отправлен бухгалтеру' : `Счёт №${i.num} уже выписан`, 'bad'); return; }
+  if(!o.items.length){ K.toast('Сначала внесите размеры — из них соберутся позиции счёта', 'bad'); return; }
+
+  showModal(`Запрос счёта-фактуры по заказу #${o.num}`, 'wide');
+  document.getElementById('m-b').innerHTML = `
+    <div class="hint">Без реквизитов компании бухгалтер не выпишет счёт. Спросите их у клиента на замере
+      и заполните все поля, отмеченные звёздочкой.</div>
+    <div class="grid2">
+      <div class="fld"><label for="c-name">Организация *</label>
+        <input class="inp" id="c-name" placeholder="ОсОО «...» или ИП Фамилия И. О."></div>
+      <div class="fld"><label for="c-inn">ИНН *</label>
+        <input class="inp" id="c-inn" placeholder="14 цифр" inputmode="numeric"></div>
+    </div>
+    <div class="fld"><label for="c-addr">Юридический адрес *</label>
+      <input class="inp" id="c-addr" value="${K.esc(o.addr)}"></div>
+    <div class="grid3">
+      <div class="fld"><label for="c-bank">Банк</label><input class="inp" id="c-bank" placeholder="ОАО «...»"></div>
+      <div class="fld"><label for="c-acc">Расчётный счёт</label><input class="inp" id="c-acc"></div>
+      <div class="fld"><label for="c-dir">Руководитель</label><input class="inp" id="c-dir" placeholder="Фамилия И. О."></div>
+    </div>
+    <div class="fld"><label for="c-phone">Контактный телефон</label>
+      <input class="inp" id="c-phone" value="${K.esc(o.phone)}"></div>
+    <div class="sec">Что попадёт в счёт</div>
+    <div class="rows"><table class="tbl">
+      <thead><tr><th>Наименование</th><th style="text-align:right;width:80px">Кол-во</th>
+        <th style="text-align:right;width:110px">Цена</th><th style="text-align:right;width:120px">Сумма</th></tr></thead>
+      <tbody>${invLines(o).map(l => `<tr><td>${K.esc(l.name)}</td>
+        <td class="money">${l.qty}</td><td class="money">${K.fmt(l.price)}</td>
+        <td class="money">${K.fmt(l.qty*l.price)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td colspan="3">Итого</td><td class="money">${K.fmt(K.orderTotal(o))}</td></tr></tfoot>
+    </table></div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button><span style="margin-left:auto"></span>
+    <button class="btn green" id="c-ok">Отправить бухгалтеру</button>`;
+  document.getElementById('c-ok').onclick = () => {
+    const v = id => document.getElementById(id).value.trim();
+    if(!v('c-name') || !v('c-inn') || !v('c-addr')){
+      K.toast('Организация, ИНН и адрес обязательны', 'bad'); return;
+    }
+    if(!/^\d{10,14}$/.test(v('c-inn'))){ K.toast('ИНН — это 14 цифр без пробелов', 'bad');
+      document.getElementById('c-inn').focus(); return; }
+    const at = NOW();
+    (S.invoices = S.invoices || []).push({
+      id:'inv' + Date.now().toString(36), num:null, date:null, order:o.id, status:'requested',
+      requestedBy:me(), requestedAt:at, issuedBy:null, issuedAt:null, aktAt:null,
+      company:{ name:v('c-name'), inn:v('c-inn'), addr:v('c-addr'), bank:v('c-bank'),
+                acc:v('c-acc'), dir:v('c-dir'), phone:v('c-phone') },
+      lines:invLines(o),
+    });
+    log(o, `Запрошен счёт-фактура для «${v('c-name')}»`);
+    save(); openOrder(o.id, 'info');
+    K.toast('Запрос ушёл бухгалтеру — он увидит его в разделе «Счета»');
+  };
+  bindClose();
+}
+
+/* позиции счёта собираются из изделий заказа */
+function invLines(o){
+  const total = K.orderTotal(o);
+  const area = o.items.reduce((a,i) => a + i.w * i.h * i.qty, 0) || 1;
+  return o.items.map(i => {
+    const share = (i.w * i.h * i.qty) / area;
+    const price = Math.round(total * share / i.qty);
+    return { name:`${i.type} ${i.fabric}, ${K.qfmt(i.w)}×${K.qfmt(i.h)} м`, qty:i.qty, price };
+  });
+}
+
+/* ── редактирование заказа ── */
+function editOrder(o){
+  showModal(`Редактировать заказ #${o.num}`, 'wide');
+  document.getElementById('m-b').innerHTML = `
+    <div class="grid2">
+      <div class="fld"><label for="e-client">Имя клиента</label><input class="inp" id="e-client" value="${K.esc(o.client)}"></div>
+      <div class="fld"><label for="e-phone">Телефон</label><input class="inp" id="e-phone" value="${K.esc(o.phone)}"></div>
+    </div>
+    <div class="fld"><label for="e-addr">Адрес</label><input class="inp" id="e-addr" value="${K.esc(o.addr)}"></div>
+    <div class="grid3">
+      <div class="fld"><label for="e-branch">Филиал</label>
+        <select class="inp" id="e-branch">${K.BRANCHES.map(b =>
+          `<option value="${b.id}" ${o.branch===b.id?'selected':''}>${b.name}</option>`).join('')}</select></div>
+      <div class="fld"><label for="e-src">Источник</label>
+        <select class="inp" id="e-src">${SOURCES.map(s => `<option ${o.source===s?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="fld"><label for="e-dl">Срок сдачи</label><input class="inp" id="e-dl" type="date" value="${o.deadline}"></div>
+      <div class="fld"><label for="e-date">Дата замера</label><input class="inp" id="e-date" type="date" value="${o.measureAt}"></div>
+      <div class="fld"><label for="e-time">Время замера</label>
+        <input class="inp" id="e-time" type="time" value="${o.measureTime}" ${o.timeless?'disabled':''}></div>
+      <div class="fld"><label style="display:flex;align-items:center;gap:7px;margin-top:22px;font-weight:600;color:var(--t1)">
+        <input type="checkbox" id="e-tl" ${o.timeless?'checked':''} style="width:16px;height:16px">
+        Без точного времени</label></div>
+    </div>
+    <div class="fld"><label for="e-comment">Комментарий</label><input class="inp" id="e-comment" value="${K.esc(o.comment||'')}"></div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button><span style="margin-left:auto"></span>
+    <button class="btn green" id="e-ok">Сохранить</button>`;
+  document.getElementById('e-tl').onchange = e =>
+    document.getElementById('e-time').disabled = e.target.checked;
+  document.getElementById('e-ok').onclick = () => {
+    const v = id => document.getElementById(id).value.trim();
+    if(!v('e-client') || !v('e-phone') || !v('e-addr')){
+      K.toast('Имя, телефон и адрес обязательны', 'bad'); return;
+    }
+    const oldBranch = o.branch;
+    Object.assign(o, {
+      client:v('e-client'), phone:v('e-phone'), addr:v('e-addr'),
+      branch:document.getElementById('e-branch').value, source:document.getElementById('e-src').value,
+      deadline:v('e-dl'), measureAt:v('e-date'),
+      timeless:document.getElementById('e-tl').checked,
+      measureTime:document.getElementById('e-tl').checked ? '' : v('e-time'),
+      comment:v('e-comment'),
+    });
+    /* сменили филиал — замерщик другого филиала больше не подходит */
+    if(oldBranch !== o.branch && o.measurer &&
+       !K.byRole('measurer', o.branch).some(m => m.id === o.measurer)){
+      o.measurer = null; o.accepted = null; o.status = 'new';
+      log(o, `Филиал изменён на ${brName(o.branch)}, замерщик сброшен`);
+    } else log(o, 'Данные заказа изменены');
+    save(); openOrder(o.id, 'info'); K.toast('Сохранено');
+  };
+  bindClose();
+}
+
+/* ── смена статуса ── */
+function moveTo(o, st){
+  if(st === 'toShop'){
+    if(!o.items.length){ K.toast('Сначала внесите размеры изделий', 'bad'); cardTab='items'; drawOrder(); return; }
+    if(!K.orderTotal(o)){ K.toast('Укажите сумму заказа', 'bad'); cardTab='items'; drawOrder(); return; }
+    const need = K.checkStock(o, S.goods);
+    const short = need.filter(n => !n.ok);
+    if(short.length){
+      K.toast(`Не хватает: ${short.map(s => s.name).join(', ')}`, 'bad');
+      cardTab = 'mat'; drawOrder(); return;
+    }
+    const lines = need.map(n => {
+      const g = S.goods.find(x => x.name === n.name);
+      return g ? { good:g.id, qty:n.qty } : null;
+    }).filter(Boolean);
+    lines.forEach(l => {
+      const g = S.goods.find(x => x.id === l.good);
+      g.q.tunguch = +(g.q.tunguch - l.qty).toFixed(2);
+    });
+    S.docs.push({ id:'o' + Date.now().toString(36), type:'writeoff',
+      num:(() => {   /* от максимума: после удалений количество даёт повторы */
+        const ns = S.docs.filter(d => d.type === 'writeoff').map(d => +d.num).filter(Number.isFinite);
+        return String((ns.length ? Math.max(...ns) : 0) + 1).padStart(5,'0');
+      })(),
+      date:K.todayISO(), from:'tunguch', who:staff(me()), status:'posted',
+      reason:`В производство по заказу №${o.num}`, order:o.id, lines });
+    log(o, 'Отправлен в цех, материалы списаны со склада');
+    o.status = st; save(); drawOrder();
+    K.toast(`Заказ #${o.num} в цеху · со склада списано ${lines.length} позиций`);
+    return;
+  }
+  o.status = st; log(o, `Статус: ${K.STATUS[st].label}`);
+  save(); drawOrder(); K.toast(`Заказ #${o.num}: ${K.STATUS[st].label}`);
+}
+
+/* ── назначение сотрудника ── */
+function pickStaff(o, kind){
+  const isM = kind === 'measurer';
+  const people = K.byRole(isM ? 'measurer' : 'installer', isM ? o.branch : null);
+  const load = p => S.orders.filter(x => (isM ? x.measurer : x.installer) === p.id &&
+    (isM ? x.measureAt === o.measureAt : x.status === 'toInstall')).length;
+
+  showModal(isM ? `Замерщики филиала «${brName(o.branch)}»` : 'Назначить установщика', 'wide');
+  document.getElementById('m-b').innerHTML = `
+    <div class="hint">${isM
+      ? `Показаны замерщики этого филиала и их загрузка на ${K.dmy(o.measureAt)}. После назначения замерщик должен подтвердить, что берёт заказ.`
+      : 'Показано, сколько заказов уже на установщике.'}</div>
+    ${people.length ? `<div class="rows"><table class="tbl">
+      <thead><tr><th>Сотрудник</th><th style="text-align:center;width:170px">${isM?'Замеров в этот день':'Заказов в работе'}</th>
+        <th style="width:140px"></th></tr></thead>
+      <tbody>${people.map(p => `<tr><td class="strong">${K.esc(p.name)}</td>
+        <td style="text-align:center"><span class="chip ${load(p)>=4?'rd':load(p)>=2?'am':'gn'}">${load(p)}</span></td>
+        <td><button class="btn sm" data-pick="${p.id}">Назначить</button></td></tr>`).join('')}</tbody>
+    </table></div>` : `<div class="empty"><div class="empty-t">В этом филиале нет замерщиков</div>
+      <div class="empty-s">Смените филиал в карточке заказа или добавьте сотрудника</div></div>`}`;
+  document.getElementById('m-f').innerHTML = `<button class="btn" data-close>Отмена</button>`;
+  document.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => {
+    const id = b.dataset.pick;
+    if(isM){ o.measurer = id; o.accepted = null; o.status = 'assigned';
+             log(o, `Назначен замерщик — ${staff(id)}`); }
+    else   { o.installer = id; o.senior = me(); o.status = 'toInstall';
+             log(o, `Назначен установщик — ${staff(id)}`); }
+    save(); openOrder(o.id, 'info');
+    K.toast(isM ? `Назначен ${staff(id)} — ждём подтверждения` : `Заказ передан ${staff(id)}`);
+  });
+  bindClose();
+}
+
+/* ── установка ── */
+function installForm(o){
+  const owe = K.orderOwe(o);
+  showModal(`Установка заказа #${o.num}`, 'wide');
+  document.getElementById('m-b').innerHTML = `
+    <div class="hint">Сумма к доплате подставлена из заказа. Если клиент отдал другую — исправьте
+      и напишите причину: расхождение увидит директор.</div>
+    <div class="grid2">
+      <div class="fld"><label for="i-sum">Принято от клиента, сом</label>
+        <input class="inp" id="i-sum" type="number" min="0" value="${owe}"></div>
+      <div class="fld"><label for="i-method">Метод</label>
+        <select class="inp" id="i-method">${METHODS.map(m => `<option>${m}</option>`).join('')}</select></div>
+    </div>
+    <div class="fld"><label for="i-note">Комментарий</label>
+      <input class="inp" id="i-note" placeholder="Например: остаток клиент отдаст завтра"></div>
+    <div class="kv"><span>Должно быть по заказу</span><b>${K.money(owe)}</b></div>
+    <div class="kv"><span>Расхождение</span><b id="i-diff" class="pos">0 сом</b></div>
+    <div class="fld"><label>Чек или фото оплаты — обязательно</label>
+      <label class="attach">+ Приложить файл<input type="file" accept="image/*,.pdf" id="i-file"></label>
+      <div class="invfiles" id="i-prev"></div></div>
+    <div class="hint" id="i-cash">Наличные встанут на вас в разделе «Деньги у сотрудников»
+      и спишутся только после того, как старший подтвердит приём.</div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button><span style="margin-left:auto"></span>
+    <button class="btn green" id="i-ok">Провести установку</button>`;
+  const upd = () => {
+    const v = +document.getElementById('i-sum').value || 0, d = v - owe;
+    const el = document.getElementById('i-diff');
+    el.textContent = (d > 0 ? '+' : '') + K.money(d);
+    el.className = d === 0 ? 'pos' : 'neg';
+    document.getElementById('i-cash').style.display =
+      document.getElementById('i-method').value === 'Наличные' ? '' : 'none';
+  };
+  let iPend = null;
+  document.getElementById('i-file').onchange = e => readFile(e.target.files[0], fl => {
+    iPend = fl;
+    document.getElementById('i-prev').innerHTML =
+      `<div class="invfile"><span class="ic">PDF</span><span><span class="nm">${K.esc(fl.name)}</span>
+       <span class="mt">готов к сохранению</span></span></div>`;
+  });
+  document.getElementById('i-sum').oninput = upd;
+  document.getElementById('i-method').onchange = upd;
+  upd();
+  document.getElementById('i-ok').onclick = () => {
+    const sum = +document.getElementById('i-sum').value || 0;
+    const method = document.getElementById('i-method').value;
+    const note = document.getElementById('i-note').value.trim();
+    if(sum !== owe && !note){
+      K.toast('Сумма не совпадает — напишите комментарий', 'bad');
+      document.getElementById('i-note').focus(); return;
+    }
+    if(sum > 0 && !iPend){ K.toast('Приложите чек или фото оплаты', 'bad'); return; }
+    const cash = method === 'Наличные', at = NOW();
+    if(sum > 0) o.payments.push({ at, sum, kind:'Доплата при установке', method, who:me(),
+                                  note, cash, handedAt:cash ? null : at, files:iPend ? [iPend] : [] });
+    o.status = K.orderOwe(o) <= 0 ? 'paid' : 'installed';
+    log(o, `Установлено, принято ${K.fmt(sum)} (${method})${note ? ' — ' + note : ''}`);
+    save(); openOrder(o.id, 'pay');
+    K.toast(cash ? `Принято ${K.money(sum)} наличными — числится на вас`
+                 : `Принято ${K.money(sum)} безналично — сразу в кассе`);
+  };
+  bindClose();
+}
+
+/* ── оплата: доступна всем ролям ── */
+function payForm(o){
+  const owe = K.orderOwe(o);
+  showModal(`Оплата по заказу #${o.num}`);
+  document.getElementById('m-b').innerHTML = `
+    <div class="grid2">
+      <div class="fld"><label for="p-sum">Сумма, сом</label>
+        <input class="inp" id="p-sum" type="number" min="0" value="${owe}"></div>
+      <div class="fld"><label for="p-kind">Тип</label>
+        <select class="inp" id="p-kind">${KINDS.map(k => `<option>${k}</option>`).join('')}</select></div>
+      <div class="fld"><label for="p-method">Метод</label>
+        <select class="inp" id="p-method">${METHODS.map(m => `<option>${m}</option>`).join('')}</select></div>
+      <div class="fld"><label for="p-note">Комментарий</label><input class="inp" id="p-note"></div>
+    </div>
+    <div class="fld"><label>Чек или скрин оплаты — без него не сохранить</label>
+      <label class="attach">+ Приложить файл<input type="file" accept="image/*,.pdf" id="p-file"></label>
+      <div class="files" id="p-prev"></div></div>
+    <div class="kv"><span>Остаток по заказу</span><b>${K.money(owe)}</b></div>
+    <div class="kv"><span>Принимает</span><b>${K.esc(staff(me()))} · ${K.ROLES[role].label}</b></div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button><span style="margin-left:auto"></span>
+    <button class="btn green" id="p-ok">Внести оплату</button>`;
+
+  let pending = null;
+  document.getElementById('p-file').onchange = e => readFile(e.target.files[0], f => {
+    pending = f;
+    document.getElementById('p-prev').innerHTML = fileTile(f, 'pv');
+  });
+  document.getElementById('p-ok').onclick = () => {
+    const sum = +document.getElementById('p-sum').value || 0;
+    if(sum <= 0){ K.toast('Укажите сумму', 'bad'); return; }
+    if(sum > owe){ K.toast(`Больше остатка. Остаток ${K.fmt(owe)}`, 'bad'); return; }
+    if(!pending){ K.toast('Без чека оплату провести нельзя — приложите фото или скрин', 'bad'); return; }
+    const method = document.getElementById('p-method').value;
+    const cash = method === 'Наличные', at = NOW();
+    o.payments.push({ at, sum, kind:document.getElementById('p-kind').value, method, who:me(),
+      note:document.getElementById('p-note').value.trim(),
+      cash, handedAt:cash ? null : at, files:pending ? [pending] : [] });
+    if(K.orderOwe(o) <= 0 && o.status === 'installed') o.status = 'paid';
+    log(o, `Оплата ${K.fmt(sum)} (${method})`);
+    save(); openOrder(o.id, 'pay');
+    K.toast(cash ? `${K.money(sum)} наличными — числится на вас` : `Внесено ${K.money(sum)}`);
+  };
+  bindClose();
+}
+
+/* ── новый заказ ── */
+function openNew(){
+  showModal('Новый заказ на замер', 'wide');
+  const drawMeas = br => K.byRole('measurer', br)
+    .map(m => `<option value="${m.id}">${K.esc(m.name)}</option>`).join('');
+  document.getElementById('m-b').innerHTML = `
+    <div class="hint">Менеджер вносит клиента и время замера. Размеры и сумму внесёт замерщик после выезда.</div>
+    <div class="grid2">
+      <div class="fld"><label for="n-client">Имя клиента</label><input class="inp" id="n-client"></div>
+      <div class="fld"><label for="n-phone">Телефон</label><input class="inp" id="n-phone" placeholder="0700 12 34 56"></div>
+    </div>
+    <div class="fld"><label for="n-addr">Адрес</label><input class="inp" id="n-addr" placeholder="Улица, дом, квартира"></div>
+    <div class="grid3">
+      <div class="fld"><label for="n-branch">Филиал</label>
+        <select class="inp" id="n-branch">${K.BRANCHES.map(b => `<option value="${b.id}">${b.name}</option>`).join('')}</select></div>
+      <div class="fld"><label for="n-src">Источник</label>
+        <select class="inp" id="n-src">${SOURCES.map(s => `<option>${s}</option>`).join('')}</select></div>
+      <div class="fld"><label for="n-meas">Замерщик</label>
+        <select class="inp" id="n-meas"><option value="">Назначу позже</option>${drawMeas('bishkek')}</select></div>
+      <div class="fld"><label for="n-date">Дата замера</label>
+        <input class="inp" id="n-date" type="date" value="${K.todayISO()}"></div>
+      <div class="fld"><label for="n-time">Время</label><input class="inp" id="n-time" type="time" disabled></div>
+      <div class="fld"><label style="display:flex;align-items:center;gap:7px;margin-top:22px;font-weight:600;color:var(--t1)">
+        <input type="checkbox" id="n-tl" checked style="width:16px;height:16px">Без точного времени</label></div>
+    </div>
+    <div class="fld"><label for="n-comment">Комментарий</label><input class="inp" id="n-comment"></div>`;
+  document.getElementById('m-f').innerHTML = `
+    <button class="btn" data-close>Отмена</button><span style="margin-left:auto"></span>
+    <button class="btn green" id="n-ok">Создать заказ</button>`;
+
+  document.getElementById('n-branch').onchange = e => {
+    document.getElementById('n-meas').innerHTML =
+      '<option value="">Назначу позже</option>' + drawMeas(e.target.value);
+  };
+  document.getElementById('n-tl').onchange = e =>
+    document.getElementById('n-time').disabled = e.target.checked;
+  document.getElementById('n-ok').onclick = () => {
+    const v = id => document.getElementById(id).value.trim();
+    if(!v('n-client') || !v('n-phone') || !v('n-addr')){
+      K.toast('Имя, телефон и адрес обязательны — без них замерщик не доедет', 'bad'); return;
+    }
+    const tl = document.getElementById('n-tl').checked;
+    const meas = document.getElementById('n-meas').value;
+    /* при пустой базе Math.max даёт -Infinity, поэтому считаем безопасно */
+    const ids = S.orders.map(o => +o.id).filter(n => Number.isFinite(n));
+    const id = (ids.length ? Math.max(...ids) : 0) + 1, at = NOW();
+    const o = { id, num:String(id), branch:document.getElementById('n-branch').value, channel:'retail',
+      client:v('n-client'), phone:v('n-phone'), addr:v('n-addr'),
+      source:document.getElementById('n-src').value,
+      status:meas ? 'assigned' : 'new', manager:me(), measurer:meas || null, accepted:null,
+      measureAt:v('n-date'), measureTime:tl ? '' : v('n-time'), timeless:tl,
+      created:at, deadline:'2026-08-17', color:'белый',
+      items:[], sum:0, final:0, payments:[], files:[], comment:v('n-comment'),
+      history:[{ at, who:me(), what:'Создан заказ' }] };
+    if(meas) o.history.push({ at, who:me(), what:`Назначен замерщик — ${staff(meas)}` });
+    S.orders.push(o); closeModal(); save();
+    K.toast(meas ? `Заказ #${id} создан, ждём подтверждения замерщика` : `Заказ #${id} создан`);
+  };
+  bindClose();
+}
+
+/* ═══════════ ОБЩЕЕ ═══════════ */
+function save(){ K.commit(S); render(); }
+document.getElementById('ovl').addEventListener('mousedown', e => { if(e.target.id === 'ovl') closeModal(); });
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape' && !document.getElementById('ovl').hidden) closeModal();
+  if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'){
+    e.preventDefault(); const el = document.getElementById('q'); el.focus(); el.select();
+  }
+});
+</script>
+</body>
+</html>
