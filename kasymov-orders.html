@@ -186,6 +186,29 @@ button.stat:hover{border-color:var(--line);box-shadow:0 3px 10px rgba(0,0,0,.06)
 /* перетаскивание */
 .oc[draggable]{cursor:grab}
 .oc.dragging{opacity:.45;cursor:grabbing;transform:rotate(-1.5deg)}
+/* фильтры по колонкам */
+.tbl thead th.fh{cursor:pointer;user-select:none;white-space:nowrap}
+.tbl thead th.fh:hover{color:var(--bl-d,#1c6fd0)}
+.tbl thead th.fh .fi{font-size:9px;opacity:.45;margin-left:3px}
+.tbl thead th.fh.active{color:var(--bl-d,#1c6fd0)}
+.tbl thead th.fh .fdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--bl,#2f80ed);margin-left:5px;vertical-align:middle}
+.hf-pop{position:fixed;z-index:3000;background:#fff;border:1px solid var(--bd,#e2e8f0);border-radius:11px;box-shadow:0 14px 38px rgba(21,29,41,.24);padding:11px;width:252px;font-size:13px}
+.hf-pop .hf-in{width:100%;box-sizing:border-box;padding:8px 9px;border:1px solid var(--bd,#e2e8f0);border-radius:8px;font-size:13px;margin-bottom:7px;font-family:inherit}
+.hf-list{max-height:220px;overflow-y:auto;margin:0 0 7px}
+.hf-opt{display:flex;align-items:center;gap:9px;padding:6px 6px;border-radius:7px;cursor:pointer}
+.hf-opt:hover{background:#f5f7fb}
+.hf-opt input{margin:0;width:15px;height:15px}
+.hf-row{display:flex;gap:7px}
+.hf-row .hf-in{width:50%}
+.hf-quick{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.hf-quick button{font-size:11.5px;padding:5px 9px;border:1px solid var(--bd,#e2e8f0);border-radius:20px;background:#fff;cursor:pointer;font-family:inherit}
+.hf-quick button.on{background:var(--bl,#2f80ed);color:#fff;border-color:var(--bl,#2f80ed)}
+.hf-sort{display:flex;gap:6px;margin-bottom:9px;border-bottom:1px solid var(--bd,#eef2f7);padding-bottom:9px}
+.hf-sort button{flex:1;font-size:11.5px;padding:6px;border:1px solid var(--bd,#e2e8f0);border-radius:7px;background:#fff;cursor:pointer;font-family:inherit}
+.hf-sort button.on{background:var(--bl,#2f80ed);color:#fff;border-color:var(--bl,#2f80ed)}
+.hf-foot{display:flex;gap:7px;margin-top:3px}
+.hf-foot button{flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;border:1px solid var(--bd,#e2e8f0);background:#fff;font-family:inherit}
+.hf-foot .hf-apply{background:var(--bl,#2f80ed);color:#fff;border-color:var(--bl,#2f80ed)}
 .col.can{outline:2px dashed rgba(95,154,30,.5);outline-offset:-4px}
 .col.cant{opacity:.45}
 .col.over{outline:2px solid var(--gn);outline-offset:-4px;background:linear-gradient(180deg,#eef7e4,#f6faf0)}
@@ -573,31 +596,160 @@ function enableDrag(){
   });
 }
 
-/* ── СПИСОК ── */
+/* ── СПИСОК с фильтрами по колонкам ── */
+let CF = { num:'', addr:'', mFrom:'', mTo:'', manager:[], measurer:[], installer:[],
+           status:[], sumMin:null, sumMax:null, oweMode:'', oweMin:null, oweMax:null };
+let CSort = { key:'id', dir:'desc' };
+
+const COLS_F = [
+  { key:'num',       label:'Номер',      type:'search', sort:'num',       w:'74px'  },
+  { key:'measure',   label:'Замер',      type:'date',   sort:'measureAt', w:'150px' },
+  { key:'addr',      label:'Адрес',      type:'search', sort:'addr'                 },
+  { key:'manager',   label:'Менеджер',   type:'people', role:'manager',   sort:'manager',   w:'160px', cls:'hide-s' },
+  { key:'measurer',  label:'Замерщик',   type:'people', role:'measurer',  sort:'measurer',  w:'170px', cls:'hide-s' },
+  { key:'installer', label:'Установщик', type:'people', role:'installer', sort:'installer', w:'170px', cls:'hide-m' },
+  { key:'status',    label:'Статус',     type:'status', sort:'status',    w:'180px' },
+  { key:'sum',       label:'Сумма',      type:'sum',    sort:'sum',       w:'115px', right:true },
+  { key:'owe',       label:'Не оплачено',type:'owe',    sort:'owe',       w:'130px', right:true },
+];
+
+function peopleOpts(roleKey){ return (K.byRole(roleKey) || []).map(s => ({ id:s.id, name:s.name })); }
+
+function applyCF(list){
+  const low = s => String(s||'').toLowerCase();
+  return list.filter(o => {
+    const total = K.orderTotal(o), owe = K.orderOwe(o);
+    if(CF.num  && !String(o.num).toLowerCase().includes(low(CF.num))) return false;
+    if(CF.addr && !low(o.addr).includes(low(CF.addr))) return false;
+    if(CF.mFrom && (!o.measureAt || o.measureAt < CF.mFrom)) return false;
+    if(CF.mTo   && (!o.measureAt || o.measureAt > CF.mTo))   return false;
+    if(CF.manager.length   && !CF.manager.includes(o.manager))     return false;
+    if(CF.measurer.length  && !CF.measurer.includes(o.measurer))   return false;
+    if(CF.installer.length && !CF.installer.includes(o.installer)) return false;
+    if(CF.status.length    && !CF.status.includes(o.status))       return false;
+    if(CF.sumMin != null && total < CF.sumMin) return false;
+    if(CF.sumMax != null && total > CF.sumMax) return false;
+    if(CF.oweMode === 'has'  && !(owe > 0)) return false;
+    if(CF.oweMode === 'none' && owe > 0)    return false;
+    if(CF.oweMin != null && owe < CF.oweMin) return false;
+    if(CF.oweMax != null && owe > CF.oweMax) return false;
+    return true;
+  });
+}
+function sortList(list){
+  const k = CSort.key, dir = CSort.dir === 'asc' ? 1 : -1;
+  const val = o => k==='num' ? Number(String(o.num).replace(/\D/g,''))||0
+    : k==='sum' ? K.orderTotal(o) : k==='owe' ? K.orderOwe(o)
+    : k==='addr' ? low(o.addr) : k==='measureAt' ? (o.measureAt||'')
+    : k==='status' ? (K.STATUS[o.status]||{}).order
+    : k==='manager' ? low(staff(o.manager)) : k==='measurer' ? low(staff(o.measurer))
+    : k==='installer' ? low(staff(o.installer)) : o.id;
+  function low(s){ return String(s||'').toLowerCase(); }
+  return list.slice().sort((a,b) => { const va=val(a), vb=val(b); return (va>vb?1:va<vb?-1:0)*dir; });
+}
+function cfActive(key){
+  if(key==='num') return !!CF.num; if(key==='addr') return !!CF.addr;
+  if(key==='measure') return !!(CF.mFrom||CF.mTo);
+  if(key==='manager') return CF.manager.length>0;
+  if(key==='measurer') return CF.measurer.length>0;
+  if(key==='installer') return CF.installer.length>0;
+  if(key==='status') return CF.status.length>0;
+  if(key==='sum') return CF.sumMin!=null||CF.sumMax!=null;
+  if(key==='owe') return !!CF.oweMode || CF.oweMin!=null || CF.oweMax!=null;
+  return false;
+}
+function cfCount(){ return COLS_F.filter(c => cfActive(c.key)).length; }
+function resetCF(){ CF = { num:'', addr:'', mFrom:'', mTo:'', manager:[], measurer:[], installer:[], status:[], sumMin:null, sumMax:null, oweMode:'', oweMin:null, oweMax:null }; renderList(); }
+
+function closeHF(){ const p=document.getElementById('hf-pop'); if(p) p.remove(); }
+function openHF(col, th){
+  closeHF();
+  const p = document.createElement('div'); p.id='hf-pop'; p.className='hf-pop';
+  const num = n => n==null?'':n;
+  const sortRow = col.sort ? `<div class="hf-sort">
+      <button data-sort="asc" class="${CSort.key===col.sort&&CSort.dir==='asc'?'on':''}">↑ по возр.</button>
+      <button data-sort="desc" class="${CSort.key===col.sort&&CSort.dir==='desc'?'on':''}">↓ по убыв.</button></div>` : '';
+  let body='';
+  if(col.type==='search'){
+    const v = col.key==='num'?CF.num:CF.addr;
+    body = `<input class="hf-in" data-txt placeholder="${col.key==='num'?'Введите номер...':'Введите адрес...'}" value="${K.esc(v)}">`;
+  } else if(col.type==='date'){
+    body = `<div class="dim" style="font-size:11px;margin-bottom:4px">Дата замера</div>
+      <div class="hf-row"><input class="hf-in" type="date" data-from value="${CF.mFrom}"><input class="hf-in" type="date" data-to value="${CF.mTo}"></div>`;
+  } else if(col.type==='people'){
+    const sel = CF[col.key], opts = peopleOpts(col.role);
+    body = `<input class="hf-in" data-search placeholder="Поиск сотрудника...">
+      <div class="hf-list">${opts.map(o=>`<label class="hf-opt" data-name="${K.esc(o.name).toLowerCase()}">
+        <input type="checkbox" value="${o.id}" ${sel.includes(o.id)?'checked':''}><span>${K.esc(o.name)}</span></label>`).join('')||'<div class="dim" style="padding:6px">нет сотрудников</div>'}</div>`;
+  } else if(col.type==='status'){
+    body = `<input class="hf-in" data-search placeholder="Поиск статуса...">
+      <div class="hf-list">${K.FLOW.map(s=>`<label class="hf-opt" data-name="${K.STATUS[s].label.toLowerCase()}">
+        <input type="checkbox" value="${s}" ${CF.status.includes(s)?'checked':''}><span>${K.STATUS[s].label}</span></label>`).join('')}</div>`;
+  } else if(col.type==='sum'){
+    const q=(a,b,lbl)=>`<button data-q="${a}_${b}">${lbl}</button>`;
+    body = `<div class="hf-quick">${q('','10000','до 10к')}${q('10000','30000','10–30к')}${q('30000','50000','30–50к')}${q('50000','','>50к')}</div>
+      <div class="hf-row"><input class="hf-in" type="number" data-min placeholder="от" value="${num(CF.sumMin)}"><input class="hf-in" type="number" data-max placeholder="до" value="${num(CF.sumMax)}"></div>`;
+  } else if(col.type==='owe'){
+    const b=(m,l)=>`<button data-mode="${m}" class="${CF.oweMode===m?'on':''}">${l}</button>`;
+    body = `<div class="hf-quick">${b('has','Есть долг')}${b('none','Нет долга')}</div>
+      <div class="hf-row"><input class="hf-in" type="number" data-min placeholder="от" value="${num(CF.oweMin)}"><input class="hf-in" type="number" data-max placeholder="до" value="${num(CF.oweMax)}"></div>`;
+  }
+  p.innerHTML = sortRow + body + `<div class="hf-foot"><button class="hf-reset">Сбросить</button><button class="hf-apply">Применить</button></div>`;
+  document.body.appendChild(p);
+  const r = th.getBoundingClientRect();
+  p.style.left = Math.min(r.left, window.innerWidth - p.offsetWidth - 10) + 'px';
+  p.style.top  = (r.bottom + 4) + 'px';
+
+  /* сортировка */
+  p.querySelectorAll('[data-sort]').forEach(b => b.onclick = () => { CSort={key:col.sort,dir:b.dataset.sort}; renderList(); });
+  /* поиск внутри списка */
+  const sb = p.querySelector('[data-search]');
+  if(sb) sb.oninput = () => { const q=sb.value.toLowerCase(); p.querySelectorAll('.hf-opt').forEach(l=>{ l.style.display = l.dataset.name.includes(q)?'':'none'; }); };
+  /* быстрые кнопки суммы */
+  p.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { const [a,c]=b.dataset.q.split('_'); p.querySelector('[data-min]').value=a; p.querySelector('[data-max]').value=c; });
+  /* режим долга */
+  p.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { const on=b.classList.contains('on'); p.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('on')); if(!on)b.classList.add('on'); });
+  const apply = () => {
+    if(col.type==='search'){ const v=p.querySelector('[data-txt]').value.trim(); if(col.key==='num')CF.num=v; else CF.addr=v; }
+    else if(col.type==='date'){ CF.mFrom=p.querySelector('[data-from]').value; CF.mTo=p.querySelector('[data-to]').value; }
+    else if(col.type==='people'){ CF[col.key]=[...p.querySelectorAll('input[type=checkbox]:checked')].map(c=>c.value); }
+    else if(col.type==='status'){ CF.status=[...p.querySelectorAll('input[type=checkbox]:checked')].map(c=>c.value); }
+    else if(col.type==='sum'){ const mn=p.querySelector('[data-min]').value, mx=p.querySelector('[data-max]').value; CF.sumMin=mn===''?null:+mn; CF.sumMax=mx===''?null:+mx; }
+    else if(col.type==='owe'){ const md=p.querySelector('[data-mode].on'); CF.oweMode=md?md.dataset.mode:''; const mn=p.querySelector('[data-min]').value, mx=p.querySelector('[data-max]').value; CF.oweMin=mn===''?null:+mn; CF.oweMax=mx===''?null:+mx; }
+    closeHF(); renderList();
+  };
+  p.querySelector('.hf-apply').onclick = apply;
+  if(sb===null){ const txt=p.querySelector('[data-txt]'); if(txt) txt.onkeydown=e=>{ if(e.key==='Enter')apply(); }; }
+  p.querySelector('.hf-reset').onclick = () => {
+    if(col.type==='search'){ if(col.key==='num')CF.num=''; else CF.addr=''; }
+    else if(col.type==='date'){ CF.mFrom=''; CF.mTo=''; }
+    else if(col.type==='people'){ CF[col.key]=[]; }
+    else if(col.type==='status'){ CF.status=[]; }
+    else if(col.type==='sum'){ CF.sumMin=null; CF.sumMax=null; }
+    else if(col.type==='owe'){ CF.oweMode=''; CF.oweMin=null; CF.oweMax=null; }
+    closeHF(); renderList();
+  };
+  setTimeout(() => document.addEventListener('mousedown', function h(e){ if(!p.contains(e.target)){ closeHF(); document.removeEventListener('mousedown',h); } }), 0);
+}
+
 function renderList(){
-  const list = filtered().slice().sort((a,b) => b.id - a.id);
+  const list = sortList(applyCF(filtered()));
   window._xlsList = list;
   const TS = list.reduce((a,o) => a + K.orderTotal(o), 0);
   const TO = list.reduce((a,o) => a + K.orderOwe(o), 0);
+  const arrow = c => CSort.key===c.sort ? (CSort.dir==='asc'?' ↑':' ↓') : '';
+  const th = c => `<th class="fh${cfActive(c.key)?' active':''} ${c.cls||''}" data-fc="${c.key}"
+      style="${c.w?`width:${c.w};`:''}${c.right?'text-align:right;':''}">${c.label}<span class="fi">▾</span>${cfActive(c.key)?'<span class="fdot"></span>':''}<span class="dim" style="font-size:10px">${arrow(c)}</span></th>`;
 
   document.getElementById('view').innerHTML = `
     <div class="bar" style="margin-bottom:12px">
       <span class="dim" style="font-size:12px">Показано ${list.length} заказов</span>
+      ${cfCount() ? `<button class="btn sm" id="cf-reset" style="margin-left:10px;color:var(--rd-d)">✕ Сбросить фильтры (${cfCount()})</button>` : ''}
       <span style="margin-left:auto"></span>
       <button class="btn sm" id="xls">↓ Выгрузить в Excel</button>
     </div>
     <div class="card"><div class="tbl-wrap"><table class="tbl" id="t-list">
-      <thead><tr>
-        <th style="width:74px">Номер</th>
-        <th style="width:150px">Замер</th>
-        <th>Адрес</th>
-        <th class="hide-s" style="width:160px">Менеджер</th>
-        <th class="hide-s" style="width:170px">Замерщик</th>
-        <th class="hide-m" style="width:170px">Установщик</th>
-        <th style="width:180px">Статус</th>
-        <th style="text-align:right;width:115px">Сумма</th>
-        <th style="text-align:right;width:130px">Не оплачено</th>
-      </tr></thead>
+      <thead><tr>${COLS_F.map(th).join('')}</tr></thead>
       <tbody>${list.length ? list.map(o => {
         const total = K.orderTotal(o), owe = K.orderOwe(o);
         return `<tr class="lnk" data-o="${o.id}" tabindex="0" role="button">
@@ -630,6 +782,10 @@ function renderList(){
     tr.addEventListener('click', () => openOrder(+tr.dataset.o));
     tr.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); openOrder(+tr.dataset.o); } });
   });
+  document.querySelectorAll('th.fh').forEach(h => h.addEventListener('click', e => {
+    e.stopPropagation(); const col = COLS_F.find(c => c.key === h.dataset.fc); if(col) openHF(col, h);
+  }));
+  const rb = document.getElementById('cf-reset'); if(rb) rb.onclick = resetCF;
 }
 
 /* ── КАЛЕНДАРЬ ── */
