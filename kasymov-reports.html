@@ -320,19 +320,19 @@ const CLOSED = ['installed','paid','done'];
 
 const NAV = [
   ['Финансовые отчёты', [
-    ['pnl','ОПИУ / P&L'], ['dds','ДДС — движение денег'], ['balance','Баланс'],
+    ['pnl','Прибыль и убытки (ОПИУ)'], ['dds','Движение денег (ДДС)'], ['balance','Баланс'],
   ]],
   ['Продажи', [
-    ['revenue','Выручка'], ['expenses','Расходы'], ['sales','Продажи и менеджеры'],
-    ['funnel','Воронка'], ['sources','Источники заявок'],
+    ['revenue','Выручка'], ['expenses','Расходы'], ['sales','Продажи по менеджерам'],
+    ['funnel','Воронка продаж'], ['sources','Источники заявок'],
   ]],
   ['Производство', [
-    ['prod','Выработка цеха'], ['prodtime','Сроки и загрузка'],
+    ['prod','Выработка цеха'], ['prodtime','Сроки и загрузка цеха'],
   ]],
   ['Персонал', [
-    ['employees','KPI сотрудников'], ['salary','Зарплатная ведомость'],
+    ['employees','Работа сотрудников'], ['salary','Зарплатная ведомость'],
   ]],
-  ['Склад', [ ['stock','Остатки и ABC'] ]],
+  ['Склад', [ ['stock','Склад: остатки и ABC-анализ'] ]],
   ['Сравнение', [ ['compare','Период к периоду'] ]],
 ];
 
@@ -551,7 +551,7 @@ PAGES.dds = () => {
       <div class="card"><div class="card-head"><div class="ct">Поток по месяцам</div></div>
         ${bars(months, 'v', 'var(--bl)')}</div>
       <div class="card">
-        <div class="card-head"><div class="ct">Структура поступлений</div></div>
+        <div class="card-head"><div class="ct">Откуда пришли деньги (структура поступлений)</div></div>
         <div class="progs">${src.map(([n,v]) => `<div class="prog-row">
           <div class="prog-lbl">${n}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,v/Math.max(1,cf.opIn)*100)}%;background:var(--gn-m)"></div></div><div class="prog-val">${f0(v)}</div></div>`).join('')
           || '<div style="color:var(--hi);font-size:12px;padding:10px 0">Поступлений нет</div>'}</div>
@@ -640,11 +640,11 @@ PAGES.revenue = () => {
     ${bars(months, 'v', 'var(--bl)')}
   </div>
   <div class="g2" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-    <div class="card"><div class="card-head"><div class="ct">По филиалам</div></div>
+    <div class="card"><div class="card-head"><div class="ct">Выручка по филиалам</div></div>
       <div class="progs">${brs.length ? brs.map(([b,v]) => `<div class="prog-row"><div class="prog-lbl">${K.esc((K.BRANCHES.find(x=>x.id===b)||{}).name||b)}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,v/mxB*100)}%;background:var(--bl)"></div></div><div class="prog-val">${f0(v)}</div></div>`).join('')
         : '<div style="color:var(--hi);font-size:12px;padding:10px 0">Нет закрытых заказов</div>'}</div>
     </div>
-    <div class="card"><div class="card-head"><div class="ct">По типу изделия</div></div>
+    <div class="card"><div class="card-head"><div class="ct">Объём заказов по типу изделий (площадь, м²)</div></div>
       <div class="progs">${tps.length ? tps.map(([t,v]) => `<div class="prog-row"><div class="prog-lbl">${K.esc(t)}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,v/mxT*100)}%;background:var(--pu-m)"></div></div><div class="prog-val">${K.qfmt(v)} м²</div></div>`).join('')
         : '<div style="color:var(--hi);font-size:12px;padding:10px 0">Нет данных</div>'}</div>
     </div>
@@ -698,11 +698,14 @@ PAGES.expenses = () => {
 
 PAGES.sales = () => {
   const p = pl(), l = leads();
+  const ORD = s => ({new:0,assigned:1,measured:2,ordered:3,thinking:3,rejected:3,toShop:4,ready:5,toInstall:6,installed:7,paid:8,done:9})[s]||0;
   const mgr = K.byRole('manager').map(s => {
     const my = l.filter(o => o.manager === s.id);
+    const meas = my.filter(o => o.status !== 'new');                 /* замер назначен */
+    const went = my.filter(o => ORD(o.status) >= 2);                 /* вышли на замер */
     const won = my.filter(o => !['new','assigned','measured','thinking','rejected'].includes(o.status));
     const closed = p.ords.filter(o => o.manager === s.id);
-    return { s, cnt:my.length, won:won.length, closed:closed.length,
+    return { s, cnt:my.length, meas:meas.length, went:went.length, won:won.length, closed:closed.length,
              sum:closed.reduce((a,o) => a + K.orderTotal(o), 0) };
   }).filter(x => x.cnt || x.closed).sort((a,b) => b.sum - a.sum);
   const mx = Math.max(1, ...mgr.map(m => m.sum));
@@ -711,24 +714,38 @@ PAGES.sales = () => {
   <div class="card" style="margin-bottom:14px">
     <div class="card-head"><div class="ct">Продажи по менеджерам</div><div class="ca">${pName()}</div></div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th>Менеджер</th><th class="tc" style="width:90px">Заявок</th>
-        <th class="tc" style="width:90px">Продано</th><th class="tc" style="width:110px">Конверсия</th>
-        <th class="tc" style="width:100px">Закрыто</th><th class="tr" style="width:140px">Выручка</th>
-        <th class="tr" style="width:130px">Средний чек</th></tr></thead>
+      <thead><tr><th>Менеджер</th>
+        <th class="tc" style="width:80px">Заявок<br><span style="font-weight:500;text-transform:none;letter-spacing:0">поступило лидов</span></th>
+        <th class="tc" style="width:100px">Назначен замер</th>
+        <th class="tc" style="width:100px">Вышли на замер</th>
+        <th class="tc" style="width:80px">Продано<br><span style="font-weight:500;text-transform:none;letter-spacing:0">заключили договор</span></th>
+        <th class="tc" style="width:100px">Конверсия<br><span style="font-weight:500;text-transform:none;letter-spacing:0">заявка → продажа</span></th>
+        <th class="tc" style="width:90px">Закрыто<br><span style="font-weight:500;text-transform:none;letter-spacing:0">сдано за период</span></th>
+        <th class="tr" style="width:130px">Выручка</th>
+        <th class="tr" style="width:120px">Средний чек</th></tr></thead>
       <tbody>${mgr.length ? mgr.map(x => `<tr>
         <td><b>${K.esc(x.s.name)}</b></td>
-        <td class="tc">${x.cnt}</td><td class="tc">${x.won}</td>
+        <td class="tc">${x.cnt}</td>
+        <td class="tc">${x.meas}</td>
+        <td class="tc">${x.went}</td>
+        <td class="tc">${x.won}</td>
         <td class="tc">${x.cnt?`<span class="b b-${x.won/x.cnt>=.5?'green':x.won/x.cnt>=.25?'blue':'gray'}">${Math.round(x.won/x.cnt*100)}%</span>`:'—'}</td>
         <td class="tc">${x.closed}</td>
         <td class="tr" style="font-weight:700">${f0(x.sum)}</td>
         <td class="tr" style="color:var(--mu)">${x.closed?f0(x.sum/x.closed):'—'}</td></tr>`).join('')
-        : '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--hi)">Нет данных</td></tr>'}</tbody>
+        : '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--hi)">Нет данных</td></tr>'}</tbody>
       <tfoot><tr style="background:var(--s2);font-weight:800">
         <td>Итого</td><td class="tc">${mgr.reduce((a,x)=>a+x.cnt,0)}</td>
+        <td class="tc">${mgr.reduce((a,x)=>a+x.meas,0)}</td>
+        <td class="tc">${mgr.reduce((a,x)=>a+x.went,0)}</td>
         <td class="tc">${mgr.reduce((a,x)=>a+x.won,0)}</td><td></td>
         <td class="tc">${mgr.reduce((a,x)=>a+x.closed,0)}</td>
         <td class="tr">${f0(mgr.reduce((a,x)=>a+x.sum,0))}</td><td></td></tr></tfoot>
     </table></div>
+    <div style="padding:10px 16px;font-size:11px;color:var(--hi)">
+      Заявок — сколько лидов пришло менеджеру. Назначен замер — по скольким назначен замерщик.
+      Вышли на замер — по скольким замер реально сделан. Продано — заключили договор.
+      Конверсия — доля продаж от всех заявок. Закрыто — сдано и оплачено за период.</div>
   </div>
   <div class="card" style="margin-bottom:14px">
     <div class="card-head"><div class="ct">Рейтинг по выручке</div></div>
@@ -893,10 +910,10 @@ PAGES.prod = () => {
   </div>
 
   <div class="g2" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-    <div class="card"><div class="card-head"><div class="ct">По операциям</div></div>
+    <div class="card"><div class="card-head"><div class="ct">Сколько операций закрыто по видам</div></div>
       <div class="progs">${K.OPS.map(op => `<div class="prog-row"><div class="prog-lbl">${op.label}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,(byOp[op.key]||0)/mxO*100)}%;background:var(--bl)"></div></div><div class="prog-val">${byOp[op.key] || 0}</div></div>`).join('')}</div>
     </div>
-    <div class="card"><div class="card-head"><div class="ct">Кто сколько сделал</div></div>
+    <div class="card"><div class="card-head"><div class="ct">Кто сколько сделал (операций за период)</div></div>
       <div class="progs">${men.length ? men.map(([id,v]) => `<div class="prog-row"><div class="prog-lbl">${K.esc(staff(id))}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,v.total/mxM*100)}%;background:var(--gn-m)"></div></div><div class="prog-val">${v.total} оп.</div></div>`).join('')
         : '<div style="color:var(--hi);font-size:12px;padding:10px 0">За период отметок нет</div>'}</div>
     </div>
@@ -998,9 +1015,9 @@ PAGES.employees = () => {
   <div class="card" style="margin-bottom:14px">
     <div class="card-head"><div class="ct">Замерщики</div><div class="ca">${pName()}</div></div>
     <div style="overflow-x:auto"><table>
-      <thead><tr><th>Сотрудник</th><th class="tc" style="width:100px">Назначено</th>
-        <th class="tc" style="width:100px">Выехал</th><th class="tr" style="width:90px">м²</th>
-        <th class="tc" style="width:100px">Продал</th><th class="tc" style="width:110px">Конверсия</th></tr></thead>
+      <thead><tr><th>Сотрудник</th><th class="tc" style="width:100px">Назначено замеров</th>
+        <th class="tc" style="width:110px">Вышел на замер</th><th class="tr" style="width:90px">Замерено, м²</th>
+        <th class="tc" style="width:100px">Довёл до продажи</th><th class="tc" style="width:110px">Конверсия</th></tr></thead>
       <tbody>${meas.length ? meas.map(x => `<tr><td><b>${K.esc(x.s.name)}</b></td>
         <td class="tc">${x.cnt}</td><td class="tc">${x.done}</td>
         <td class="tr">${K.qfmt(x.area)}</td><td class="tc">${x.won}</td>
@@ -1018,7 +1035,7 @@ PAGES.employees = () => {
           : '<tr><td colspan="3" style="text-align:center;padding:26px;color:var(--hi)">Нет данных</td></tr>'}</tbody>
       </table></div>
     </div>
-    <div class="card"><div class="card-head"><div class="ct">Рейтинг по заработку</div>
+    <div class="card"><div class="card-head"><div class="ct">Кто сколько заработал (начислено за период)</div>
       <div class="ca">${f0(pay.reduce((a,r) => a + r.sum, 0))} сом</div></div>
       <div class="progs">${pay.slice(0,8).map(r => `<div class="prog-row"><div class="prog-lbl">${K.esc(r.name)}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,r.sum/mxP*100)}%;background:var(--pu-m)"></div></div><div class="prog-val">${f0(r.sum)}</div></div>`).join('')
         || '<div style="color:var(--hi);font-size:12px;padding:10px 0">Начислений нет</div>'}</div>
@@ -1050,7 +1067,7 @@ PAGES.salary = () => {
       <div class="kpi-s">от выручки</div></div>
   </div>
   <div class="card" style="margin-bottom:14px">
-    <div class="card-head"><div class="ct">Фонд по ролям</div></div>
+    <div class="card-head"><div class="ct">Фонд оплаты труда по ролям</div></div>
     <div class="progs">${Object.entries(byRole).sort((a,b)=>b[1]-a[1]).map(([n,v]) => `<div class="prog-row"><div class="prog-lbl">${n}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,v/mxR*100)}%;background:var(--bl)"></div></div><div class="prog-val">${f0(v)} · ${Math.round(v/total*100)}%</div></div>`).join('')
       || '<div style="color:var(--hi);font-size:12px;padding:10px 0">Начислений нет</div>'}</div>
   </div>
@@ -1111,7 +1128,7 @@ PAGES.stock = () => {
       <div class="kpi-s">тканей дают 80% выручки</div></div>
   </div>
   <div class="card" style="margin-bottom:14px">
-    <div class="card-head"><div class="ct">ABC-анализ тканей</div><div class="ca">${pName()}</div></div>
+    <div class="card-head"><div class="ct">ABC-анализ тканей (какие ткани приносят выручку)</div><div class="ca">${pName()}</div></div>
     <div class="progs">${abc.length ? abc.map(x => `<div class="prog-row"><div class="prog-lbl"><span class="b b-${x.cls==='A'?'green':x.cls==='B'?'blue':'gray'}">${x.cls}</span>
         ${K.esc(x.n)}</div><div class="prog-wrap"><div class="prog-bar" style="width:${Math.max(2,x.rev/mx*100)}%;background:var(--bl)"></div></div><div class="prog-val">${f0(x.rev)} · ${K.qfmt(x.m2)} м²</div></div>`).join('')
       : '<div style="color:var(--hi);font-size:12px;padding:10px 0">За период заказов не было</div>'}</div>
