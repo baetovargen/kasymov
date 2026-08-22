@@ -769,6 +769,16 @@ window.addEventListener('hashchange', () => {
    item.onmouseleave=function(){item.style.background='transparent';};
    item.onclick=function(e){e.stopPropagation();menu.style.display='none';window.open('admin.html','_blank');};
    menu.appendChild(item);
+   var out=document.createElement('div');
+   out.textContent='⎋ Выйти';
+   out.style.cssText='padding:10px 12px;color:#ff9b9b;border-radius:7px;cursor:pointer;margin-top:2px;border-top:1px solid rgba(255,255,255,.08)';
+   out.onmouseenter=function(){out.style.background='rgba(255,80,80,.14)';};
+   out.onmouseleave=function(){out.style.background='transparent';};
+   out.onclick=function(e){e.stopPropagation();menu.style.display='none';
+     try{sessionStorage.removeItem('kasymov-me');}catch(_){}
+     try{localStorage.removeItem('kasymov-db');}catch(_){}
+     location.reload();};
+   menu.appendChild(out);
    document.body.appendChild(menu);
    u.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();
      if(menu.style.display==='block'){menu.style.display='none';return;}
