@@ -65,8 +65,24 @@ tr.lnk{cursor:pointer} tr.lnk:hover td{background:#f5f8ff}
 .prog-t{flex:1;height:9px;background:#eef1f7;border-radius:5px;overflow:hidden;min-width:50px}
 .prog-t i{display:block;height:100%;border-radius:5px}
 .prog-v{min-width:130px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:12.5px}
+/* отчёт руководителя */
+.rep-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-bottom:14px}
+.card.rep{padding:15px 16px}
+.kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.kpi-i{background:#f7f9fc;border:1px solid var(--bd);border-radius:9px;padding:9px 11px}
+.kpi-i.warn{background:#fff6f4;border-color:#f3d3cc}
+.kpi-v{font-size:19px;font-weight:800;letter-spacing:.2px;line-height:1.1}
+.kpi-l{font-size:11.5px;color:var(--t3,#8a93a6);margin-top:3px;font-weight:600}
+.rep-note{font-size:11.5px;color:var(--t3,#8a93a6);margin-top:10px;line-height:1.5}
+.pf-row{font-size:13.5px;margin:2px 0 8px}
+.pf-bar{height:11px;border-radius:7px;background:#eef1f7;overflow:hidden}
+.pf-bar i{display:block;height:100%;border-radius:7px}
+.pf-bar i.gn{background:#35c47a}.pf-bar i.am{background:#f2b23e}.pf-bar i.rd{background:#ef5f5f}
+.an{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.5;padding:9px 2px;border-top:1px solid #f0f3f8}
+.an:first-of-type{border-top:0}
+.an-d{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:0 0 auto}
 @media (max-width:1000px){ .hide-m{display:none} .prog-n{width:130px} }
-@media (max-width:640px){ .hide-s{display:none} }
+@media (max-width:640px){ .hide-s{display:none} .kpi{grid-template-columns:repeat(2,1fr)} }
 </style>
 </head>
 <body>
@@ -191,6 +207,9 @@ function render(){
         <div class="bg-d q0">розница</div></button>
     </div>
 
+    ${planFact(m)}
+    ${reportBlocks(f,t,m)}
+    ${analytics(f,t,m,pm)}
     ${alarms()}
 
     <div class="grid2" style="margin-bottom:14px">
@@ -223,6 +242,111 @@ function render(){
     if(window.parent !== window)
       window.parent.postMessage({ ns:'kasymov', type:'goto', page:b.dataset.go }, '*');
   }));
+}
+
+/* ═════════ ОТЧЁТ РУКОВОДИТЕЛЯ ═════════ */
+const DAILY_PLAN = (S && S.plan && +S.plan.daily) || 500000;   /* план продаж в день, сом */
+function periodDays(){ const [f,t] = R(); return Math.max(1, Math.round((new Date(t)-new Date(f))/864e5)+1); }
+function planTarget(){ const s = (S && S.plan && +S.plan.daily) || DAILY_PLAN; return s * periodDays(); }
+
+function salesStats(f,t){
+  const l = leads(f,t);
+  const processed = l.filter(o => o.status !== 'new');
+  const measures  = l.filter(o => o.measureAt);          /* замер назначен/сделан */
+  const contracts = won(l);                               /* договоры (продано) */
+  const m = money(f,t);
+  return { leads:l.length, processed:processed.length, measures:measures.length, contracts:contracts.length,
+    convLM: l.length ? Math.round(measures.length/l.length*100) : 0,
+    convMD: measures.length ? Math.round(contracts.length/measures.length*100) : 0,
+    rev:m.rev, avg: m.ords.length ? Math.round(m.revR/m.ords.length) : 0 };
+}
+function prodStats(f,t){
+  const cur = S.orders.filter(brOk);
+  const inWork = cur.filter(o => ['toShop','ready'].includes(o.status)).length;
+  const made   = S.orders.filter(o => brOk(o) && ['ready','toInstall','installed','paid','done'].includes(o.status) && ok(o.deadline,f,t)).length;
+  const late   = cur.filter(o => ['toShop','ready'].includes(o.status) && o.deadline < TODAY).length;
+  const doneP  = S.orders.filter(o => brOk(o) && CLOSED.includes(o.status) && ok(o.deadline,f,t));
+  const avg = doneP.length ? Math.round(doneP.reduce((a,o)=>a+Math.max(0,(new Date(o.deadline)-new Date((o.created||'').slice(0,10)))/864e5),0)/doneP.length) : 0;
+  return { inWork, made, late, avg };
+}
+function instStats(f,t){
+  const cur = S.orders.filter(brOk);
+  const planned = cur.filter(o => ['toInstall','installed'].includes(o.status)).length;
+  const done    = S.orders.filter(o => brOk(o) && ['installed','paid','done'].includes(o.status) && ok(o.deadline,f,t)).length;
+  return { planned, done };
+}
+function finStats(f,t,m){
+  const income = (K.moneyIn(S)||[]).filter(x => ok(x.date,f,t)).reduce((a,x)=>a+x.sum,0);
+  const bal = K.balances(S);
+  const cash = K.ACCOUNTS.reduce((a,x)=>a+bal[x.id],0);
+  const debt = S.orders.filter(o => brOk(o) && o.status !== 'rejected').reduce((a,o)=>a+K.orderOwe(o),0);
+  return { rev:m.rev, income, exp:m.exp, cash, debt };
+}
+
+function kpiCard(title, cls, rows, note){
+  return `<div class="card rep">
+    <div class="card-h"><div class="card-t">${title}</div></div>
+    <div class="kpi">${rows.map(r => `<div class="kpi-i${r.warn?' warn':''}">
+      <div class="kpi-v">${r.v}</div><div class="kpi-l">${r.l}</div></div>`).join('')}</div>
+    ${note ? `<div class="rep-note">${note}</div>` : ''}</div>`;
+}
+function reportBlocks(f,t,m){
+  const s = salesStats(f,t), p = prodStats(f,t), i = instStats(f,t), fin = finStats(f,t,m);
+  const nd = '<span class="q0">нет учёта</span>';
+  return `<div class="rep-grid">
+    ${kpiCard('Продажи','bl',[
+      {v:s.leads,l:'Новых лидов'},{v:s.processed,l:'Обработано'},{v:s.measures,l:'Замеров'},
+      {v:s.contracts,l:'Договоров'},{v:s.convLM+'%',l:'Конв. Лид→Замер'},{v:s.convMD+'%',l:'Конв. Замер→Договор'},
+      {v:f0(s.rev),l:'Сумма продаж'},{v:f0(s.avg),l:'Средний чек'} ])}
+    ${kpiCard('Производство','am',[
+      {v:p.inWork,l:'В работе'},{v:p.made,l:'Изготовлено'},{v:p.late,l:'Просрочено',warn:p.late>0},
+      {v:p.avg+' дн',l:'Средний срок'},{v:nd,l:'Брак'} ], 'Учёт брака появится, когда добавим галочку «брак» в цеху.')}
+    ${kpiCard('Монтаж','gn',[
+      {v:i.planned,l:'Запланировано'},{v:i.done,l:'Выполнено'},{v:nd,l:'Переносы'},{v:nd,l:'Рекламации'} ],
+      'Переносы и рекламации — добавим отметку в карточке заказа при необходимости.')}
+    ${kpiCard('Финансы','vl',[
+      {v:f0(fin.rev),l:'Выручка'},{v:f0(fin.income),l:'Поступления'},{v:f0(fin.exp),l:'Расходы',warn:fin.exp>0},
+      {v:f0(fin.cash),l:'Остаток в кассах'},{v:f0(fin.debt),l:'Дебиторка',warn:fin.debt>0} ])}
+  </div>`;
+}
+
+function planFact(m){
+  const plan = planTarget(), fact = m.rev, pct = plan ? Math.round(fact/plan*100) : 0;
+  const need = Math.max(0, plan - fact), days = periodDays();
+  const perDay = (S && S.plan && +S.plan.daily) || DAILY_PLAN;
+  const cls = pct>=100?'gn':pct>=80?'am':'rd';
+  const verdict = pct>=100 ? 'План выполнен — отличная работа.'
+    : `Выполнение ${pct}%. До плана не хватает ${f0(need)} сом` + (days>1?` (в среднем +${f0(Math.round(need/days))} в день)`:'') + '.';
+  return `<div class="card" style="margin-bottom:14px">
+    <div class="card-h"><div class="card-t">План / факт продаж</div>
+      <span class="chip ${cls}">${pct}%</span></div>
+    <div class="pf-row"><b>${f0(fact)}</b> из ${f0(plan)} сом · план ${f0(perDay)}/день × ${days} дн</div>
+    <div class="pf-bar"><i class="${cls}" style="width:${Math.min(100,pct)}%"></i></div>
+    <div class="rep-note">${verdict}</div></div>`;
+}
+
+function analytics(f,t,m,pm){
+  const out = [];
+  const cur = salesStats(f,t);
+  const pr  = R.__prev || null;
+  const prevR = K.rangeOf('prev'); const sp = salesStats(prevR[0], prevR[1]);
+  const dRev = pm.rev ? Math.round((m.rev - pm.rev)/pm.rev*100) : 0;
+  if(dRev <= -15) out.push({c:'rd',t:`Продажи снизились на ${Math.abs(dRev)}% относительно прошлого периода. Причина — меньше замеров/договоров. Усильте обзвон лидов и контроль менеджеров.`});
+  else if(dRev >= 15) out.push({c:'gn',t:`Продажи выросли на ${dRev}%. Удержите темп и следите за загрузкой цеха, чтобы не появились просрочки.`});
+  if(sp.convMD && cur.convMD && cur.convMD < sp.convMD - 10)
+    out.push({c:'am',t:`Конверсия Замер→Договор упала с ${sp.convMD}% до ${cur.convMD}%. Проверьте работу замерщиков и качество коммерческих предложений.`});
+  const late = S.orders.filter(o => brOk(o) && !['done','paid','rejected'].includes(o.status) && o.deadline < TODAY).length;
+  if(late > 5) out.push({c:'rd',t:`Просроченных заказов: ${late}. Основная нагрузка — на производстве и монтаже. Нужно перераспределить задачи.`});
+  const plan = planTarget(), pct = plan ? Math.round(m.rev/plan*100) : 0;
+  if(pct < 80) out.push({c:'am',t:`Выполнение плана ${pct}% — ниже нормы. Чтобы выйти на план, увеличьте ежедневные продажи.`});
+  const debt = S.orders.filter(o => brOk(o) && o.status !== 'rejected').reduce((a,o)=>a+K.orderOwe(o),0);
+  if(debt > 1000000) out.push({c:'am',t:`Дебиторская задолженность ${f0(debt)} сом. Напомните клиентам об оплате, чтобы не замораживать деньги.`});
+  if(!out.length) out.push({c:'gn',t:'Ключевые показатели в норме, критичных отклонений нет.'});
+  return `<div class="card" style="margin-bottom:14px">
+    <div class="card-h"><div class="card-t">Аналитика и выводы</div>
+      <span class="chip ${out.some(x=>x.c==='rd')?'rd':out.some(x=>x.c==='am')?'am':'gn'}">${out.length}</span></div>
+    ${out.map(x => `<div class="an ${x.c}"><span class="an-d" style="background:var(--${x.c})"></span>${x.t}</div>`).join('')}
+  </div>`;
 }
 
 /* ── тревоги: что требует решения прямо сейчас ── */
