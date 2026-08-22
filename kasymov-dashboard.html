@@ -348,9 +348,9 @@ function reportBlocks(f,t,m){
   return `<div class="rep-grid">
     ${kpiCard('Продажи','bl',[
       {v:s.leads,l:'Лиды (заявки)'},{v:s.assigned,l:'Замер назначен'},{v:s.went,l:'Вышли на замер'},
-      {v:nd,l:'Переносы замеров'},{v:s.contracts,l:'Договоров'},
+      {v:nd,l:'Переносы замеров'},{v:s.contracts,l:'Продано'},
       {v:s.convLA+'%',l:'Конверсия Лид → Замер'},{v:s.convLW+'%',l:'Конверсия Лид → Вышли на замер'},
-      {v:s.convWD+'%',l:'Конверсия Вышли на замер → Договор'},{v:s.convLD+'%',l:'Конверсия Лид → Договор'},
+      {v:s.convWD+'%',l:'Конверсия Вышли на замер → Продано'},{v:s.convLD+'%',l:'Конверсия Лид → Продано'},
       {v:f0(s.rev),l:'Сумма продаж'},{v:f0(s.avg),l:'Средний чек'} ])}
     ${kpiCard('Производство','am',[
       {v:p.total,l:'Всего заказов'},{v:p.made,l:'Изготовлено'},{v:p.late,l:'Просрочено',warn:p.late>0},
@@ -388,10 +388,10 @@ function analytics(f,t,m,pm){
   const pr  = R.__prev || null;
   const prevR = K.rangeOf('prev'); const sp = salesStats(prevR[0], prevR[1]);
   const dRev = pm.rev ? Math.round((m.rev - pm.rev)/pm.rev*100) : 0;
-  if(dRev <= -15) out.push({c:'rd',t:`Продажи снизились на ${Math.abs(dRev)}% относительно прошлого периода. Причина — меньше замеров/договоров. Усильте обзвон лидов и контроль менеджеров.`});
+  if(dRev <= -15) out.push({c:'rd',t:`Продажи снизились на ${Math.abs(dRev)}% относительно прошлого периода. Причина — меньше замеров/продаж. Усильте обзвон лидов и контроль менеджеров.`});
   else if(dRev >= 15) out.push({c:'gn',t:`Продажи выросли на ${dRev}%. Удержите темп и следите за загрузкой цеха, чтобы не появились просрочки.`});
   if(sp.convMD && cur.convMD && cur.convMD < sp.convMD - 10)
-    out.push({c:'am',t:`Конверсия Замер→Договор упала с ${sp.convMD}% до ${cur.convMD}%. Проверьте работу замерщиков и качество коммерческих предложений.`});
+    out.push({c:'am',t:`Конверсия Замер→Продано упала с ${sp.convMD}% до ${cur.convMD}%. Проверьте работу замерщиков и качество коммерческих предложений.`});
   const late = S.orders.filter(o => brOk(o) && !['done','paid','rejected'].includes(o.status) && o.deadline < TODAY).length;
   if(late > 5) out.push({c:'rd',t:`Просроченных заказов: ${late}. Основная нагрузка — на производстве и монтаже. Нужно перераспределить задачи.`});
   const plan = planTarget(), pct = plan ? Math.round(m.rev/plan*100) : 0;
