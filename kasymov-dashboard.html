@@ -266,6 +266,9 @@ function planTarget(){ const s = (S && S.plan && +S.plan.daily) || DAILY_PLAN; r
 
 const ORD = s => ({new:0,assigned:1,measured:2,ordered:3,thinking:3,rejected:3,toShop:4,ready:5,toInstall:6,installed:7,paid:8,done:9})[s] || 0;
 const pc = (a,b) => b ? Math.round(a/b*100) : 0;
+/* сумма отметок (переносы/переделки/рекламации) по всем заказам за период */
+const markCount = (key,f,t) => S.orders.filter(brOk)
+  .reduce((a,o) => a + ((o[key]||[]).filter(e => ok(e.at,f,t)).length), 0);
 
 function salesStats(f,t){
   const l = leads(f,t);
@@ -274,6 +277,7 @@ function salesStats(f,t){
   const contracts= won(l);                                   /* договоры (продано) */
   const m = money(f,t);
   return { leads:l.length, assigned:assigned.length, went:went.length, contracts:contracts.length,
+    resched: markCount('reschedMeas',f,t),
     convLA:pc(assigned.length,l.length), convLW:pc(went.length,l.length),
     convWD:pc(contracts.length,went.length), convLD:pc(contracts.length,l.length),
     rev:m.rev, avg: m.ords.length ? Math.round(m.revR/m.ords.length) : 0 };
@@ -285,13 +289,13 @@ function prodStats(f,t){
   const late  = cur.filter(o => ['toShop','ready'].includes(o.status) && o.deadline < TODAY).length;
   const doneP = S.orders.filter(o => brOk(o) && CLOSED.includes(o.status) && ok(o.deadline,f,t));
   const avg = doneP.length ? Math.round(doneP.reduce((a,o)=>a+Math.max(0,(new Date(o.deadline)-new Date((o.created||'').slice(0,10)))/864e5),0)/doneP.length) : 0;
-  return { total, made, late, avg };
+  return { total, made, late, avg, rework: markCount('reworks',f,t) };
 }
 function instStats(f,t){
   const cur = S.orders.filter(brOk);
   const planned = cur.filter(o => ['toInstall','installed'].includes(o.status)).length;
   const done    = S.orders.filter(o => brOk(o) && ['installed','paid','done'].includes(o.status) && ok(o.deadline,f,t)).length;
-  return { planned, done };
+  return { planned, done, resched: markCount('reschedInstall',f,t), claims: markCount('claims',f,t) };
 }
 function finStats(f,t,m){
   const income = (K.moneyIn(S)||[]).filter(x => ok(x.date,f,t)).reduce((a,x)=>a+x.sum,0);
@@ -344,22 +348,21 @@ function kpiCard(title, cls, rows, note){
 }
 function reportBlocks(f,t,m){
   const s = salesStats(f,t), p = prodStats(f,t), i = instStats(f,t), fin = finStats(f,t,m);
-  const nd = '<span class="q0">нет учёта</span>';
   return `<div class="rep-grid">
     ${kpiCard('Продажи','bl',[
       {v:s.leads,l:'Лиды (заявки)'},{v:s.assigned,l:'Замер назначен'},{v:s.went,l:'Вышли на замер'},
-      {v:nd,l:'Переносы замеров'},{v:s.contracts,l:'Продано'},
+      {v:s.resched,l:'Переносы замеров',warn:s.resched>0},{v:s.contracts,l:'Продано'},
       {v:s.convLA+'%',l:'Конверсия Лид → Замер'},{v:s.convLW+'%',l:'Конверсия Лид → Вышли на замер'},
       {v:s.convWD+'%',l:'Конверсия Вышли на замер → Продано'},{v:s.convLD+'%',l:'Конверсия Лид → Продано'},
       {v:f0(s.rev),l:'Сумма продаж'},{v:f0(s.avg),l:'Средний чек'} ])}
     ${kpiCard('Производство','am',[
       {v:p.total,l:'Всего заказов'},{v:p.made,l:'Изготовлено'},{v:p.late,l:'Просрочено',warn:p.late>0},
-      {v:p.avg+' дн',l:'Средний срок изготовления'},{v:nd,l:'Переделки'} ],
-      'Переделки появятся, когда добавим отметку «переделка» в цеху.')}
+      {v:p.avg+' дн',l:'Средний срок изготовления'},{v:p.rework,l:'Переделки',warn:p.rework>0} ],
+      'Переделки отмечаются в карточке заказа на вкладке «Отметки».')}
     ${kpiCard('Монтаж','gn',[
       {v:i.planned,l:'Запланировано монтажей'},{v:i.done,l:'Выполнено монтажей'},
-      {v:nd,l:'Переносы монтажа'},{v:nd,l:'Рекламации'} ],
-      'Переносы и рекламации — добавим отметку в карточке заказа при необходимости.')}
+      {v:i.resched,l:'Переносы монтажа',warn:i.resched>0},{v:i.claims,l:'Рекламации',warn:i.claims>0} ],
+      'Переносы и рекламации отмечаются в карточке заказа на вкладке «Отметки».')}
     ${kpiCard('Финансы','vl',[
       {v:f0(fin.rev),l:'Выручка'},{v:f0(fin.income),l:'Поступления'},{v:f0(fin.exp),l:'Расходы',warn:fin.exp>0},
       {v:f0(fin.cash),l:'Остаток в кассах'},{v:f0(fin.debt),l:'Дебиторка (нам должны)',warn:fin.debt>0},

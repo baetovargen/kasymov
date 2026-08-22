@@ -934,13 +934,22 @@ function bindClose(){ document.querySelectorAll('#ovl [data-close]').forEach(b =
 function openOrder(id, t){ openId = id; cardTab = t || 'info'; drawOrder(); }
 function log(o, what){ o.history.push({ at:NOW(), who:me(), what }); }
 
+/* отметки сбоев по заказу — попадают в «Показатели» и отчёты */
+const MARKS = [
+  {key:'reschedMeas',    t:'Переносы замера',  hint:'Клиент перенёс дату или время замера.', bad:false},
+  {key:'reschedInstall', t:'Переносы монтажа', hint:'Перенесли дату установки.', bad:false},
+  {key:'reworks',        t:'Переделки',        hint:'Изделие пришлось переделать — брак или ошибка в размерах.', bad:true},
+  {key:'claims',         t:'Рекламации',       hint:'Жалоба клиента после установки.', bad:true},
+];
+const MARK_LABEL = {reschedMeas:'Перенос замера', reschedInstall:'Перенос монтажа', reworks:'Переделка', claims:'Рекламация'};
+
 const PENCIL = '<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg>';
 
 function drawOrder(){
   const o = order(openId); if(!o) return;
   const total = K.orderTotal(o), paid = K.orderPaid(o), owe = K.orderOwe(o), disc = K.orderDisc(o);
   const CT = [['info','Заказ'],['items','Изделия'],['mat','Материалы'],
-              ['pay','Оплата'],['files','Файлы'],['hist','История']];
+              ['pay','Оплата'],['files','Файлы'],['flags','Отметки'],['hist','История']];
   showModal(`Заказ #${o.num}`, 'xwide');
 
   const head = `<div class="ohead">
@@ -1093,6 +1102,27 @@ function drawOrder(){
          <div class="empty-s">Загрузите фото замера или скрин оплаты</div></div>`}`;
   }
 
+  if(cardTab === 'flags'){
+    body = `<div class="hint">Отмечайте сбои по заказу: перенос замера или монтажа, переделку изделия,
+        рекламацию после установки. Эти отметки автоматически попадают в раздел «Показатели» и отчёты руководителя.</div>
+      <div class="grid2">${MARKS.map(m => {
+        const arr = o[m.key] || [];
+        return `<div><div class="sec">${m.t}
+            <span class="chip ${arr.length?(m.bad?'rd':'am'):'gn'}">${arr.length}</span></div>
+          <div class="hint" style="margin-bottom:8px">${m.hint}</div>
+          <div class="bar" style="margin-bottom:8px;gap:6px">
+            <input class="ri" id="fl-note-${m.key}" placeholder="Причина (необязательно)" style="flex:1;min-width:0">
+            <button class="btn ${m.bad?'danger':'green'} sm" data-flag="${m.key}">+ Отметить</button></div>
+          ${arr.length ? `<div class="tl">${arr.slice().reverse().map((e,ri) => {
+            const idx = arr.length - 1 - ri;
+            return `<div class="tl-i"><div class="tl-w">${e.note ? K.esc(e.note) : '<span class="q0">без комментария</span>'}</div>
+              <div class="tl-m">${e.at} · ${K.esc(staff(e.by))}
+                <button class="del" data-unflag="${m.key}:${idx}" style="margin-left:8px" title="Убрать отметку" aria-label="Убрать">✕</button></div></div>`;
+          }).join('')}</div>` : '<div class="q0" style="font-size:11.5px">Пока отметок нет</div>'}
+        </div>`;
+      }).join('')}</div>`;
+  }
+
   if(cardTab === 'hist'){
     body = `<div class="sec">Что происходило с заказом</div>
       <div class="tl">${o.history.slice().reverse().map(h => `<div class="tl-i">
@@ -1148,6 +1178,20 @@ function drawOrder(){
   document.querySelectorAll('[data-invf]').forEach(b =>
     b.onclick = () => openInvFile(o, +b.dataset.invf));
   on('pay-add', () => payForm(o));
+  document.querySelectorAll('[data-flag]').forEach(b => b.onclick = () => {
+    const key = b.dataset.flag;
+    const inp = document.getElementById('fl-note-' + key);
+    const note = (inp && inp.value.trim()) || '';
+    (o[key] = o[key] || []).push({ at:NOW(), by:me(), note });
+    log(o, note ? `${MARK_LABEL[key]}: ${note}` : MARK_LABEL[key]);
+    save(); drawOrder();
+    K.toast(MARK_LABEL[key] + ' — отметка добавлена');
+  });
+  document.querySelectorAll('[data-unflag]').forEach(b => b.onclick = () => {
+    const [key, idx] = b.dataset.unflag.split(':');
+    if(o[key]) o[key].splice(+idx, 1);
+    save(); drawOrder();
+  });
   on('it-add', () => {
     o.items.push({ w:0, h:0, qty:1, fabric:'', profile:'', type:'',
                    urgent:false, marks:[{}] });
