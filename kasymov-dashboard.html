@@ -81,6 +81,15 @@ tr.lnk{cursor:pointer} tr.lnk:hover td{background:#f5f8ff}
 .an{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.5;padding:9px 2px;border-top:1px solid #f0f3f8}
 .an:first-of-type{border-top:0}
 .an-d{width:8px;height:8px;border-radius:50%;margin-top:6px;flex:0 0 auto}
+.tbl-wrap{overflow-x:auto}
+.rtbl{width:100%;border-collapse:collapse;font-size:12.5px;white-space:nowrap}
+.rtbl th{text-align:left;color:var(--t3,#8a93a6);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.3px;padding:6px 8px;border-bottom:1px solid var(--bd,#e6ebf2)}
+.rtbl td{padding:8px 8px;border-bottom:1px solid #f0f3f8;font-variant-numeric:tabular-nums}
+.rtbl td.strong{font-weight:600;white-space:normal}
+.rtbl td.money{text-align:right;font-weight:600}
+.rtbl th:not(:first-child){text-align:right}
+.rtbl td:not(.strong){text-align:right}
+.rtbl tr:hover td{background:#f7f9fc}
 @media (max-width:1000px){ .hide-m{display:none} .prog-n{width:130px} }
 @media (max-width:640px){ .hide-s{display:none} .kpi{grid-template-columns:repeat(2,1fr)} }
 </style>
@@ -163,6 +172,7 @@ function render(){
   const [f,t] = R();
   const m = money(f,t);
   const l = leads(f,t), w = won(l);
+  const st = staffTables(f,t);
   const prevR = K.rangeOf('prev');
   const pm = money(prevR[0], prevR[1]);
   const bal = K.balances(S);
@@ -227,15 +237,20 @@ function render(){
 
     <div class="grid2">
       <div class="card">
-        <div class="card-h"><div class="card-t">Менеджеры</div>
+        <div class="card-h"><div class="card-t">Продажи по менеджерам</div>
           <span class="chip gy">${K.rangeName(P.preset,P.from,P.to)}</span></div>
-        ${people()}
+        ${st.mgTbl}
       </div>
       <div class="card">
-        <div class="card-h"><div class="card-t">Куда уходят деньги</div>
-          <span class="chip rd">${K.money(m.exp)}</span></div>
-        ${expenses(f,t,m)}
+        <div class="card-h"><div class="card-t">Замерщики</div>
+          <span class="chip gy">${K.rangeName(P.preset,P.from,P.to)}</span></div>
+        ${st.meTbl}
       </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="card-h"><div class="card-t">Куда уходят деньги</div>
+        <span class="chip rd">${K.money(m.exp)}</span></div>
+      ${expenses(f,t,m)}
     </div>`;
 
   document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => {
@@ -249,25 +264,28 @@ const DAILY_PLAN = (S && S.plan && +S.plan.daily) || 500000;   /* план пр�
 function periodDays(){ const [f,t] = R(); return Math.max(1, Math.round((new Date(t)-new Date(f))/864e5)+1); }
 function planTarget(){ const s = (S && S.plan && +S.plan.daily) || DAILY_PLAN; return s * periodDays(); }
 
+const ORD = s => ({new:0,assigned:1,measured:2,ordered:3,thinking:3,rejected:3,toShop:4,ready:5,toInstall:6,installed:7,paid:8,done:9})[s] || 0;
+const pc = (a,b) => b ? Math.round(a/b*100) : 0;
+
 function salesStats(f,t){
   const l = leads(f,t);
-  const processed = l.filter(o => o.status !== 'new');
-  const measures  = l.filter(o => o.measureAt);          /* замер назначен/сделан */
-  const contracts = won(l);                               /* договоры (продано) */
+  const assigned = l.filter(o => o.status !== 'new');       /* замер назначен */
+  const went     = l.filter(o => ORD(o.status) >= 2);        /* вышли на замер (состоялся) */
+  const contracts= won(l);                                   /* договоры (продано) */
   const m = money(f,t);
-  return { leads:l.length, processed:processed.length, measures:measures.length, contracts:contracts.length,
-    convLM: l.length ? Math.round(measures.length/l.length*100) : 0,
-    convMD: measures.length ? Math.round(contracts.length/measures.length*100) : 0,
+  return { leads:l.length, assigned:assigned.length, went:went.length, contracts:contracts.length,
+    convLA:pc(assigned.length,l.length), convLW:pc(went.length,l.length),
+    convWD:pc(contracts.length,went.length), convLD:pc(contracts.length,l.length),
     rev:m.rev, avg: m.ords.length ? Math.round(m.revR/m.ords.length) : 0 };
 }
 function prodStats(f,t){
   const cur = S.orders.filter(brOk);
-  const inWork = cur.filter(o => ['toShop','ready'].includes(o.status)).length;
-  const made   = S.orders.filter(o => brOk(o) && ['ready','toInstall','installed','paid','done'].includes(o.status) && ok(o.deadline,f,t)).length;
-  const late   = cur.filter(o => ['toShop','ready'].includes(o.status) && o.deadline < TODAY).length;
-  const doneP  = S.orders.filter(o => brOk(o) && CLOSED.includes(o.status) && ok(o.deadline,f,t));
+  const total = S.orders.filter(o => brOk(o) && ORD(o.status) >= 4 && ok(o.deadline,f,t)).length;
+  const made  = S.orders.filter(o => brOk(o) && ORD(o.status) >= 5 && ok(o.deadline,f,t)).length;
+  const late  = cur.filter(o => ['toShop','ready'].includes(o.status) && o.deadline < TODAY).length;
+  const doneP = S.orders.filter(o => brOk(o) && CLOSED.includes(o.status) && ok(o.deadline,f,t));
   const avg = doneP.length ? Math.round(doneP.reduce((a,o)=>a+Math.max(0,(new Date(o.deadline)-new Date((o.created||'').slice(0,10)))/864e5),0)/doneP.length) : 0;
-  return { inWork, made, late, avg };
+  return { total, made, late, avg };
 }
 function instStats(f,t){
   const cur = S.orders.filter(brOk);
@@ -280,7 +298,41 @@ function finStats(f,t,m){
   const bal = K.balances(S);
   const cash = K.ACCOUNTS.reduce((a,x)=>a+bal[x.id],0);
   const debt = S.orders.filter(o => brOk(o) && o.status !== 'rejected').reduce((a,o)=>a+K.orderOwe(o),0);
-  return { rev:m.rev, income, exp:m.exp, cash, debt };
+  const credit = (S.suppliers||[]).reduce((a,s)=>a+(s.debt||0),0);
+  return { rev:m.rev, income, exp:m.exp, cash, debt, credit };
+}
+function mgrKPI(f,t){
+  return K.byRole('manager').map(s => {
+    const l = leads(f,t).filter(o => o.manager === s.id);
+    const went = l.filter(o => ORD(o.status) >= 2);
+    const sold = won(l);
+    const closed = l.filter(o => CLOSED.includes(o.status));
+    const rev = closed.reduce((a,o)=>a+K.orderTotal(o),0);
+    return { name:s.name, leads:l.length, meas:l.filter(o=>o.status!=='new').length, went:went.length,
+      sold:sold.length, conv:pc(sold.length,l.length), closed:closed.length, rev, avg: closed.length?Math.round(rev/closed.length):0 };
+  }).filter(r => r.leads > 0).sort((a,b) => b.rev - a.rev);
+}
+function measKPI(f,t){
+  return K.byRole('measurer').map(s => {
+    const l = S.orders.filter(o => brOk(o) && o.measurer === s.id && ok(o.created,f,t));
+    const went = l.filter(o => ORD(o.status) >= 2);
+    const sold = won(l);
+    const closed = l.filter(o => CLOSED.includes(o.status));
+    const rev = closed.reduce((a,o)=>a+K.orderTotal(o),0);
+    return { name:s.name, meas:went.length, sold:sold.length, conv:pc(sold.length,went.length), rev };
+  }).filter(r => r.meas > 0).sort((a,b) => b.rev - a.rev);
+}
+function staffTables(f,t){
+  const mg = mgrKPI(f,t), me = measKPI(f,t);
+  const mgTbl = mg.length ? `<div class="tbl-wrap"><table class="rtbl">
+    <thead><tr><th>Менеджер</th><th>Заявок</th><th>Замер назн.</th><th>Вышли на замер</th><th>Продано</th><th>Конверсия</th><th>Закрыто</th><th>Выручка</th><th>Средний чек</th></tr></thead>
+    <tbody>${mg.map(r=>`<tr><td class="strong">${K.esc(r.name)}</td><td>${r.leads}</td><td>${r.meas}</td><td>${r.went}</td><td>${r.sold}</td><td>${r.conv}%</td><td>${r.closed}</td><td class="money">${f0(r.rev)}</td><td class="money">${f0(r.avg)}</td></tr>`).join('')}</tbody></table></div>`
+    : '<div class="q0" style="padding:10px">Нет данных за период</div>';
+  const meTbl = me.length ? `<div class="tbl-wrap"><table class="rtbl">
+    <thead><tr><th>Замерщик</th><th>Замеров</th><th>Продано</th><th>Конверсия</th><th>Выручка</th></tr></thead>
+    <tbody>${me.map(r=>`<tr><td class="strong">${K.esc(r.name)}</td><td>${r.meas}</td><td>${r.sold}</td><td>${r.conv}%</td><td class="money">${f0(r.rev)}</td></tr>`).join('')}</tbody></table></div>`
+    : '<div class="q0" style="padding:10px">Нет данных за период</div>';
+  return { mgTbl, meTbl };
 }
 
 function kpiCard(title, cls, rows, note){
@@ -295,18 +347,23 @@ function reportBlocks(f,t,m){
   const nd = '<span class="q0">нет учёта</span>';
   return `<div class="rep-grid">
     ${kpiCard('Продажи','bl',[
-      {v:s.leads,l:'Новых лидов'},{v:s.processed,l:'Обработано'},{v:s.measures,l:'Замеров'},
-      {v:s.contracts,l:'Договоров'},{v:s.convLM+'%',l:'Конв. Лид→Замер'},{v:s.convMD+'%',l:'Конв. Замер→Договор'},
+      {v:s.leads,l:'Лиды (заявки)'},{v:s.assigned,l:'Замер назначен'},{v:s.went,l:'Вышли на замер'},
+      {v:nd,l:'Переносы замеров'},{v:s.contracts,l:'Договоров'},
+      {v:s.convLA+'%',l:'Конверсия Лид → Замер'},{v:s.convLW+'%',l:'Конверсия Лид → Вышли на замер'},
+      {v:s.convWD+'%',l:'Конверсия Вышли на замер → Договор'},{v:s.convLD+'%',l:'Конверсия Лид → Договор'},
       {v:f0(s.rev),l:'Сумма продаж'},{v:f0(s.avg),l:'Средний чек'} ])}
     ${kpiCard('Производство','am',[
-      {v:p.inWork,l:'В работе'},{v:p.made,l:'Изготовлено'},{v:p.late,l:'Просрочено',warn:p.late>0},
-      {v:p.avg+' дн',l:'Средний срок'},{v:nd,l:'Брак'} ], 'Учёт брака появится, когда добавим галочку «брак» в цеху.')}
+      {v:p.total,l:'Всего заказов'},{v:p.made,l:'Изготовлено'},{v:p.late,l:'Просрочено',warn:p.late>0},
+      {v:p.avg+' дн',l:'Средний срок изготовления'},{v:nd,l:'Переделки'} ],
+      'Переделки появятся, когда добавим отметку «переделка» в цеху.')}
     ${kpiCard('Монтаж','gn',[
-      {v:i.planned,l:'Запланировано'},{v:i.done,l:'Выполнено'},{v:nd,l:'Переносы'},{v:nd,l:'Рекламации'} ],
+      {v:i.planned,l:'Запланировано монтажей'},{v:i.done,l:'Выполнено монтажей'},
+      {v:nd,l:'Переносы монтажа'},{v:nd,l:'Рекламации'} ],
       'Переносы и рекламации — добавим отметку в карточке заказа при необходимости.')}
     ${kpiCard('Финансы','vl',[
       {v:f0(fin.rev),l:'Выручка'},{v:f0(fin.income),l:'Поступления'},{v:f0(fin.exp),l:'Расходы',warn:fin.exp>0},
-      {v:f0(fin.cash),l:'Остаток в кассах'},{v:f0(fin.debt),l:'Дебиторка',warn:fin.debt>0} ])}
+      {v:f0(fin.cash),l:'Остаток в кассах'},{v:f0(fin.debt),l:'Дебиторка (нам должны)',warn:fin.debt>0},
+      {v:f0(fin.credit),l:'Кредиторка (мы должны)',warn:fin.credit>0} ])}
   </div>`;
 }
 
