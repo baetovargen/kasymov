@@ -239,7 +239,7 @@ window.addEventListener('error', e => {
     + '<b>Сбой в разделе.</b> ' + (e.message||'') + '</div>');
 });
 </script>
-<script src="kasymov-data.js"></script>
+<script>document.write('<script src="kasymov-data.js'+(location.search||'')+'"><\/script>');</script>
 <script>
 const K = window.KASYMOV;
 let S = null, tab = 'list', who = 'u19', flt = 'work', packFlt = 'ready';
