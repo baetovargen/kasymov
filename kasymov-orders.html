@@ -372,11 +372,11 @@ const F = { from:'', to:'', branch:'', status:'', manager:'', measurer:'', insta
 const COLS = {
   manager:   ['new','assigned','measured','ordered','thinking','rejected','toShop'],
   measurer:  ['assigned','measured','ordered','thinking','rejected','toShop'],
-  shop:      ['toShop','ready'],
-  senior:    ['ready','toInstall','installed'],
-  installer: ['toInstall','installed','paid'],
-  accountant:['toShop','ready','toInstall','installed','paid','done'],
-  director:  ['new','assigned','measured','ordered','thinking','rejected','toShop','ready','toInstall','installed','paid','done'],
+  shop:      ['toShop','ready','toSenior'],
+  senior:    ['ready','toSenior','toInstall','installed'],
+  installer: ['toInstall','installed','done'],
+  accountant:['toShop','ready','toSenior','toInstall','installed','done'],
+  director:  ['new','assigned','measured','ordered','thinking','rejected','toShop','ready','toSenior','toInstall','installed','done'],
 };
 const TABS = [
   { id:'board', name:'Канбан' }, { id:'list', name:'Список' },
@@ -1029,7 +1029,7 @@ function drawOrder(){
   }
 
   if(cardTab === 'items'){
-    const canEdit = !['ready','toInstall','installed','paid','done'].includes(o.status);
+    const canEdit = !['ready','toSenior','toInstall','installed','paid','done'].includes(o.status);
     body = `<div class="bar" style="margin-bottom:10px">
         <span class="dim" style="font-size:12px">Размеры в метрах, каждая строка — одно окно.</span>
         <span style="margin-left:auto"></span>
@@ -1175,7 +1175,7 @@ function drawOrder(){
     acts.push('<button class="btn big green" id="a-accept">Принять заказ</button>');
   if(['new','assigned'].includes(o.status) && ['manager','director'].includes(role))
     acts.push(`<button class="btn big primary" id="a-assign">${o.measurer?'Сменить':'Назначить'} замерщика</button>`);
-  if(o.status === 'ready' && ['senior','director'].includes(role))
+  if(o.status === 'toSenior' && ['senior','director'].includes(role))
     acts.push('<button class="btn big primary" id="a-installer">Назначить установщика</button>');
   if(o.status === 'toInstall' && ['installer','senior','director'].includes(role))
     acts.push('<button class="btn big green" id="a-install">Установлено и оплачено</button>');
@@ -1520,6 +1520,10 @@ function moveTo(o, st){
     K.toast(`Заказ #${o.num} в цеху · со склада списано ${lines.length} позиций`);
     return;
   }
+  if(st === 'done' && K.orderOwe(o) > 0){
+    K.toast('В «Выполнен» можно перевести только после полной оплаты. Остаток ' + K.fmt(K.orderOwe(o)) + ' сом', 'bad');
+    cardTab = 'pay'; drawOrder(); return;
+  }
   o.status = st; log(o, `Статус: ${K.STATUS[st].label}`);
   save(); drawOrder(); K.toast(`Заказ #${o.num}: ${K.STATUS[st].label}`);
 }
@@ -1612,7 +1616,7 @@ function installForm(o){
     const cash = method === 'Наличные', at = NOW();
     if(sum > 0) o.payments.push({ at, sum, kind:'Доплата при установке', method, who:me(),
                                   note, cash, handedAt:cash ? null : at, files:iPend ? [iPend] : [] });
-    o.status = K.orderOwe(o) <= 0 ? 'paid' : 'installed';
+    o.status = K.orderOwe(o) <= 0 ? 'done' : 'installed';
     log(o, `Установлено, принято ${K.fmt(sum)} (${method})${note ? ' — ' + note : ''}`);
     save(); openOrder(o.id, 'pay');
     K.toast(cash ? `Принято ${K.money(sum)} наличными — числится на вас`
@@ -1659,7 +1663,7 @@ function payForm(o){
     o.payments.push({ at, sum, kind:document.getElementById('p-kind').value, method, who:me(),
       note:document.getElementById('p-note').value.trim(),
       cash, handedAt:cash ? null : at, files:pending ? [pending] : [] });
-    if(K.orderOwe(o) <= 0 && o.status === 'installed') o.status = 'paid';
+    if(K.orderOwe(o) <= 0 && o.status === 'installed') o.status = 'done';
     log(o, `Оплата ${K.fmt(sum)} (${method})`);
     save(); openOrder(o.id, 'pay');
     K.toast(cash ? `${K.money(sum)} наличными — числится на вас` : `Внесено ${K.money(sum)}`);

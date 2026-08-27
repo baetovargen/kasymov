@@ -45,27 +45,29 @@ window.KASYMOV = (function () {
   /* статусы заказа. can — какие роли могут перевести заказ В этот статус */
   const STATUS = {
     new:       { label:'Новый замер',            cls:'bl', order:0,  can:['manager','director'] },
-    assigned:  { label:'Замер распределено',     cls:'bl', order:1,  can:['manager','director'] },
+    assigned:  { label:'Замер распределён',      cls:'bl', order:1,  can:['manager','director'] },
     measured:  { label:'Замер сделан',           cls:'vl', order:2,  can:['measurer','director'] },
     ordered:   { label:'Заказан',                cls:'gn', order:3,  can:['measurer','manager','director'] },
     thinking:  { label:'Думает',                 cls:'am', order:3,  can:['measurer','manager','director'] },
     rejected:  { label:'Отказ',                  cls:'rd', order:3,  can:['measurer','manager','director'] },
     toShop:    { label:'Заказ отправлен в цех',  cls:'am', order:4,  can:['manager','measurer','director'] },
     ready:     { label:'Готов в цеху',           cls:'gn', order:5,  can:['shop','director'] },
-    toInstall: { label:'Отправлен на установку', cls:'bl', order:6,  can:['senior','director'] },
-    installed: { label:'Установлен',             cls:'gn', order:7,  can:['installer','senior','director'] },
-    paid:      { label:'Полностью оплачен',      cls:'gn', order:8,  can:['installer','director'] },
-    done:      { label:'Выполнено',              cls:'gy', order:9,  can:['director','senior'] },
+    toSenior:  { label:'Передан старшему установщику', cls:'vl', order:6, can:['senior','shop','director'] },
+    toInstall: { label:'Отправлен на установку', cls:'bl', order:7,  can:['senior','director'] },
+    installed: { label:'Установлен',             cls:'gn', order:8,  can:['installer','senior','director'] },
+    done:      { label:'Выполнен',               cls:'gy', order:9,  can:['installer','senior','director','accountant'] },
+    /* legacy: старый статус «Полностью оплачен» — оставлен, чтобы старые заказы не ломались */
+    paid:      { label:'Выполнен',               cls:'gy', order:9,  can:[] },
   };
   const FLOW = ['new','assigned','measured','ordered','thinking','rejected',
-                'toShop','ready','toInstall','installed','paid','done'];
+                'toShop','ready','toSenior','toInstall','installed','done'];
   /* куда можно перейти из текущего статуса */
   const NEXT = {
     new:['assigned'], assigned:['measured','rejected'],
     measured:['ordered','thinking','rejected'],
     thinking:['ordered','rejected'], ordered:['toShop'], rejected:[],
-    toShop:['ready'], ready:['toInstall'], toInstall:['installed'],
-    installed:['paid'], paid:['done'], done:[],
+    toShop:['ready'], ready:['toSenior'], toSenior:['toInstall'],
+    toInstall:['installed'], installed:['done'], done:[], paid:[],
   };
 
   const CHANNEL = {

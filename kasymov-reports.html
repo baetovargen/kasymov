@@ -701,7 +701,7 @@ PAGES.expenses = () => {
 
 PAGES.sales = () => {
   const p = pl(), l = leads();
-  const ORD = s => ({new:0,assigned:1,measured:2,ordered:3,thinking:3,rejected:3,toShop:4,ready:5,toInstall:6,installed:7,paid:8,done:9})[s]||0;
+  const ORD = s => ({new:0,assigned:1,measured:2,ordered:3,thinking:3,rejected:3,toShop:4,ready:5,toSenior:6,toInstall:7,installed:8,paid:9,done:9})[s]||0;
   const mgr = K.byRole('manager').map(s => {
     const my = l.filter(o => o.manager === s.id);
     const meas = my.filter(o => o.status !== 'new');                 /* замер назначен */

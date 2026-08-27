@@ -264,7 +264,7 @@ const DAILY_PLAN = (S && S.plan && +S.plan.daily) || 500000;   /* план пр�
 function periodDays(){ const [f,t] = R(); return Math.max(1, Math.round((new Date(t)-new Date(f))/864e5)+1); }
 function planTarget(){ const s = (S && S.plan && +S.plan.daily) || DAILY_PLAN; return s * periodDays(); }
 
-const ORD = s => ({new:0,assigned:1,measured:2,ordered:3,thinking:3,rejected:3,toShop:4,ready:5,toInstall:6,installed:7,paid:8,done:9})[s] || 0;
+const ORD = s => ({new:0,assigned:1,measured:2,ordered:3,thinking:3,rejected:3,toShop:4,ready:5,toSenior:6,toInstall:7,installed:8,paid:9,done:9})[s] || 0;
 const pc = (a,b) => b ? Math.round(a/b*100) : 0;
 /* сумма отметок (переносы/переделки/рекламации) по всем заказам за период */
 const markCount = (key,f,t) => S.orders.filter(brOk)

@@ -529,7 +529,7 @@ function renderPack(){
         ${!ready && !packed && wait.length ? `<span class="waitlist">ждём: ${wait.join(', ')}</span>` : ''}
         <span style="margin-left:auto"></span>
         ${packed
-          ? `<button class="btn primary" data-give="${o.id}">Передать старшему установщику</button>`
+          ? `<button class="btn primary" data-give="${o.id}">Готов — вывести из цеха</button>`
           : `<button class="btn green" data-pk="${o.id}" ${ready?'':'disabled title="Сначала поставьте все галочки"'}>Упаковать адрес</button>`}
       </div>
     </div>`;
@@ -571,10 +571,10 @@ function renderPack(){
   document.querySelectorAll('[data-give]').forEach(b =>
     b.addEventListener('click', () => {
       const o = order(+b.dataset.give); if(!o) return;
-      confirmBox('Передать старшему установщику',
-        `Передать адрес <b>${K.esc(o.addr)}</b> (заказ #${o.num}) старшему установщику?<br>`
-        + `После этого заказ уйдёт из цеха.`,
-        'Передать', () => handOver(o));
+      confirmBox('Вывести из цеха',
+        `Отметить адрес <b>${K.esc(o.addr)}</b> (заказ #${o.num}) готовым и вывести из цеха?<br>`
+        + `Он попадёт в колонку «Готов в цеху».`,
+        'Вывести', () => handOver(o));
     }));
 }
 
