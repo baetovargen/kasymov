@@ -527,6 +527,13 @@ function openCard(id){
       <b class="${(g.q[l.id]||0)<=0?'zero':''}">${K.qfmt(g.q[l.id]||0)} ${g.unit}</b></div>`).join('')}
     ${oo ? `<div class="kv"><span>Заказано у поставщика</span><b>${K.qfmt(oo)} ${g.unit}</b></div>` : ''}
 
+    ${['Ткань','Профиль'].includes(g.cat) ? `<div class="sec">Тип изделия — для подсказки в заказе</div>
+      <div class="kv"><span>Показывать при выборе типа</span>
+        <select class="inp" id="g-fortype" style="width:190px">
+          <option value="">Все типы</option>
+          ${['Рулонная','Плиссе','День-ночь','Вертикальная'].map(t=>`<option ${g.forType===t?'selected':''}>${t}</option>`).join('')}
+        </select></div>` : ''}
+
     <div class="sec">Цены</div>
     <div class="kv"><span>Себестоимость (средневзвешенная)</span><b>${K.money(g.cost)}</b></div>
     <div class="kv"><span>Оптовая цена</span><b>${K.money(g.opt)}</b></div>
@@ -565,6 +572,8 @@ function openCard(id){
   document.getElementById('c-in').onclick  = () => openDoc('receipt', id);
   document.getElementById('c-out').onclick = () => openDoc('writeoff', id);
   document.getElementById('c-mv').onclick  = () => openDoc('transfer', id);
+  const ft = document.getElementById('g-fortype');
+  if(ft) ft.onchange = () => { g.forType = ft.value; K.commit(S); K.toast('Тип изделия сохранён — теперь эта ' + (g.cat==='Ткань'?'ткань':'профиль') + ' показывается в заказе для «' + (ft.value||'всех типов') + '»'); };
   bindClose();
 }
 

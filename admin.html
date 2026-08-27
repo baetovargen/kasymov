@@ -310,6 +310,7 @@ const ENT = {
       {h:'Материалов',f:r=>(r.rows||[]).length},
     ],
   },
+  pay:{ tab:'Зарплата (ставки)', special:'pay' },
 };
 
 /* ── утилиты ── */
@@ -339,6 +340,7 @@ function renderTabs(){
 async function load(){
   const e=ENT[current];
   if(e.special==='access'){ return renderAccess(); }
+  if(e.special==='pay'){ return renderPay(); }
   document.getElementById('view').innerHTML='<div class="empty">Загрузка…</div>';
   const {data,error}=await db.from(e.table).select('*').order(e.order,{ascending:true});
   if(error){document.getElementById('view').innerHTML='<div class="empty">Ошибка: '+esc(error.message)+'</div>';
@@ -401,6 +403,51 @@ function togglePw(id){ const el=document.getElementById(id); if(!el)return;
 /* ── ПРАВА ДОСТУПА (роли × разделы) ── */
 const SECTIONS=[['dashboard','Дашборд'],['orders','Заказы'],['production','Производство'],['warehouse','Склад'],['wholesale','Опт'],['invoices','Накладные'],['finance','Финансы'],['reports','Отчёты'],['partners','Партнёры']];
 let accRoles=[], accMap={};
+/* ── ставки зарплаты ── */
+async function renderPay(){
+  const view=document.getElementById('view');
+  view.innerHTML='<div class="empty">Загрузка…</div>';
+  let p={};
+  try{ const {data}=await db.from('settings').select('*').eq('key','pay').maybeSingle(); p=(data&&data.value)||{}; }
+  catch(err){ view.innerHTML='<div class="empty">Ошибка: '+esc(err.message||err)+'</div>'; return; }
+  p.measurer=p.measurer||{}; p.measurer.m2byDisc=p.measurer.m2byDisc||{};
+  p.manager=p.manager||{}; p.installer=p.installer||{};
+  const inp=(id,val)=>'<input id="'+id+'" type="number" value="'+(val==null?'':val)+'" style="width:120px;padding:7px 9px;border:1px solid var(--bd);border-radius:7px;background:var(--panel);color:var(--tx)">';
+  const row=(label,field)=>'<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--bd)"><span>'+label+'</span>'+field+'</div>';
+  view.innerHTML=
+    '<div class="bar"><h2>Зарплата — ставки</h2><span class="spacer"></span>'
+    +'<button class="btn" onclick="savePay()">Сохранить</button></div>'
+    +'<div class="hint">Эти ставки применяются во всех расчётах зарплаты и в карточке заказа. '
+    +'Бонус менеджеру начисляется отдельно (вручную). После сохранения обновите основную систему.</div>'
+    +'<div class="card" style="max-width:640px"><h3 style="margin:0 0 8px">Менеджер</h3>'
+    + row('Оклад в месяц, сом', inp('pm-salary', p.manager.salary))
+    + row('Процент от суммы заказа, %', inp('pm-pct', p.manager.pct))
+    +'</div>'
+    +'<div class="card" style="max-width:640px;margin-top:12px"><h3 style="margin:0 0 8px">Замерщик</h3>'
+    + row('За выезд, сом', inp('me-trip', p.measurer.trip))
+    +'<div style="margin:8px 0 4px;font-weight:600">Ставка за м² в зависимости от скидки:</div>'
+    + row('Без скидки (0%)', inp('me-d0', p.measurer.m2byDisc.d0))
+    + row('Скидка до 10%', inp('me-d10', p.measurer.m2byDisc.d10))
+    + row('Скидка 10–15%', inp('me-d15', p.measurer.m2byDisc.d15))
+    + row('Скидка 15–20% и больше', inp('me-d20', p.measurer.m2byDisc.d20))
+    +'</div>'
+    +'<div class="card" style="max-width:640px;margin-top:12px"><h3 style="margin:0 0 8px">Установщик</h3>'
+    + row('За изделие, сом', inp('pi-piece', p.installer.piece))
+    + row('За адрес (выезд), сом', inp('pi-trip', p.installer.trip))
+    +'</div>';
+}
+async function savePay(){
+  const g=id=>num(document.getElementById(id).value);
+  const value={
+    manager:{ salary:g('pm-salary'), pct:g('pm-pct') },
+    measurer:{ trip:g('me-trip'), m2byDisc:{ d0:g('me-d0'), d10:g('me-d10'), d15:g('me-d15'), d20:g('me-d20') } },
+    installer:{ piece:g('pi-piece'), trip:g('pi-trip') },
+  };
+  const {error}=await db.from('settings').upsert({key:'pay',value});
+  if(error) note('Не сохранилось: '+error.message,true);
+  else note('Ставки зарплаты сохранены');
+}
+
 async function renderAccess(){
   const view=document.getElementById('view');
   view.innerHTML='<div class="empty">Загрузка…</div>';

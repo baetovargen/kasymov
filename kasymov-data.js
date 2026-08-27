@@ -114,10 +114,32 @@ window.KASYMOV = (function () {
 
   /* ── сдельная оплата вне цеха ── */
   const PAY = {
-    measurer:  { trip:100, m2:150 },   /* 100 сом за выезд + 150 сом за м² */
-    manager:   { pct:4 },              /* 4% от суммы заказа */
+    /* замерщик: 100 за выезд + ставка за м², которая зависит от скидки по заказу */
+    measurer:  { trip:100, m2byDisc:{ d0:200, d10:150, d15:120, d20:100 } },
+    /* менеджер: оклад 10 000 + 4% от суммы; бонус начисляется отдельно вручную */
+    manager:   { salary:10000, pct:4 },
     installer: { piece:150, trip:300 },/* 150 сом за изделие + 300 сом за адрес */
   };
+  /* ставка замерщика за м² в зависимости от % скидки по заказу */
+  function measurerRate(disc){
+    const t = (PAY.measurer && PAY.measurer.m2byDisc) || {};
+    if(disc <= 0)  return t.d0  != null ? t.d0  : 200;
+    if(disc <= 10) return t.d10 != null ? t.d10 : 150;
+    if(disc <= 15) return t.d15 != null ? t.d15 : 120;
+    return t.d20 != null ? t.d20 : 100;   /* 15–20% и выше */
+  }
+  /* сколько сотрудники заработали именно с этого заказа (для карточки) */
+  function orderEarnings(o){
+    const area  = (o.items || []).reduce((x,i) => x + i.w * i.h * i.qty, 0);
+    const pcs   = (o.items || []).reduce((x,i) => x + i.qty, 0);
+    const total = orderTotal(o), disc = orderDisc(o);
+    return {
+      manager:   o.manager   ? Math.round(total * PAY.manager.pct / 100) : 0,
+      measurer:  o.measurer  ? Math.round(PAY.measurer.trip + area * measurerRate(disc)) : 0,
+      installer: o.installer ? (pcs * PAY.installer.piece + PAY.installer.trip) : 0,
+      rate: measurerRate(disc), disc, area,
+    };
+  }
 
   const STAFF = [
     { id:'u1',  name:'Тилек кызы Адеми',   role:'manager',   branch:'bishkek', salary:15000 },
@@ -1546,8 +1568,8 @@ window.KASYMOV = (function () {
       if(sum) rows[s.id].parts.push({ part, sum, note });
     };
 
-    /* оклад — пропорционально длине периода в месяце */
-    STAFF.forEach(s => { if(s.salary)
+    /* оклад — пропорционально длине периода в месяце (менеджерам оклад из PAY, ниже) */
+    STAFF.forEach(s => { if(s.salary && s.role !== 'manager')
       add(s, 'salary', Math.round(s.salary * Math.min(1, days / 30)), 'оклад'); });
 
     /* цех — сдельно по галочкам */
@@ -1562,23 +1584,27 @@ window.KASYMOV = (function () {
       if(qty){ add(s, 'piece', sum, `${qty} операций сдельно`); rows[s.id].per = per; }
     });
 
-    /* замерщики — выезд плюс метраж */
+    /* замерщики — выезд плюс метраж по ставке, зависящей от скидки заказа */
     byRole('measurer').forEach(s => {
       const l = state.orders.filter(o => o.measurer === s.id && o.items.length && inR(o.measureAt));
       if(!l.length) return;
-      const area = l.reduce((a,o) => a + o.items.reduce((x,i) => x + i.w * i.h * i.qty, 0), 0);
-      add(s, 'piece', Math.round(l.length * PAY.measurer.trip + area * PAY.measurer.m2),
-          `${l.length} выездов × ${PAY.measurer.trip} + ${area.toFixed(1)} м² × ${PAY.measurer.m2}`);
+      let sum = l.length * PAY.measurer.trip;
+      l.forEach(o => { const area = o.items.reduce((x,i) => x + i.w * i.h * i.qty, 0);
+        sum += Math.round(area * measurerRate(orderDisc(o))); });
+      add(s, 'piece', Math.round(sum),
+          `${l.length} выездов × ${PAY.measurer.trip} + м² по ставке скидки (${PAY.measurer.m2byDisc.d0}/${PAY.measurer.m2byDisc.d10}/${PAY.measurer.m2byDisc.d15}/${PAY.measurer.m2byDisc.d20})`);
     });
 
-    /* менеджеры — процент от закрытых заказов */
+    /* менеджеры — оклад + процент от закрытых заказов (бонус начисляется отдельно) */
     byRole('manager').forEach(s => {
+      add(s, 'salary', Math.round((PAY.manager.salary || 0) * Math.min(1, days / 30)), 'оклад');
       const l = state.orders.filter(o => o.manager === s.id &&
         ['installed','paid','done'].includes(o.status) && inR(o.deadline));
-      if(!l.length) return;
-      const rev = l.reduce((a,o) => a + orderTotal(o), 0);
-      add(s, 'piece', Math.round(rev * PAY.manager.pct / 100),
-          `${PAY.manager.pct}% от ${fmt(rev)} сом (${l.length} заказов)`);
+      if(l.length){
+        const rev = l.reduce((a,o) => a + orderTotal(o), 0);
+        add(s, 'piece', Math.round(rev * PAY.manager.pct / 100),
+            `${PAY.manager.pct}% от ${fmt(rev)} сом (${l.length} заказов)`);
+      }
     });
 
     /* установщики — изделия плюс выезды */
@@ -1793,7 +1819,15 @@ window.KASYMOV = (function () {
     window.addEventListener('message', e => {
       const d = e.data;
       if(!d || d.ns !== 'kasymov') return;
-      if(d.type === 'state'){ got = true; apply(d.state); }
+      if(d.type === 'state'){
+        got = true;
+        /* применяем настройки из админки: ставки зарплаты и прайс */
+        if(d.state){
+          if(d.state.pay)   Object.assign(PAY, d.state.pay);
+          if(d.state.price) Object.assign(PRICE, d.state.price);
+        }
+        apply(d.state);
+      }
       if(d.type === 'action' && onAction) onAction(d.name);
     });
 
@@ -1835,6 +1869,7 @@ window.KASYMOV = (function () {
            dueState, dueToday,
            poOwe, poCost, partnerStats,
            moneyIn, moneyOut, balances, orderCost, payroll, cashflow, balanceSheet,
+           measurerRate, orderEarnings,
            bonuses, fines, payouts,
            fmt, qfmt, money, dmy, today, todayISO, daysLeft, deadlineChip,
            materials, normsFor, checkStock, total, reserved, onOrder, newCost,
