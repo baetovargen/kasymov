@@ -194,6 +194,10 @@ button.stat:hover{border-color:var(--line);box-shadow:0 3px 10px rgba(0,0,0,.06)
 .oc-money>div>b{font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
 .oc-money .pos{color:var(--gn-d)}
 .oc-money .neg{color:var(--rd-d)}
+.oc-dates{display:flex;gap:8px;margin:0 0 7px}
+.oc-dates>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.oc-dates>div>span{font-size:8.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--t3)}
+.oc-dates>div>b{font-size:11px;font-weight:700;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .oc-foot{padding:7px 12px;border-top:1px solid #f2f5fa;font-size:11px;font-weight:700;
          display:flex;align-items:center;gap:6px}
 .oc-foot.wait{background:var(--am-l);color:var(--am-d)}
@@ -535,6 +539,8 @@ function card(o){
   const accM = o.accepted ? '<span class="acc ok">принял</span>'
              : waitingAccept(o) ? '<span class="acc wt">ждёт</span>' : '';
   const row = (lbl, val, extra='') => `<div class="ocr"><span>${lbl}</span><b>${val}</b>${extra}</div>`;
+  const md  = o.measureAt ? K.dmy(o.measureAt).slice(0,5) + ' · ' + (o.timeless ? 'весь день' : (o.measureTime || '—')) : '—';
+  const idt = o.installAt ? K.dmy(o.installAt).slice(0,5) + (o.installTime ? ' · ' + o.installTime : '') : '—';
   return `<button class="oc" data-o="${o.id}" draggable="true">
     <div class="oc-top">
       <div class="oc-h"><span class="oc-num">#${o.num}</span>
@@ -544,6 +550,10 @@ function card(o){
         ${row('Менеджер', K.esc(staff(o.manager)))}
         ${row('Замерщик', o.measurer ? K.esc(staff(o.measurer)) : '—', accM)}
         ${row('Установщик', o.installer ? K.esc(staff(o.installer)) : '—')}
+      </div>
+      <div class="oc-dates">
+        <div><span>Замер</span><b>${md}</b></div>
+        <div><span>Установка</span><b>${idt}</b></div>
       </div>
       <div class="oc-money">
         <div><span>Сумма</span><b>${total ? K.fmt(total) : '—'}</b></div>
@@ -1010,6 +1020,8 @@ function drawOrder(){
         <div class="kv"><span>Подтвердил выезд</span>
           <b class="${o.accepted?'pos':'neg'}">${o.accepted || (o.measurer ? 'ещё нет' : '—')}</b></div>
         <div class="kv"><span>Установщик</span><b>${o.installer ? K.esc(staff(o.installer)) : '—'}</b></div>
+        <div class="kv"><span>Замер</span><b>${o.measureAt ? K.dmy(o.measureAt) + (o.timeless ? ', весь день' : (o.measureTime ? ', ' + o.measureTime : '')) : '—'}</b></div>
+        <div class="kv"><span>Установка</span><b>${o.installAt ? K.dmy(o.installAt) + (o.installTime ? ', ' + o.installTime : '') : '—'}</b></div>
         <div class="kv"><span>Срок сдачи</span><b>${K.dmy(o.deadline)}</b></div>
       </div></div>
       ${o.comment ? `<div class="sec">Комментарий</div><div class="hint">${K.esc(o.comment)}</div>` : ''}
@@ -1442,6 +1454,8 @@ function editOrder(o){
       <div class="fld"><label style="display:flex;align-items:center;gap:7px;margin-top:22px;font-weight:600;color:var(--t1)">
         <input type="checkbox" id="e-tl" ${o.timeless?'checked':''} style="width:16px;height:16px">
         Без точного времени</label></div>
+      <div class="fld"><label for="e-idate">Дата установки</label><input class="inp" id="e-idate" type="date" value="${o.installAt||''}"></div>
+      <div class="fld"><label for="e-itime">Время установки</label><input class="inp" id="e-itime" type="time" value="${o.installTime||''}"></div>
     </div>
     <div class="fld"><label for="e-comment">Комментарий</label><input class="inp" id="e-comment" value="${K.esc(o.comment||'')}"></div>`;
   document.getElementById('m-f').innerHTML = `
@@ -1461,6 +1475,7 @@ function editOrder(o){
       deadline:v('e-dl'), measureAt:v('e-date'),
       timeless:document.getElementById('e-tl').checked,
       measureTime:document.getElementById('e-tl').checked ? '' : v('e-time'),
+      installAt:v('e-idate'), installTime:v('e-itime'),
       comment:v('e-comment'),
     });
     /* сменили филиал — замерщик другого филиала больше не подходит */
