@@ -636,7 +636,9 @@ function loadModule(p){
   loading.classList.remove('hide');
   document.getElementById('fl-text').textContent = 'Загрузка: ' + m.title + '…';
   frame.removeAttribute('srcdoc');
-  frame.src = m.file;
+  /* метка версии за загрузку страницы — чтобы после обновления всегда
+     подтягивалась свежая версия раздела, а не старая из кэша браузера */
+  frame.src = m.file + '?v=' + (window.__BUILD || (window.__BUILD = Date.now()));
   /* раздел обязан отчитаться о готовности; если молчит — объясняем,
      а не оставляем белый экран */
   frame._ready = false;
