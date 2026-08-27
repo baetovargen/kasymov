@@ -412,8 +412,12 @@ function renderList(){
 
 /* поставить или снять галочку */
 function toggle(oid, ix, u, key){
-  const o = order(+oid), it = o.items[+ix], m = it.marks[+u];
+  const o = order(+oid);
+  if(!o){ render(); return; }                 /* заказ уже ушёл из цеха — обновим список, без ошибки */
+  const it = o.items[+ix]; if(!it) return;
+  const m = it.marks[+u]; if(!m) return;
   const op = K.OPS.find(x => x.key === key);
+  if(!op) return;
   if(m[key]){
     if(m[key].by !== who){
       K.toast(`Отметил ${staff(m[key].by)} — снять может только он`, 'bad'); return;
@@ -565,7 +569,13 @@ function renderPack(){
     K.toast(`${o.addr} — упаковано. Теперь передайте старшему установщику`);
   }));
   document.querySelectorAll('[data-give]').forEach(b =>
-    b.addEventListener('click', () => handOver(order(+b.dataset.give))));
+    b.addEventListener('click', () => {
+      const o = order(+b.dataset.give); if(!o) return;
+      confirmBox('Передать старшему установщику',
+        `Передать адрес <b>${K.esc(o.addr)}</b> (заказ #${o.num}) старшему установщику?<br>`
+        + `После этого заказ уйдёт из цеха.`,
+        'Передать', () => handOver(o));
+    }));
 }
 
 /* ── АРХИВ: что уже ушло старшему установщику ── */
@@ -723,6 +733,26 @@ function printSheet(){
 }
 
 /* ═══════════ ОБЩЕЕ ═══════════ */
+/* простое окно подтверждения (не зависит от нативных диалогов) */
+function confirmBox(title, html, yesLabel, onYes){
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(15,22,38,.55);'
+    + 'display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.innerHTML =
+    `<div style="background:#fff;color:#1a2233;max-width:430px;width:100%;border-radius:14px;`
+    + `overflow:hidden;box-shadow:0 24px 60px -12px rgba(0,0,0,.45)">`
+    + `<div style="padding:15px 18px;font-size:15px;font-weight:700;border-bottom:1px solid #e6eaf2">${title}</div>`
+    + `<div style="padding:16px 18px;font-size:13.5px;line-height:1.55;color:#2a3346">${html}</div>`
+    + `<div style="display:flex;gap:8px;justify-content:flex-end;padding:12px 18px;background:#f5f7fb">`
+    + `<button class="btn" data-no>Отмена</button>`
+    + `<button class="btn primary" data-yes>${yesLabel}</button></div></div>`;
+  document.body.appendChild(ov);
+  const close = () => ov.remove();
+  ov.addEventListener('mousedown', e => { if(e.target === ov) close(); });
+  ov.querySelector('[data-no]').onclick = close;
+  ov.querySelector('[data-yes]').onclick = () => { close(); onYes(); };
+}
+
 function save(){ K.commit(S); render(); }
 document.getElementById('ovl').addEventListener('mousedown', e => {
   if(e.target.id === 'ovl') document.getElementById('ovl').hidden = true;
