@@ -177,6 +177,23 @@ button.stat:hover{border-color:var(--line);box-shadow:0 3px 10px rgba(0,0,0,.06)
 .oc-addr{font-size:13px;font-weight:600;line-height:1.35;margin-bottom:5px}
 .oc-meta{font-size:11.5px;color:var(--t3);line-height:1.5}
 .oc-meta b{color:var(--t2);font-weight:600}
+/* новые строки карточки: люди + деньги */
+.oc-urg{margin-left:auto;font-size:9px;font-weight:800;background:var(--rd-l);color:var(--rd-d);
+        padding:1px 6px;border-radius:10px;text-transform:uppercase;letter-spacing:.03em}
+.oc-people{display:flex;flex-direction:column;gap:2px;margin:1px 0 7px}
+.ocr{display:flex;align-items:center;gap:6px;font-size:11.5px;line-height:1.3}
+.ocr>span{color:var(--t3);width:76px;flex:none}
+.ocr>b{color:var(--t2);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ocr .acc{font-size:9px;font-weight:800;padding:0 5px;border-radius:10px;margin-left:auto;flex:none;
+          text-transform:uppercase;letter-spacing:.02em}
+.acc.ok{background:var(--gn-l);color:var(--gn-d)}
+.acc.wt{background:var(--am-l);color:var(--am-d)}
+.oc-money{display:flex;gap:8px;border-top:1px solid #f2f5fa;padding-top:7px}
+.oc-money>div{display:flex;flex-direction:column;gap:1px;flex:1;min-width:0}
+.oc-money>div>span{font-size:8.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--t3)}
+.oc-money>div>b{font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
+.oc-money .pos{color:var(--gn-d)}
+.oc-money .neg{color:var(--rd-d)}
 .oc-foot{padding:7px 12px;border-top:1px solid #f2f5fa;font-size:11px;font-weight:700;
          display:flex;align-items:center;gap:6px}
 .oc-foot.wait{background:var(--am-l);color:var(--am-d)}
@@ -502,28 +519,36 @@ document.getElementById('q').addEventListener('input', render);
 
 /* ── КАНБАН ── */
 function card(o){
-  const total = K.orderTotal(o), owe = K.orderOwe(o);
+  const total = K.orderTotal(o), paid = K.orderPaid(o), owe = K.orderOwe(o);
   const late = new Date(o.deadline) < new Date('2026-08-03') && !['done','paid','rejected'].includes(o.status);
+  const urgent = (o.items || []).some(i => i.urgent);
   let foot = '';
   if(waitingAccept(o)){
     const h = hoursSince(o.created);
     foot = `<div class="oc-foot ${h>=6?'late':'wait'}">Замерщик не принял${h>0?` · ${h} ч`:''}</div>`;
-  } else if(o.status === 'assigned' && o.accepted){
-    foot = `<div class="oc-foot ok">Принял в ${o.accepted.slice(11,16)}</div>`;
   } else if(late){
     foot = `<div class="oc-foot late">Срок ${K.dmy(o.deadline)} прошёл</div>`;
   } else if(owe > 0 && total){
     foot = `<div class="oc-foot owe">Не оплачено ${K.fmt(owe)} сом</div>`;
   }
-  const people = [o.measurer && staff(o.measurer), o.installer && staff(o.installer)].filter(Boolean);
+  /* статус приёмки замерщиком */
+  const accM = o.accepted ? '<span class="acc ok">принял</span>'
+             : waitingAccept(o) ? '<span class="acc wt">ждёт</span>' : '';
+  const row = (lbl, val, extra='') => `<div class="ocr"><span>${lbl}</span><b>${val}</b>${extra}</div>`;
   return `<button class="oc" data-o="${o.id}" draggable="true">
     <div class="oc-top">
       <div class="oc-h"><span class="oc-num">#${o.num}</span>
-        <span class="oc-sum">${total ? K.fmt(total) : '—'}</span></div>
+        ${urgent ? '<span class="oc-urg">срочно</span>' : ''}</div>
       <div class="oc-addr">${K.esc(o.addr)}</div>
-      <div class="oc-meta">
-        ${K.dmy(o.measureAt)}${o.timeless ? ', в течение дня' : ', ' + o.measureTime}<br>
-        <b>${K.esc(staff(o.manager))}</b>${people.length ? ' · ' + people.map(K.esc).join(' · ') : ''}
+      <div class="oc-people">
+        ${row('Менеджер', K.esc(staff(o.manager)))}
+        ${row('Замерщик', o.measurer ? K.esc(staff(o.measurer)) : '—', accM)}
+        ${row('Установщик', o.installer ? K.esc(staff(o.installer)) : '—')}
+      </div>
+      <div class="oc-money">
+        <div><span>Сумма</span><b>${total ? K.fmt(total) : '—'}</b></div>
+        <div><span>Предоплата</span><b class="${paid?'pos':''}">${paid ? K.fmt(paid) : '—'}</b></div>
+        <div><span>Остаток</span><b class="${owe?'neg':(total?'pos':'')}">${total ? K.fmt(owe) : '—'}</b></div>
       </div>
     </div>${foot}</button>`;
 }
